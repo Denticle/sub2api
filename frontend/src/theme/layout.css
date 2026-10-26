@@ -26,37 +26,81 @@
 :root {
   --shell-sidebar-w: 15rem;        /* 240px */
   --shell-sidebar-w-collapsed: 4.5rem; /* 72px，与上游折叠宽度一致 */
-  --shell-header-h: 3.5rem;        /* 56px */
-  --shell-container-max: 80rem;    /* 1280px */
+  --shell-header-h: 3.5rem;        /* 56px，OpenRouter --navbar-height */
+  --shell-container-max: 90rem;    /* 1440px，含目录列 */
   --shell-pad-x: 2rem;             /* 32px，md 以上 */
   --shell-pad-x-sm: 1.5rem;        /* 24px，小屏 */
   --shell-pad-b: 3.5rem;           /* 56px 底部呼吸 */
 }
 
 /* ==========================================================================
-   1) 侧栏
-   结构改成 OpenRouter 那样：顶栏通栏在上，侧栏从顶栏下方开始，
-   因此侧栏不再 fixed 通高，而是 sticky 到顶栏下沿。
+   1) 壳层结构 —— OpenRouter 的骨架
+   --------------------------------------------------------------------------
+   OpenRouter 登录后的控制台（/settings、/activity 等）实测结构：
+     <nav id="main-nav" class="h-[var(--navbar-height)] w-full border-b">  ← 通栏顶部导航，Logo 在最左
+     <div class="mx-auto max-w-…  flex">                                  ← 居中限宽容器
+       <aside> 一列纯文字链接（无底色、无贴边竖线） </aside>
+       <main> 内容 </main>
+   和 sub2api 的区别不在颜色：sub2api 是「贴左边的整块深色侧栏 + 右侧满宽内容」，
+   这是典型后台模板的骨架；OpenRouter 是「顶部导航 + 居中文档式版面」，
+   侧栏只是版面里的一列目录。下面就是把骨架换掉。
    ========================================================================== */
-.app-shell-sidebar {
-  width: var(--shell-sidebar-w);
+.app-shell-body {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  max-width: var(--shell-container-max);
+  margin-inline: auto;
+  padding-inline: var(--shell-pad-x-sm);
 }
 
-.sidebar {
-  /* 上游是 fixed inset-y-0，会盖住通栏顶栏；这里改成 sticky 到顶栏下方 */
-  position: sticky;
-  top: var(--shell-header-h);
-  height: calc(100vh - var(--shell-header-h));
-  z-index: 20;
+@media (min-width: 1024px) {
+  .app-shell-body {
+    padding-inline: var(--shell-pad-x);
+  }
+
+  /* 侧栏：容器内的一列目录，sticky 在顶部导航下方 */
+  .sidebar.sidebar {
+    position: sticky;
+    top: var(--shell-header-h);
+    height: calc(100dvh - var(--shell-header-h));
+    flex: 0 0 auto;
+    z-index: 10;
+    background-color: transparent;
+    border-right-width: 0;
+    padding-top: 1.25rem;
+    padding-bottom: 1rem;
+  }
+
+  .dark .sidebar.sidebar {
+    background-color: transparent;
+  }
+
+  /* 品牌已经移到顶部导航，桌面端隐藏侧栏里的 Logo 块 */
+  .sidebar .sidebar-header {
+    display: none;
+  }
+
+  .sidebar .sidebar-nav {
+    padding-left: 0;
+    padding-right: 1rem;
+    padding-top: 0;
+  }
+
+  /* 底部「主题 / 收起」：去掉分隔框，和目录同一层级 */
+  .sidebar > div.mt-auto {
+    border-top-width: 0;
+    padding: 0.5rem 1rem 0 0;
+  }
 }
 
-/* 移动端仍然走抽屉，保留上游的 fixed 行为 */
+/* 移动端仍然走抽屉：贴边 + 实底，保留上游的 fixed 行为 */
 @media (max-width: 1023px) {
   .sidebar {
     position: fixed;
     top: 0;
     height: 100vh;
-    z-index: 40;
+    z-index: 50;
   }
 }
 
@@ -68,6 +112,18 @@
   margin-inline: 0;
   padding-inline: 0;
   padding-bottom: 0;
+}
+
+/* main：上游 p-4 md:p-6 lg:p-8 是给满宽版面的；居中容器里只需要
+   顶部呼吸 + 与目录列的间距。类名重复一次压过 Tailwind 工具类。 */
+.app-shell-body main.p-4 {
+  padding: 1.5rem 0 2.5rem;
+}
+
+@media (min-width: 1024px) {
+  .app-shell-body main.p-4 {
+    padding: 1.75rem 0 2.5rem 2rem;
+  }
 }
 
 /* ==========================================================================
@@ -122,11 +178,11 @@ main:has(header h1) > .app-page-title {
 .app-topbar {
   position: sticky;
   top: 0;
-  z-index: 40;
   width: 100%;
   height: var(--shell-header-h);
   display: flex;
   align-items: center;
+  z-index: 40;
   border-bottom: 1px solid rgb(var(--line-light) / var(--line-a-light));
   background-color: rgb(248 248 246 / 0.9);
   backdrop-filter: blur(12px);
@@ -179,8 +235,8 @@ main:has(header h1) > .app-page-title {
 }
 
 /* 表格行数多时的宽屏优化：不要让操作列被挤到屏幕最右端 */
-@media (min-width: 100rem) {
-  :root { --shell-container-max: 88rem; } /* 1600 屏上放宽到 1408，避免两侧留白过大 */
+@media (min-width: 120rem) {
+  :root { --shell-container-max: 100rem; } /* 1920+ 屏放宽到 1600 */
 }
 
 /* ==========================================================================
@@ -221,4 +277,56 @@ main > .table-page-layout.table-page-layout {
   /* 上游 scoped 样式里的 gap-6 需要压过去：类名重复一次提升权重 */
   gap: 1rem;
 }
+}
+
+/* 顶栏内层容器必须撑满，否则右侧操作区会挤到左边。
+   OpenRouter：px-4 lg:px-6，不限宽。 */
+.app-topbar > div {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .app-topbar > div {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+/* 顶部导航品牌 */
+.app-topbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: rgb(var(--n-900));
+  white-space: nowrap;
+}
+
+.dark .app-topbar-brand {
+  color: rgb(var(--n-50));
+}
+
+.app-topbar-sep {
+  margin-left: 0.25rem;
+  color: rgb(var(--n-300));
+  font-size: 0.875rem;
+}
+
+.dark .app-topbar-sep {
+  color: rgb(var(--d-600));
+}
+
+.app-topbar-crumb {
+  font-size: 0.8125rem;
+  font-weight: 550;
+  color: rgb(var(--n-600));
+}
+
+.dark .app-topbar-crumb {
+  color: rgb(var(--n-400));
 }

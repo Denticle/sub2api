@@ -1,15 +1,15 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-dark-950">
-    <!-- Header: 通栏，跨整个视口宽度（OpenRouter 的结构） -->
+    <!-- OpenRouter 结构：通栏顶部导航（含品牌），下面是居中限宽容器，
+         左侧导航只是容器里的一列链接，不是贴边的整块侧栏。 -->
     <AppHeader />
 
-    <!-- Body: 侧栏 + 内容，位于顶栏下方 -->
-    <div class="relative flex">
+    <div class="app-shell-body">
       <!-- Sidebar -->
       <AppSidebar />
 
       <!-- Main Content Area -->
-      <div class="relative min-h-[calc(100vh-4rem)] min-w-0 flex-1 transition-all duration-300">
+      <div class="relative min-w-0 flex-1">
         <!-- Main Content -->
         <main class="p-4 md:p-6 lg:p-8">
           <!-- 页面主标题：视觉锚点。个别视图自带 h1.page-title，

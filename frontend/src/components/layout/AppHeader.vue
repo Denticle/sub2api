@@ -11,12 +11,16 @@
           <Icon name="menu" size="md" />
         </button>
 
-        <!-- 顶栏不再承载页面标题（标题在内容区做主视觉），这里只留一条
-             面包屑式的当前位置提示，避免同一屏出现两个主标题。 -->
-        <nav v-if="pageTitle" class="hidden items-center gap-1.5 text-[13px] lg:flex" aria-label="Breadcrumb">
-          <router-link to="/dashboard" class="app-crumb-link">{{ siteName }}</router-link>
-          <Icon name="chevronRight" size="xs" class="text-gray-300 dark:text-dark-600" />
-          <span class="font-medium text-gray-500 dark:text-dark-400">{{ pageTitle }}</span>
+        <!-- 品牌放在顶部导航最左侧（OpenRouter 结构），侧栏不再承载 Logo -->
+        <router-link :to="homePath" class="app-topbar-brand">
+          <img :src="siteLogo || '/logo.svg'" alt="" class="h-7 w-7 rounded-lg object-contain" />
+          <span class="hidden sm:inline">{{ siteName }}</span>
+        </router-link>
+
+        <!-- 当前位置：页面主标题在内容区，这里只是轻量提示 -->
+        <nav v-if="pageTitle" class="hidden items-center gap-1.5 lg:flex" aria-label="Breadcrumb">
+          <span class="app-topbar-sep">/</span>
+          <span class="app-topbar-crumb">{{ pageTitle }}</span>
         </nav>
       </div>
 
@@ -314,6 +318,8 @@ const subscriptionFeatureEnabled = computed(() => isFeatureFlagEnabled(FeatureFl
 // 标题与内容区共用同一份解析，避免两处各自维护而漂移。
 const { pageTitle } = usePageTitle()
 const siteName = computed(() => appStore.siteName)
+const siteLogo = computed(() => sanitizeUrl(appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true }))
+const homePath = computed(() => (authStore.isAdmin ? '/admin/dashboard' : '/dashboard'))
 
 function toggleMobileSidebar() {
   appStore.toggleMobileSidebar()
