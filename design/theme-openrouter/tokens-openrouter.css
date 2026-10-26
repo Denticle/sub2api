@@ -1,0 +1,309 @@
+/* ==========================================================================
+   Sub2API — OpenRouter-inspired skin
+   --------------------------------------------------------------------------
+   参照 OpenRouter 公开站点的设计语言（从 openrouter.ai 线上 CSS 提取特征后
+   独立实现，未复制其源码或样式文件；OpenRouter 未公开其前端源代码）。
+
+   提取到的四个特征，也是本文件的设计骨架：
+     1) 暗色画布是「青黑」而不是炭黑 —— hsl(197 54% 2.5%) ≈ #03080a
+     2) 边框是「发丝线」：墨色或白，8%~12% 透明度，1px
+     3) 主色紫 #7624f4，另有一个荧光青柠 #c8ff00 只做极少量点缀
+     4) 圆角 8px 基准；阴影 = 大扩散柔影 + 1px 描边叠加
+
+   接入：在 frontend/src/style.css 之后引入一次，不修改任何上游 .vue。
+   ========================================================================== */
+
+:root {
+  /* ---------- 品牌紫 Violet ----------
+     600 = #7624f4（OpenRouter 现值），白字在其上 6.31:1，正文级别可用。 */
+  --p-50:  245 240 255;
+  --p-100: 237 226 255;
+  --p-200: 220 199 255;
+  --p-300: 196 160 253;
+  --p-400: 167 139 250;
+  --p-500: 139  75 247;
+  --p-600: 118  36 244;
+  --p-700: 106  31 214;
+  --p-800:  76  22 153;
+  --p-900:  42  16  96;
+  --p-950:  23   8  54;
+
+  /* ---------- 荧光青柠 Lime ----------
+     只用于极小面积：实时状态点、选中下划线、新功能标记。
+     深色底上 17:1，浅色底上几乎不可读 —— 浅色模式须配深色文字。 */
+  --lime:  200 255   0;
+
+  /* ---------- 中性色 Zinc（与 Tailwind 的 zinc 同源） ---------- */
+  --n-50:  250 250 250;
+  --n-100: 244 244 245;
+  --n-200: 228 228 231;
+  --n-300: 212 212 216;
+  --n-400: 161 161 170;
+  --n-500: 113 113 122;
+  --n-600:  82  82  91;
+  --n-700:  63  63  70;
+  --n-800:  39  39  42;
+  --n-900:  24  24  27;
+  --n-950:  11  11  13;
+
+  /* ---------- 深色表面：青黑阶 ----------
+     色相锁在 195° 左右，和 OpenRouter 的 197° 一致。
+     注意不能和 zinc 混用：zinc 的深值偏中性，做不出"青"的观感。 */
+  --d-950:   3   8  10;   /* 画布 */
+  --d-900:   7  13  16;   /* 卡片 */
+  --d-800:  13  22  26;   /* 抬升表面 / 输入框 */
+  --d-700:  22  35  41;   /* 悬停 / 分隔 */
+  --d-600:  34  52  61;   /* 弱边框 */
+
+  /* ---------- 语义色 ---------- */
+  --success:  48 164 108;   /* green-9  */
+  --warning: 255 162   0;   /* amber-9  */
+  --danger:  229  72  77;   /* red-9    */
+  --info:     62 149 255;
+
+  /* ---------- 阴影：OpenRouter 的做法是「1px 描边 + 大扩散柔影」 ---------- */
+  --shadow-card: 0 1px 3px rgb(0 0 0 / 0.10), 0 1px 2px -1px rgb(0 0 0 / 0.10);
+  --shadow-card-hover: 0 4px 20px rgb(0 0 0 / 0.08), 0 0 1px rgb(0 0 0 / 0.10);
+  --shadow-pop: 0 8px 30px rgb(0 0 0 / 0.12), 0 0 1px rgb(0 0 0 / 0.10);
+
+  /* ---------- 版式 ---------- */
+  --font-ui: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system,
+             'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+             sans-serif;
+  --font-numeric: 'Geist Mono', 'JetBrains Mono', ui-monospace,
+                  SFMono-Regular, Menlo, monospace;
+
+  /* ---------- 布局 ---------- */
+  --shell-sidebar-w: 15rem;
+  --shell-header-h: 3.5rem;
+}
+
+.dark {
+  --shadow-card: inset 0 1px 0 0 rgb(255 255 255 / 0.04);
+  --shadow-card-hover: inset 0 1px 0 0 rgb(255 255 255 / 0.06);
+  --shadow-pop: 0 8px 30px rgb(0 0 0 / 0.6), 0 0 1px rgb(255 255 255 / 0.14);
+}
+
+/* ==========================================================================
+   A. 底色
+   浅色画布不是纯白：OpenRouter 用 hsl(240 50% 99.2%) ≈ #fcfcfe，极淡冷调。
+   ========================================================================== */
+body {
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.006em;
+}
+
+.dark body {
+  background-color: rgb(var(--d-950));
+  color: rgb(var(--n-300));
+}
+
+/* ==========================================================================
+   B. 按钮
+   紫底白字；次级按钮用发丝线边框，不加阴影。
+   ========================================================================== */
+.btn {
+  font-weight: 500;
+  letter-spacing: -0.008em;
+  transform: none;
+  transition: background-color 120ms ease, border-color 120ms ease,
+              box-shadow 120ms ease, color 120ms ease;
+}
+.btn:active { transform: none; }
+
+.btn-primary {
+  background-image: none;
+  background-color: rgb(var(--p-600));
+  color: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+}
+.btn-primary:hover {
+  background-color: rgb(var(--p-700));
+  background-image: none;
+  box-shadow: 0 2px 8px rgb(118 36 244 / 0.28);
+}
+
+.btn-secondary {
+  background-color: #fff;
+  border-color: rgb(var(--n-200));
+  color: rgb(var(--n-700));
+  box-shadow: none;
+}
+.btn-secondary:hover {
+  background-color: rgb(var(--n-50));
+  border-color: rgb(var(--n-300));
+}
+
+.btn-ghost { color: rgb(var(--n-600)); }
+.btn-ghost:hover { background-color: rgb(var(--n-100)); }
+
+.btn-danger, .btn-success, .btn-warning { background-image: none; }
+.btn-danger  { background-color: rgb(var(--danger)); }
+.btn-success { background-color: rgb(var(--success)); }
+.btn-warning { background-color: rgb(var(--warning)); color: #1a1200; }
+
+/* 深色模式：紫底白字是 6.31:1，可继续使用；次级按钮改深平面 */
+.dark .btn-secondary {
+  background-color: rgb(var(--d-800));
+  border-color: rgb(var(--d-700));
+  color: rgb(var(--n-300));
+  box-shadow: none;
+}
+.dark .btn-secondary:hover {
+  background-color: rgb(var(--d-700));
+  border-color: rgb(var(--d-600));
+}
+.dark .btn-ghost { color: rgb(var(--n-400)); }
+.dark .btn-ghost:hover { background-color: rgb(var(--d-800)); }
+
+/* ==========================================================================
+   C. 输入框
+   ========================================================================== */
+.input {
+  background-color: #fff;
+  border-color: rgb(var(--n-200));
+  box-shadow: none;
+}
+.input:focus {
+  outline: none;
+  border-color: rgb(var(--p-500));
+  box-shadow: 0 0 0 3px rgb(118 36 244 / 0.14);
+}
+.dark .input {
+  background-color: rgb(var(--d-800));
+  border-color: rgb(var(--d-700));
+  color: rgb(var(--n-200));
+}
+.dark .input:focus {
+  border-color: rgb(var(--p-500));
+  box-shadow: 0 0 0 3px rgb(167 139 250 / 0.22);
+}
+
+/* ==========================================================================
+   D. 卡片 —— 1px 发丝线 + 柔影，这是 OpenRouter 最标志性的一处
+   上游 .stat-card 用 `@apply card` 内联了样式，必须并列声明才能命中。
+   ========================================================================== */
+.card,
+.stat-card,
+.card-glass,
+.glass-card,
+.glass {
+  background-color: #fff;
+  background-image: none;
+  border: 1px solid rgb(var(--n-200));
+  box-shadow: var(--shadow-card);
+  backdrop-filter: none;
+}
+
+.dark .card,
+.dark .stat-card,
+.dark .card-glass,
+.dark .glass-card,
+.dark .glass {
+  background-color: rgb(var(--d-900));
+  border-color: rgb(var(--d-800));
+  box-shadow: var(--shadow-card);
+}
+
+.card-header { border-bottom-color: rgb(var(--n-200)); }
+.card-footer { border-top-color: rgb(var(--n-200)); }
+.dark .card-header { border-bottom-color: rgb(var(--d-800)); }
+.dark .card-footer { border-top-color: rgb(var(--d-800)); }
+
+/* ==========================================================================
+   E. 表格 —— 发丝线分隔，表头小字距
+   ========================================================================== */
+.table-container,
+.table {
+  font-variant-numeric: tabular-nums;
+}
+.table th {
+  background-color: transparent;
+  color: rgb(var(--n-500));
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom-color: rgb(var(--n-200));
+}
+.table td {
+  border-bottom-color: rgb(var(--n-100));
+}
+.table tbody tr:hover {
+  background-color: rgb(var(--n-50));
+}
+.dark .table th {
+  color: rgb(var(--n-500));
+  border-bottom-color: rgb(var(--d-700));
+}
+.dark .table td {
+  border-bottom-color: rgb(var(--d-800));
+}
+.dark .table tbody tr:hover {
+  background-color: rgb(var(--d-900));
+}
+
+/* ==========================================================================
+   F. 徽标 —— 6px 方角，不走胶囊
+   ========================================================================== */
+.badge {
+  border-radius: 6px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.badge-primary { background-color: rgb(var(--p-50)); color: rgb(var(--p-700)); }
+.badge-success { background-color: rgb(var(--success) / 0.12); color: rgb(24 122 78); }
+.badge-warning { background-color: rgb(var(--warning) / 0.16); color: rgb(155 95 0); }
+.badge-danger  { background-color: rgb(var(--danger) / 0.12); color: rgb(190 40 46); }
+.badge-gray    { background-color: rgb(var(--n-100)); color: rgb(var(--n-600)); }
+
+.dark .badge-primary { background-color: rgb(var(--p-500) / 0.18); color: rgb(var(--p-300)); }
+.dark .badge-success { background-color: rgb(var(--success) / 0.16); color: rgb(110 210 160); }
+.dark .badge-warning { background-color: rgb(var(--warning) / 0.14); color: rgb(255 190 80); }
+.dark .badge-danger  { background-color: rgb(var(--danger) / 0.16); color: rgb(255 130 134); }
+.dark .badge-gray    { background-color: rgb(var(--d-800)); color: rgb(var(--n-400)); }
+
+/* 青柠徽标：整站只应该在「实时/新」这类极少数语义上出现 */
+.badge-live {
+  background-color: rgb(var(--lime) / 0.14);
+  color: rgb(120 160 0);
+}
+.dark .badge-live {
+  background-color: rgb(var(--lime) / 0.12);
+  color: rgb(var(--lime));
+}
+
+/* ==========================================================================
+   G. 弹层 —— 唯一使用重阴影的地方
+   ========================================================================== */
+.modal-content {
+  border: 1px solid rgb(var(--n-200));
+  box-shadow: var(--shadow-pop);
+}
+.dark .modal-content {
+  background-color: rgb(var(--d-900));
+  border-color: rgb(var(--d-700));
+}
+.modal-overlay {
+  background-color: rgb(3 8 10 / 0.55);
+  backdrop-filter: blur(2px);
+}
+
+/* ==========================================================================
+   H. 数字
+   ========================================================================== */
+.stat-value {
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+::selection {
+  background-color: rgb(var(--p-500) / 0.22);
+  color: rgb(var(--p-900));
+}
+.dark ::selection {
+  background-color: rgb(var(--lime) / 0.30);
+  color: #fff;
+}

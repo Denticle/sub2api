@@ -7,6 +7,9 @@ import { useAppStore } from '@/stores/app'
 import { updateFavicon } from '@/utils/branding'
 import { isIOSDevice } from '@/utils/device'
 import './style.css'
+// OpenRouter 风格皮肤：必须在 style.css 之后加载，才能覆盖同名组件类
+import './theme/tokens-openrouter.css'
+import './theme/layout.css'
 
 function initIOSViewportZoomFix() {
   // iOS Safari 在输入框字号小于 16px 时聚焦会自动放大页面，且失焦后不会恢复。

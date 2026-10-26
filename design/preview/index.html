@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sub2API 企业风格 — 视觉预览</title>
+<style>
+/* ============================================================
+   自助实现的 token，不用 Tailwind，方便单独评审
+   ============================================================ */
+:root{
+  --brand-50:#eef5ff; --brand-100:#dbe9fe; --brand-200:#bbd5fc;
+  --brand-300:#89b3f8; --brand-400:#4e89ee; --brand-500:#2863d6;
+  --brand-600:#164cba; --brand-700:#143c96; --brand-900:#142b63;
+  --n-50:#f8fafc; --n-100:#f1f5f9; --n-200:#e2e8f0; --n-300:#cbd5e1;
+  --n-400:#94a3b8; --n-500:#64748b; --n-600:#475569; --n-700:#334155;
+  --n-800:#1e293b; --n-900:#0f172a;
+  --d-950:#0b111c; --d-900:#111927; --d-800:#161f2f; --d-700:#202b3d;
+  --success:#168054; --warning:#b46c0c; --danger:#be2834;
+  --canvas:#f8fafc; --surface:#ffffff;
+  --shell-sidebar:#fbfcfe;
+  --radius:8px; --radius-lg:8px; --radius-xl:10px;
+  --shadow-card:0 1px 2px 0 rgb(15 23 42/.04);
+  --shadow-pop:0 12px 32px -8px rgb(15 23 42/.16),0 4px 8px -4px rgb(15 23 42/.08);
+  --font-ui:'Inter','Geist',system-ui,-apple-system,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+  --font-num:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sidebar-w:236px; --header-h:56px;
+}
+html.dark{
+  --canvas:var(--d-950); --surface:var(--d-900); --shell-sidebar:#0e1622;
+  --n-50:#141d2b; --n-100:#1a2433; --n-200:#232f42; --n-300:#33415a;
+  --n-400:#7d8ca3; --n-500:#95a3b8; --n-600:#b3c0d1; --n-700:#cdd7e3;
+  --n-800:#22304a; --n-900:#e6ecf5;
+  --shadow-card:inset 0 1px 0 0 rgb(255 255 255/.04);
+  --shadow-pop:0 16px 40px -12px rgb(0 0 0/.7);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:var(--font-ui);background:var(--canvas);color:var(--n-900);
+  -webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;
+}
+html.dark body{color:var(--n-200)}
+code,.num{font-family:var(--font-num);font-variant-numeric:tabular-nums}
+
+/* ---- 壳层 ---- */
+/* 演示容器在窄视口下应横向滚动，而不是把三栏压成逐字换行 */
+.shell-frame{overflow-x:auto;border-radius:var(--radius-xl)}
+.shell{display:flex;min-height:100vh;min-width:960px}
+.sidebar{
+  width:var(--sidebar-w);flex:0 0 var(--sidebar-w);background:var(--shell-sidebar);
+  border-right:1px solid var(--n-200);display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;padding:14px 10px;
+}
+.brand{display:flex;align-items:center;gap:9px;padding:6px 8px 18px}
+.brand-mark{
+  width:26px;height:26px;border-radius:6px;background:var(--brand-600);
+  display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;
+  letter-spacing:-.03em;
+}
+.brand-name{font-weight:600;font-size:14px;letter-spacing:-.01em}
+.brand-env{
+  font-size:10px;color:var(--n-500);border:1px solid var(--n-200);
+  border-radius:4px;padding:0 4px;margin-left:auto;line-height:16px;
+}
+.nav-group{margin-bottom:18px}
+.nav-label{
+  font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--n-400);padding:0 10px;margin-bottom:5px;
+}
+.nav-item{
+  display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:6px;
+  color:var(--n-600);font-size:13px;font-weight:450;cursor:pointer;
+  border-left:2px solid transparent;margin-left:-2px;
+}
+.nav-item:hover{background:var(--n-100);color:var(--n-900)}
+.nav-item.active{
+  background:var(--brand-50);color:var(--brand-700);font-weight:550;
+  border-left-color:var(--brand-600);
+}
+html.dark .nav-item.active{background:rgb(40 99 214/.14);color:var(--brand-300);border-left-color:var(--brand-400)}
+.nav-item .dot{width:4px;height:4px;border-radius:2px;background:var(--n-300);margin-left:auto}
+.nav-item.active .dot{background:var(--brand-500)}
+.icon{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.6;
+  stroke-linecap:round;stroke-linejoin:round;flex:0 0 15px;opacity:.85}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{
+  height:var(--header-h);border-bottom:1px solid var(--n-200);background:var(--surface);
+  display:flex;align-items:center;gap:14px;padding:0 22px;position:sticky;top:0;z-index:10;
+}
+.crumb{font-size:12.5px;color:var(--n-500)}
+.crumb b{color:var(--n-900);font-weight:550}
+html.dark .crumb b{color:var(--n-200)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.search{
+  display:flex;align-items:center;gap:7px;border:1px solid var(--n-200);
+  background:var(--n-50);border-radius:6px;padding:5px 9px;width:200px;color:var(--n-400);
+  font-size:12.5px;
+}
+kbd{
+  font-family:var(--font-num);font-size:10px;border:1px solid var(--n-200);
+  border-radius:3px;padding:0 4px;background:var(--surface);color:var(--n-500);margin-left:auto;
+}
+.content{padding:20px 22px 40px;max-width:1280px;width:100%}
+
+/* ---- 页头 ---- */
+.page-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:18px}
+.page-title{font-size:19px;font-weight:600;letter-spacing:-.02em}
+.page-desc{font-size:12.5px;color:var(--n-500);margin-top:3px}
+.page-actions{margin-left:auto;display:flex;gap:8px}
+
+/* ---- 按钮 ---- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  height:32px;padding:0 12px;border-radius:var(--radius);font-size:12.5px;
+  font-weight:500;letter-spacing:-.006em;cursor:pointer;border:1px solid transparent;
+  transition:background-color .12s,border-color .12s,box-shadow .12s;white-space:nowrap;
+}
+.btn-primary{background:var(--brand-600);color:#fff;box-shadow:0 1px 2px 0 rgb(15 23 42/.08)}
+.btn-primary:hover{background:var(--brand-700);box-shadow:0 2px 6px 0 rgb(15 23 42/.14)}
+.btn-secondary{background:var(--surface);border-color:var(--n-200);color:var(--n-700);box-shadow:var(--shadow-card)}
+.btn-secondary:hover{background:var(--n-50);border-color:var(--n-300)}
+.btn-ghost{background:transparent;color:var(--n-600)}
+.btn-ghost:hover{background:var(--n-100)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-sm{height:27px;padding:0 9px;font-size:11.5px;border-radius:6px}
+
+/* ---- 卡片 ---- */
+.card{
+  background:var(--surface);border:1px solid var(--n-200);border-radius:var(--radius-xl);
+  box-shadow:var(--shadow-card);
+}
+.card-header{
+  padding:12px 16px;border-bottom:1px solid var(--n-200);display:flex;align-items:center;gap:10px;
+}
+.card-title{font-size:13px;font-weight:600;letter-spacing:-.01em}
+.card-body{padding:16px}
+.card-footer{padding:11px 16px;border-top:1px solid var(--n-200);display:flex;align-items:center;gap:8px}
+
+/* ---- 统计卡 ---- */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat{padding:13px 15px}
+.stat-head{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+.stat-label{font-size:11.5px;color:var(--n-500);font-weight:500}
+.stat-value{
+  font-family:var(--font-num);font-size:22px;font-weight:550;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;line-height:1.15;
+}
+.stat-value small{font-size:12px;font-weight:400;color:var(--n-400);margin-left:2px}
+.stat-foot{display:flex;align-items:center;gap:5px;margin-top:8px;font-size:11px;color:var(--n-500)}
+.trend-up{color:var(--success);font-weight:550;font-family:var(--font-num)}
+.trend-down{color:var(--danger);font-weight:550;font-family:var(--font-num)}
+
+/* ---- 徽标 ---- */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;border-radius:4px;
+  padding:1px 6px;font-size:11px;font-weight:500;letter-spacing:.01em;line-height:17px;
+}
+.badge-success{background:rgb(22 128 84/.10);color:var(--success)}
+.badge-warning{background:rgb(180 108 12/.12);color:var(--warning)}
+.badge-danger{background:rgb(190 40 52/.10);color:var(--danger)}
+.badge-primary{background:var(--brand-50);color:var(--brand-700)}
+.badge-gray{background:var(--n-100);color:var(--n-600)}
+html.dark .badge-success{background:rgb(22 128 84/.20);color:#6ec8a0}
+html.dark .badge-warning{background:rgb(180 108 12/.20);color:#e6aa50}
+html.dark .badge-danger{background:rgb(190 40 52/.20);color:#e67880}
+html.dark .badge-primary{background:rgb(40 99 214/.16);color:var(--brand-300)}
+html.dark .badge-gray{background:var(--d-800);color:var(--n-400)}
+
+/* ---- 表格 ---- */
+.table-wrap{overflow:hidden;border-radius:var(--radius-xl)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{
+  text-align:left;padding:8px 16px;background:var(--n-50);color:var(--n-500);
+  font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  border-bottom:1px solid var(--n-200);white-space:nowrap;
+}
+td{padding:9px 16px;border-bottom:1px solid var(--n-100);color:var(--n-700)}
+tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:var(--n-50)}
+html.dark tbody tr:hover td{background:rgb(255 255 255/.02)}
+td.num,th.num{text-align:right;font-family:var(--font-num);font-variant-numeric:tabular-nums}
+.mono{font-family:var(--font-num);font-size:11.5px;color:var(--n-500)}
+.acct{display:flex;align-items:center;gap:8px}
+.avatar{
+  width:22px;height:22px;border-radius:6px;background:var(--brand-50);color:var(--brand-700);
+  display:grid;place-items:center;font-size:10px;font-weight:600;flex:0 0 22px;
+}
+html.dark .avatar{background:rgb(40 99 214/.18);color:var(--brand-300)}
+
+/* ---- 输入 ---- */
+.field{display:flex;flex-direction:column;gap:5px}
+.label{font-size:12px;font-weight:500;color:var(--n-700)}
+.input{
+  height:32px;padding:0 10px;border:1px solid var(--n-300);border-radius:var(--radius);
+  background:var(--surface);font-size:12.5px;color:var(--n-900);font-family:inherit;width:100%;
+}
+.input:focus{outline:none;border-color:var(--brand-500);box-shadow:0 0 0 3px rgb(40 99 214/.12)}
+.hint{font-size:11px;color:var(--n-500)}
+
+/* ---- 进度 / 条形 ---- */
+.bar{height:5px;border-radius:3px;background:var(--n-100);overflow:hidden;margin-top:8px}
+.bar>i{display:block;height:100%;border-radius:3px;background:var(--brand-600)}
+html.dark .bar{background:var(--d-800)}
+
+/* ---- 对比栏 ---- */
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.compare-col{min-width:0}
+.compare-head{
+  display:flex;align-items:center;gap:8px;margin-bottom:9px;font-size:11.5px;
+  font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--n-500);
+}
+.compare-head .tag{
+  font-size:10px;padding:1px 6px;border-radius:4px;background:var(--n-100);
+  color:var(--n-600);letter-spacing:0;text-transform:none;font-weight:500;
+}
+
+/* ---- 旧样式模拟（用于对比，复刻 sub2api 现状） ---- */
+.legacy{
+  --legacy-primary1:#14b8a6;--legacy-primary2:#0d9488;
+  font-family:system-ui,-apple-system,'PingFang SC',sans-serif;
+}
+.legacy .card{border-radius:16px;border-color:#f3f4f6;box-shadow:0 1px 3px rgba(0,0,0,.04),0 1px 2px rgba(0,0,0,.06)}
+.legacy .btn{border-radius:12px;padding:0 16px;height:34px}
+.legacy .btn-primary{
+  background:linear-gradient(135deg,#14b8a6,#0d9488);color:#fff;border:0;
+  box-shadow:0 4px 6px -1px rgba(20,184,166,.25);border-radius:12px;
+}
+.legacy .badge{border-radius:9999px;padding:1px 10px}
+.legacy .stat-value{font-family:system-ui;font-weight:700;font-size:24px;letter-spacing:-.02em}
+.legacy .nav-item.active{background:#f0fdfa;color:#0f766e;border-left-color:transparent;border-radius:10px}
+.legacy th{text-transform:none;letter-spacing:0;font-size:12px;background:#f9fafb;color:#4b5563}
+.legacy .input{border-radius:12px;height:34px}
+.legacy .sidebar{border-right-color:#f3f4f6}
+.legacy .brand-mark{background:linear-gradient(135deg,#14b8a6,#0d9488);border-radius:10px}
+
+.toolbar{
+  position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--canvas) 88%,transparent);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--n-200);
+  padding:10px 22px;display:flex;align-items:center;gap:10px;
+}
+.section{margin:26px 0 10px;display:flex;align-items:baseline;gap:10px}
+.section h2{font-size:13px;font-weight:600;letter-spacing:-.01em}
+.section span{font-size:11.5px;color:var(--n-500)}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <strong style="font-size:12.5px">Sub2API 企业风格预览</strong>
+  <span style="font-size:11.5px;color:var(--n-500)">对照：上游现状 vs 目标皮肤</span>
+  <div style="margin-left:auto;display:flex;gap:8px">
+    <button class="btn btn-secondary btn-sm" id="themeBtn">切换深色</button>
+    <button class="btn btn-secondary btn-sm" id="modeBtn">只看新皮肤</button>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- ============ 完整页面预览 ============ -->
+  <div class="section"><h2>完整界面</h2><span>侧栏 / 顶栏 / 统计 / 表格，一套 token 覆盖</span></div>
+
+  <div class="shell card shell-frame" style="padding:0">
+    <!-- 侧栏 -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">S2</div>
+        <div class="brand-name">Sub2API</div>
+        <div class="brand-env">PROD</div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">总览</div>
+        <div class="nav-item active">
+          <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          仪表盘
+        </div>
+        <div class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 5-7 4 4"/></svg>
+          实时监控<span class="dot"></span>
+        </div>
+        <div class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M4 19V5m0 14h16"/><rect x="7" y="11" width="3" height="8" rx="1"/><rect x="13" y="7" width="3" height="12" rx="1"/></svg>
+          用量统计
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">连接</div>
+        <div class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/></svg>
+          上游账号
+        </div>
+        <div class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0110 0v3"/><rect x="5" y="11" width="14" height="9" rx="2"/></svg>
+          API 密钥
+          <span class="badge badge-primary" style="margin-left:auto">12</span>
+        </div>
+        <div class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h12"/></svg>
+          渠道分组
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">运营</div>
+        <div class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0114 0"/></svg>
+          用户管理
+        </div>
+        <div class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>
+          账单流水
+          <span class="dot"></span>
+        </div>
+        <div class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 00-1.7-1L14.5 3h-4l-.4 2.1a7 7 0 00-1.7 1l-2.3-1-2 3.4L6 10a7 7 0 000 2l-2 1.5 2 3.4 2.3-1a7 7 0 001.7 1l.4 2.1h4l.4-2.1a7 7 0 001.7-1l2.3 1 2-3.4-2-1.5a7 7 0 00.1-1z"/></svg>
+          系统设置
+        </div>
+      </div>
+
+      <div style="margin-top:auto;padding:9px 10px;border-top:1px solid var(--n-200);display:flex;align-items:center;gap:8px">
+        <div class="avatar" style="width:24px;height:24px;border-radius:999px;flex:0 0 24px">W</div>
+        <div style="min-width:0">
+          <div style="font-size:12px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Wei Shaw</div>
+          <div style="font-size:10.5px;color:var(--n-500)">管理员</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 主区 -->
+    <div class="main">
+      <header class="topbar">
+        <div class="crumb"><b>仪表盘</b></div>
+        <div class="topbar-right">
+          <div class="search">
+            <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            搜索账号、密钥…
+            <kbd>⌘K</kbd>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="border-radius:6px">文档</button>
+          <div class="avatar" style="border-radius:999px;width:24px;height:24px">W</div>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="page-header">
+          <div>
+            <div class="page-title">仪表盘</div>
+            <div class="page-desc">过去 24 小时网关运行状况与用量概览</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary">导出</button>
+            <button class="btn btn-primary">
+              <svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M12 5v14M5 12h14"/></svg>
+              新建密钥
+            </button>
+          </div>
+        </div>
+
+        <div class="stat-grid">
+          <div class="card stat">
+            <div class="stat-head"><span class="stat-label">今日请求</span></div>
+            <div class="stat-value">1,284,930</div>
+            <div class="stat-foot"><span class="trend-up">+12.4%</span> 较昨日</div>
+            <div class="bar"><i style="width:72%"></i></div>
+          </div>
+          <div class="card stat">
+            <div class="stat-head"><span class="stat-label">消耗额度</span></div>
+            <div class="stat-value">$8,412.60</div>
+            <div class="stat-foot"><span class="trend-up">+3.1%</span> 较昨日</div>
+            <div class="bar"><i style="width:54%"></i></div>
+          </div>
+          <div class="card stat">
+            <div class="stat-head"><span class="stat-label">平均延迟</span></div>
+            <div class="stat-value">412<small>ms</small></div>
+            <div class="stat-foot"><span class="trend-down">+18ms</span> 较昨日</div>
+            <div class="bar"><i style="width:41%"></i></div>
+          </div>
+          <div class="card stat">
+            <div class="stat-head"><span class="stat-label">成功率</span></div>
+            <div class="stat-value">99.6<small>%</small></div>
+            <div class="stat-foot"><span class="badge badge-success">健康</span> 全部渠道</div>
+            <div class="bar"><i style="width:99.6%"></i></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">
+            <div class="card-title">上游账号</div>
+            <span class="badge badge-gray">42 个</span>
+            <div style="margin-left:auto;display:flex;gap:6px">
+              <button class="btn btn-ghost btn-sm">筛选</button>
+              <button class="btn btn-secondary btn-sm">刷新</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>账号</th><th>平台</th><th>状态</th>
+                  <th class="num">今日调用</th><th class="num">额度余量</th><th>最近同步</th><th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><div class="acct"><div class="avatar">A</div><div><div style="font-weight:550">acct-anthropic-01</div><div class="mono">OAuth</div></div></div></td>
+                  <td>Claude</td>
+                  <td><span class="badge badge-success">运行中</span></td>
+                  <td class="num">418,204</td>
+                  <td class="num">$1,240.00</td>
+                  <td class="mono">2 分钟前</td>
+                  <td style="text-align:right"><button class="btn btn-ghost btn-sm">管理</button></td>
+                </tr>
+                <tr>
+                  <td><div class="acct"><div class="avatar">B</div><div><div style="font-weight:550">acct-openai-07</div><div class="mono">API Key</div></div></div></td>
+                  <td>OpenAI</td>
+                  <td><span class="badge badge-warning">限流中</span></td>
+                  <td class="num">302,918</td>
+                  <td class="num">$86.40</td>
+                  <td class="mono">5 分钟前</td>
+                  <td style="text-align:right"><button class="btn btn-ghost btn-sm">管理</button></td>
+                </tr>
+                <tr>
+                  <td><div class="acct"><div class="avatar">C</div><div><div style="font-weight:550">acct-grok-02</div><div class="mono">OAuth</div></div></div></td>
+                  <td>Grok</td>
+                  <td><span class="badge badge-danger">已失效</span></td>
+                  <td class="num">0</td>
+                  <td class="num">$0.00</td>
+                  <td class="mono">3 天前</td>
+                  <td style="text-align:right"><button class="btn btn-ghost btn-sm">管理</button></td>
+                </tr>
+                <tr>
+                  <td><div class="acct"><div class="avatar">D</div><div><div style="font-weight:550">acct-anthropic-04</div><div class="mono">OAuth</div></div></div></td>
+                  <td>Claude</td>
+                  <td><span class="badge badge-success">运行中</span></td>
+                  <td class="num">194,672</td>
+                  <td class="num">$2,008.10</td>
+                  <td class="mono">1 分钟前</td>
+                  <td style="text-align:right"><button class="btn btn-ghost btn-sm">管理</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card-footer">
+            <span style="font-size:11.5px;color:var(--n-500)">显示 1–4，共 42 条</span>
+            <div style="margin-left:auto;display:flex;gap:6px">
+              <button class="btn btn-secondary btn-sm">上一页</button>
+              <button class="btn btn-secondary btn-sm">下一页</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px">
+          <div class="card">
+            <div class="card-header"><div class="card-title">新建密钥</div></div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:13px">
+              <div class="field">
+                <label class="label">密钥名称</label>
+                <input class="input" value="生产环境 / 计费系统">
+                <span class="hint">仅用于区分用途，不影响鉴权。</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div class="field">
+                  <label class="label">额度上限</label>
+                  <input class="input num" value="500.00">
+                </div>
+                <div class="field">
+                  <label class="label">速率限制</label>
+                  <input class="input num" value="60 / min">
+                </div>
+              </div>
+            </div>
+            <div class="card-footer">
+              <button class="btn btn-ghost">取消</button>
+              <button class="btn btn-primary" style="margin-left:auto">创建密钥</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><div class="card-title">渠道健康度</div></div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+              <div>
+                <div style="display:flex;font-size:12px"><span>Claude</span><span class="num" style="margin-left:auto;color:var(--n-500)">99.8%</span></div>
+                <div class="bar"><i style="width:99.8%"></i></div>
+              </div>
+              <div>
+                <div style="display:flex;font-size:12px"><span>OpenAI</span><span class="num" style="margin-left:auto;color:var(--n-500)">97.2%</span></div>
+                <div class="bar"><i style="width:97.2%"></i></div>
+              </div>
+              <div>
+                <div style="display:flex;font-size:12px"><span>Grok</span><span class="num" style="margin-left:auto;color:var(--n-500)">61.4%</span></div>
+                <div class="bar"><i style="width:61.4%;background:var(--warning)"></i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 对照 ============ -->
+  <div class="section" id="compareSection"><h2>同一界面的新旧对照</h2><span>左侧为上游现状（青绿渐变 / 16px 圆角 / 胶囊徽标）</span></div>
+
+  <div class="compare">
+    <div class="compare-col legacy">
+      <div class="compare-head">上游现状 <span class="tag">teal 渐变</span></div>
+      <div class="card" style="padding:16px">
+        <div class="page-title" style="font-size:17px;font-weight:700">上游账号</div>
+        <div class="page-desc" style="font-size:12.5px;color:#6b7280;margin:2px 0 14px">共 42 个账号</div>
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button class="btn btn-primary">新建账号</button>
+          <button class="btn btn-secondary" style="border:1px solid #e5e7eb">导入</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <div style="border:1px solid #f3f4f6;border-radius:14px;padding:12px">
+            <div style="font-size:11.5px;color:#6b7280">今日请求</div>
+            <div class="stat-value" style="font-size:21px">1,284,930</div>
+          </div>
+          <div style="border:1px solid #f3f4f6;border-radius:14px;padding:12px">
+            <div style="font-size:11.5px;color:#6b7280">消耗额度</div>
+            <div class="stat-value" style="font-size:21px">$8,412.60</div>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>账号</th><th>状态</th><th style="text-align:right">调用</th></tr></thead>
+          <tbody>
+            <tr><td>acct-anthropic-01</td><td><span class="badge badge-success">运行中</span></td><td style="text-align:right;font-family:var(--font-num)">418,204</td></tr>
+            <tr><td>acct-openai-07</td><td><span class="badge badge-warning">限流中</span></td><td style="text-align:right;font-family:var(--font-num)">302,918</td></tr>
+            <tr><td>acct-grok-02</td><td><span class="badge badge-danger">已失效</span></td><td style="text-align:right;font-family:var(--font-num)">0</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="compare-col">
+      <div class="compare-head">企业皮肤 <span class="tag">navy / 8px / 方角徽标</span></div>
+      <div class="card" style="padding:16px">
+        <div class="page-title" style="font-size:17px">上游账号</div>
+        <div class="page-desc" style="margin:2px 0 14px">共 42 个账号</div>
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button class="btn btn-primary">新建账号</button>
+          <button class="btn btn-secondary">导入</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <div class="card" style="padding:12px">
+            <div style="font-size:11.5px;color:var(--n-500);font-weight:500">今日请求</div>
+            <div class="stat-value" style="font-size:21px">1,284,930</div>
+          </div>
+          <div class="card" style="padding:12px">
+            <div style="font-size:11.5px;color:var(--n-500);font-weight:500">消耗额度</div>
+            <div class="stat-value" style="font-size:21px">$8,412.60</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>账号</th><th>状态</th><th class="num">调用</th></tr></thead>
+          <tbody>
+            <tr><td><div class="acct"><div class="avatar" style="width:18px;height:18px;flex:0 0 18px;font-size:9px">A</div>acct-anthropic-01</div></td><td><span class="badge badge-success">运行中</span></td><td class="num">418,204</td></tr>
+            <tr><td><div class="acct"><div class="avatar" style="width:18px;height:18px;flex:0 0 18px;font-size:9px">B</div>acct-openai-07</div></td><td><span class="badge badge-warning">限流中</span></td><td class="num">302,918</td></tr>
+            <tr><td><div class="acct"><div class="avatar" style="width:18px;height:18px;flex:0 0 18px;font-size:9px">C</div>acct-grok-02</div></td><td><span class="badge badge-danger">已失效</span></td><td class="num">0</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section"><h2>设计要点</h2><span>这四条是"企业感"的实际来源，不是审美偏好</span></div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:40px">
+    <div class="card" style="padding:14px">
+      <div style="font-size:12px;font-weight:600;margin-bottom:6px">1. 去渐变</div>
+      <div style="font-size:11.5px;color:var(--n-500);line-height:1.55">渐变+发光是消费级产品的语言。企业后台用单色实心，靠明度差表达层级。</div>
+    </div>
+    <div class="card" style="padding:14px">
+      <div style="font-size:12px;font-weight:600;margin-bottom:6px">2. 收圆角</div>
+      <div style="font-size:11.5px;color:var(--n-500);line-height:1.55">16px→8px。圆角越大越"轻"，越小越"工具"。这是新皮肤观感变化最大的一项。</div>
+    </div>
+    <div class="card" style="padding:14px">
+      <div style="font-size:12px;font-weight:600;margin-bottom:6px">3. 边框分层</div>
+      <div style="font-size:11.5px;color:var(--n-500);line-height:1.55">用 1px 边框而非大阴影划分卡片，密集表格下不会脏。阴影只留给弹层。</div>
+    </div>
+    <div class="card" style="padding:14px">
+      <div style="font-size:12px;font-weight:600;margin-bottom:6px">4. 等宽数字</div>
+      <div style="font-size:11.5px;color:var(--n-500);line-height:1.55">金额/调用量/延迟用 tabular-nums 对齐，是可扫读性而非装饰。</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const root = document.documentElement
+document.getElementById('themeBtn').onclick = () => {
+  root.classList.toggle('dark')
+  document.getElementById('themeBtn').textContent =
+    root.classList.contains('dark') ? '切换浅色' : '切换深色'
+}
+let onlyNew = false
+document.getElementById('modeBtn').onclick = () => {
+  onlyNew = !onlyNew
+  const legacy = document.querySelectorAll('.legacy')
+  legacy.forEach(el => el.style.display = onlyNew ? 'none' : '')
+  document.getElementById('compareSection').style.display = onlyNew ? 'none' : ''
+  document.getElementById('modeBtn').textContent = onlyNew ? '显示对照' : '只看新皮肤'
+}
+</script>
+</body>
+</html>

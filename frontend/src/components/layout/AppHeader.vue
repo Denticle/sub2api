@@ -1,6 +1,6 @@
 <template>
-  <header class="glass sticky top-0 z-30 border-b border-gray-200/50 dark:border-dark-700/50">
-    <div class="flex h-16 items-center justify-between gap-2 px-2 sm:px-4 md:px-6">
+  <header class="app-topbar">
+    <div class="flex h-full items-center justify-between gap-2 px-2 sm:px-4 md:px-6">
       <!-- Left: Mobile Menu Toggle + Page Title -->
       <div class="flex shrink-0 items-center gap-2 sm:gap-4">
         <button
@@ -11,14 +11,13 @@
           <Icon name="menu" size="md" />
         </button>
 
-        <div class="hidden lg:block">
-          <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
-            {{ pageTitle }}
-          </h1>
-          <p v-if="pageDescription" class="text-xs text-gray-500 dark:text-dark-400">
-            {{ pageDescription }}
-          </p>
-        </div>
+        <!-- 顶栏不再承载页面标题（标题在内容区做主视觉），这里只留一条
+             面包屑式的当前位置提示，避免同一屏出现两个主标题。 -->
+        <nav v-if="pageTitle" class="hidden items-center gap-1.5 text-[13px] lg:flex" aria-label="Breadcrumb">
+          <router-link to="/dashboard" class="app-crumb-link">{{ siteName }}</router-link>
+          <Icon name="chevronRight" size="xs" class="text-gray-300 dark:text-dark-600" />
+          <span class="font-medium text-gray-500 dark:text-dark-400">{{ pageTitle }}</span>
+        </nav>
       </div>
 
       <!-- Right: Announcements + Docs + Language + Subscriptions + Balance + User Dropdown -->
@@ -253,25 +252,21 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAppStore, useAuthStore, useOnboardingStore } from '@/stores'
-import { useAdminSettingsStore } from '@/stores/adminSettings'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import SubscriptionProgressMini from '@/components/common/SubscriptionProgressMini.vue'
 import AnnouncementBell from '@/components/common/AnnouncementBell.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { sanitizeUrl } from '@/utils/url'
 import { FeatureFlags, isFeatureFlagEnabled } from '@/utils/featureFlags'
-import { resolveRouteMetaKeys } from '@/router/title'
-import { resolveSiteBillingMode } from '@/utils/siteBillingMode'
+import { usePageTitle } from '@/composables/usePageTitle'
 
 const router = useRouter()
-const route = useRoute()
 const { t } = useI18n()
 const appStore = useAppStore()
 const authStore = useAuthStore()
-const adminSettingsStore = useAdminSettingsStore()
 const onboardingStore = useOnboardingStore()
 
 const user = computed(() => authStore.user)
@@ -316,34 +311,9 @@ const displayName = computed(() => {
 // 订阅功能关闭时不挂载顶栏订阅徽章（组件 onMounted 会拉取订阅接口）。
 const subscriptionFeatureEnabled = computed(() => isFeatureFlagEnabled(FeatureFlags.subscription))
 
-// /purchase 的标题/描述随站点计费模式切换，与 document.title 共用同一解析。
-const routeMetaKeys = computed(() => resolveRouteMetaKeys(route, {
-  billingMode: resolveSiteBillingMode(appStore.cachedPublicSettings),
-}))
-
-const pageTitle = computed(() => {
-  // For custom pages, use the menu item's label instead of generic "自定义页面"
-  if (route.name === 'CustomPage') {
-    const id = route.params.id as string
-    const publicItems = appStore.cachedPublicSettings?.custom_menu_items ?? []
-    const menuItem = publicItems.find((item) => item.id === id)
-      ?? (authStore.isAdmin ? adminSettingsStore.customMenuItems.find((item) => item.id === id) : undefined)
-    if (menuItem?.label) return menuItem.label
-  }
-  const titleKey = routeMetaKeys.value.titleKey
-  if (titleKey) {
-    return t(titleKey)
-  }
-  return (route.meta.title as string) || ''
-})
-
-const pageDescription = computed(() => {
-  const descKey = routeMetaKeys.value.descriptionKey
-  if (descKey) {
-    return t(descKey)
-  }
-  return (route.meta.description as string) || ''
-})
+// 标题与内容区共用同一份解析，避免两处各自维护而漂移。
+const { pageTitle } = usePageTitle()
+const siteName = computed(() => appStore.siteName)
 
 function toggleMobileSidebar() {
   appStore.toggleMobileSidebar()

@@ -1,0 +1,114 @@
+/* ==========================================================================
+   Sub2API — OpenRouter 风格：壳层版式
+   --------------------------------------------------------------------------
+   这一层解决的是「屏幕装得有多满」，不是配色。上一轮预览把整个应用塞进一个
+   1320px 的圆角框里，在 1440 屏上只渲染出 1272px，右边露出灰边——那正是
+   "看起来还是 sub2api" 的原因。
+
+   OpenRouter 线上实测（从其 HTML/CSS 提取）：
+     · 顶栏        通栏（w-full），仅 px-4 lg:px-6 = 16/24px 内边距，无 max-width
+     · 品牌/侧栏列  w-60 = 240px
+     · 内容区上限   max-w-7xl = 1280px，且 mx-auto 居中
+     · 内容内边距   px-6 md:px-8 = 24/32px
+     · 顶栏高度     --navbar-height: 3.5rem = 56px
+     · 页面底部留白 --dashboard-page-pad-b: 2.5rem / 2rem
+
+   与 sub2api 默认的差异（不是配色问题，是布局问题）：
+     · sub2api 侧栏 w-64 = 256px        → 改 240px（更窄，主区更宽）
+     · sub2api main p-4 md:p-6 lg:p-8    → 改 24/32px，并加 1280 居中容器
+     · sub2api 内容无 max-width（全通栏） → OpenRouter 是 1280 居中
+       两者观感差别在于：全通栏在 2K/4K 屏上会拉出极长的表格行，扫读困难；
+       1280 居中把行宽锁在可读区间，这才是"宽屏"的正确做法——不是更宽，是更稳。
+
+   接入方式见 DESIGN-OPENROUTER.md「壳层接入」一节。
+   ========================================================================== */
+
+:root {
+  --shell-sidebar-w: 15rem;        /* 240px */
+  --shell-sidebar-w-collapsed: 4.5rem; /* 72px，与上游折叠宽度一致 */
+  --shell-header-h: 3.5rem;        /* 56px */
+  --shell-container-max: 80rem;    /* 1280px */
+  --shell-pad-x: 2rem;             /* 32px，md 以上 */
+  --shell-pad-x-sm: 1.5rem;        /* 24px，小屏 */
+  --shell-pad-b: 3.5rem;           /* 56px 底部呼吸 */
+}
+
+/* ==========================================================================
+   1) 侧栏宽度：240 而不是 256
+   上游：AppSidebar.vue  `sidebarCollapsed ? 'w-[72px]' : 'w-64'`
+        AppLayout.vue   `sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-64'`
+   这两处必须同时改，否则主区偏移与侧栏实际宽度会对不上。
+   最省事的做法是不动 .vue，直接用 CSS 覆盖（需 confirm 上游用的是固定 w-64/w-[72px]）。
+   若用 CSS 覆盖，注意 Tailwind 的 w-64 会赢——所以推荐在 .vue 里改成上面的类名
+   之外直接写 inline style 或自定义类，改动仍只有两行。
+   ========================================================================== */
+.app-shell-sidebar {
+  width: var(--shell-sidebar-w);
+}
+
+/* ==========================================================================
+   2) 内容容器：1280 居中
+   把这段套在 <main> 里，或在 AppLayout 的插槽外包一层。
+   好处：2K/4K 下不会出现超长表格行；1440 下接近满宽，不显空。
+   ========================================================================== */
+.app-container {
+  width: 100%;
+  max-width: var(--shell-container-max);
+  margin-inline: auto;
+  padding-inline: var(--shell-pad-x-sm);
+  padding-bottom: var(--shell-pad-b);
+}
+@media (min-width: 48rem) {
+  .app-container {
+    padding-inline: var(--shell-pad-x);
+  }
+}
+
+/* ==========================================================================
+   3) 顶栏：通栏 + 毛玻璃
+   OpenRouter 顶栏不是白底实心，是 92% 不透明的表面色 + 12px 模糊，
+   内容滚到下面时能看到隐约透出——这是它"轻"观感的一半来源。
+   ========================================================================== */
+.app-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: var(--shell-header-h);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-inline: var(--shell-pad-x-sm);
+  border-bottom: 1px solid rgb(3 8 10 / 0.08);
+  background-color: rgb(255 255 255 / 0.92);
+  backdrop-filter: blur(12px);
+}
+@media (min-width: 48rem) {
+  .app-topbar { padding-inline: var(--shell-pad-x); }
+}
+.dark .app-topbar {
+  border-bottom-color: rgb(255 255 255 / 0.09);
+  background-color: rgb(7 13 16 / 0.92);
+}
+
+/* ==========================================================================
+   4) 宽屏下的两栏内容布局
+   OpenRouter 用 minmax 而不是固定比例，保证窄屏也能收得住：
+     grid-template-columns: minmax(0,1fr) minmax(18rem,24rem)
+   上游多个页面是写死的 grid-cols-3 / 固定列宽，2K 屏上会被拉得很丑。
+   下面的类供你替换这些写死的栅格，不必逐个页面改。
+   ========================================================================== */
+.app-split {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 64rem) {
+  .app-split {
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+  }
+}
+
+/* 表格行数多时的宽屏优化：不要让操作列被挤到屏幕最右端 */
+@media (min-width: 100rem) {
+  :root { --shell-container-max: 88rem; } /* 1600 屏上放宽到 1408，避免两侧留白过大 */
+}

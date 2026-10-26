@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sub2API — OpenRouter 风格预览</title>
+<style>
+:root{
+  --p-50:#f5f0ff; --p-100:#ede2ff; --p-200:#dcc7ff; --p-300:#c4a0fd;
+  --p-400:#a78bfa; --p-500:#8b4bf7; --p-600:#7624f4; --p-700:#6a1fd6;
+  --p-900:#2a1060;
+  --lime:#c8ff00;
+  --n-50:#fafafa; --n-100:#f4f4f5; --n-200:#e4e4e7; --n-300:#d4d4d8;
+  --n-400:#a1a1aa; --n-500:#71717a; --n-600:#52525b; --n-700:#3f3f46;
+  --n-800:#27272a; --n-900:#18181b;
+  --success:#30a46c; --warning:#ffa200; --danger:#e5484d; --info:#3e95ff;
+
+  --canvas:#fcfcfe; --surface:#ffffff; --sidebar:#fcfcfe;
+  --hairline:rgba(3,8,10,.08);
+  --hairline-strong:rgba(3,8,10,.13);
+  --text:#03080a; --text-2:#52525b; --text-3:#71717a;
+
+  --radius-sm:4px; --radius-md:6px; --radius-lg:8px; --radius-xl:10px;
+  --shadow-card:0 1px 3px rgba(0,0,0,.10),0 1px 2px -1px rgba(0,0,0,.10);
+  --shadow-pop:0 8px 30px rgba(0,0,0,.12),0 0 1px rgba(0,0,0,.10);
+  --font-ui:'Plus Jakarta Sans','Inter',system-ui,-apple-system,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+  --font-num:'Geist Mono','JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sidebar-w:232px; --header-h:56px;
+}
+html.dark{
+  --canvas:#03080a; --surface:#070d10; --sidebar:#050b0d;
+  --hairline:rgba(255,255,255,.09);
+  --hairline-strong:rgba(255,255,255,.14);
+  --text:#dfe1e2; --text-2:#a1a1aa; --text-3:#8b8b94;
+  --n-50:#0d161a; --n-100:#132026; --n-200:#1c2c33; --n-300:#2d4149;
+  --n-400:#7b8b92; --n-500:#93a3aa; --n-600:#b0bcc2; --n-700:#c8d2d6;
+  --n-800:#e0e6e8; --n-900:#f2f5f6;
+  --p-50:#1a0f33; --p-100:#241546; --p-200:#3a1f6e; --p-300:#c4a0fd;
+  --p-700:#c4a0fd;
+  --surface:#070d10;
+  --shadow-card:inset 0 1px 0 rgba(255,255,255,.04);
+  --shadow-pop:0 8px 30px rgba(0,0,0,.6),0 0 1px rgba(255,255,255,.14);
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-ui);background:var(--canvas);color:var(--text);
+  -webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;
+  letter-spacing:-.006em}
+.num,.mono{font-family:var(--font-num);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+/* ---------- 工具条 ---------- */
+.toolbar{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:10px;
+  padding:10px 22px;background:color-mix(in srgb,var(--canvas) 86%,transparent);
+  backdrop-filter:blur(14px);border-bottom:1px solid var(--hairline)}
+.toolbar strong{font-size:12.5px;font-weight:600}
+.toolbar .sub{font-size:11.5px;color:var(--text-3)}
+.toolbar .right{margin-left:auto;display:flex;gap:8px}
+
+/* ---------- 壳层（宽屏：用满整个视口，内容区居中不限死宽度） ---------- */
+.shell{display:flex;width:100%;min-height:100vh;background:var(--surface)}
+.sidebar{width:240px;flex:0 0 240px;background:var(--sidebar);
+  border-right:1px solid var(--hairline);display:flex;flex-direction:column;
+  padding:14px 10px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:9px;padding:4px 8px 16px}
+.mark{width:26px;height:26px;border-radius:7px;background:var(--p-600);
+  display:grid;place-items:center;color:#fff;font-weight:700;font-size:12px;letter-spacing:-.04em}
+.brand-name{font-weight:650;font-size:13.5px;letter-spacing:-.02em}
+.env{font-size:9.5px;font-family:var(--font-num);letter-spacing:.04em;color:var(--text-3);
+  border:1px solid var(--hairline);border-radius:4px;padding:0 4px;line-height:15px;margin-left:auto}
+.nav-label{font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--text-3);padding:0 10px;margin:16px 0 5px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:6px 9px;border-radius:6px;
+  color:var(--text-2);font-size:12.5px;font-weight:450;cursor:pointer;margin-bottom:1px}
+.nav-item:hover{background:var(--n-100);color:var(--text)}
+.nav-item.active{background:var(--p-50);color:var(--p-700);font-weight:550}
+html.dark .nav-item.active{background:rgba(118,36,244,.16);color:var(--p-300)}
+.ico{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round;flex:0 0 14px;opacity:.8}
+.count{margin-left:auto;font-family:var(--font-num);font-size:10px;color:var(--text-3)}
+.live{width:6px;height:6px;border-radius:99px;background:var(--lime);margin-left:auto;
+  box-shadow:0 0 0 3px rgba(200,255,0,.14)}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+/* 顶栏通栏：跟随主区全宽，不设 max-width */
+.topbar{height:56px;border-bottom:1px solid var(--hairline);display:flex;
+  align-items:center;gap:12px;padding:0 24px;position:sticky;top:0;z-index:30;
+  background:color-mix(in srgb,var(--surface) 92%,transparent);
+  backdrop-filter:blur(12px)}
+.crumb{font-size:12.5px;color:var(--text-3)}
+.crumb b{color:var(--text);font-weight:600}
+.tr{margin-left:auto;display:flex;align-items:center;gap:8px}
+.search{display:flex;align-items:center;gap:7px;border:1px solid var(--hairline);
+  background:var(--n-50);border-radius:6px;padding:5px 9px;width:236px;color:var(--text-3);font-size:12px}
+html.dark .search{background:#0a1215;border-color:var(--hairline)}
+kbd{font-family:var(--font-num);font-size:10px;border:1px solid var(--hairline);
+  border-radius:3px;padding:0 4px;color:var(--text-3);margin-left:auto;background:var(--surface)}
+/* 内容区：1280 上限 + 居中，屏比 1280 宽时留白对称，比它窄时用满 */
+.container{width:100%;max-width:1280px;margin:0 auto;padding:24px 32px 56px}
+
+/* ---------- 页头 ---------- */
+.ph{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px}
+.ph h1{font-size:17px;font-weight:650;letter-spacing:-.028em}
+.ph p{font-size:12.5px;color:var(--text-3);margin-top:3px}
+.ph .acts{margin-left:auto;display:flex;gap:8px}
+
+/* ---------- 按钮 ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;
+  padding:0 12px;border-radius:var(--radius-lg);font-size:12.5px;font-weight:550;
+  cursor:pointer;border:1px solid transparent;letter-spacing:-.008em;white-space:nowrap;
+  transition:background-color .12s,border-color .12s,box-shadow .12s;font-family:inherit}
+.btn-primary{background:var(--p-600);color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.btn-primary:hover{background:var(--p-700);box-shadow:0 2px 8px rgba(118,36,244,.28)}
+.btn-secondary{background:var(--surface);border-color:var(--n-200);color:var(--n-700)}
+.btn-secondary:hover{background:var(--n-50);border-color:var(--n-300)}
+html.dark .btn-secondary{background:#0d161a;border-color:var(--hairline);color:var(--n-600)}
+html.dark .btn-secondary:hover{background:#132026;border-color:var(--hairline-strong)}
+.btn-ghost{background:transparent;color:var(--text-2)}
+.btn-ghost:hover{background:var(--n-100)}
+html.dark .btn-ghost:hover{background:#0d161a}
+.btn-sm{height:27px;padding:0 9px;font-size:11.5px;border-radius:6px}
+
+/* ---------- 卡片 ---------- */
+.card{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius-xl);
+  box-shadow:var(--shadow-card)}
+html.dark .card{box-shadow:var(--shadow-card)}
+.ch{padding:11px 16px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:9px}
+.ch .t{font-size:12.5px;font-weight:600;letter-spacing:-.015em}
+.cb{padding:16px}
+.cf{padding:10px 16px;border-top:1px solid var(--hairline);display:flex;align-items:center;gap:8px}
+
+/* ---------- 统计 ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat{padding:14px 15px}
+.stat .lab{font-size:11px;color:var(--text-3);font-weight:500;letter-spacing:.01em;
+  display:flex;align-items:center;gap:6px}
+.stat .v{font-family:var(--font-num);font-size:23px;font-weight:500;letter-spacing:-.035em;
+  margin-top:7px;line-height:1.1}
+.stat .v small{font-size:11.5px;color:var(--text-3);font-weight:400;margin-left:3px}
+.stat .f{display:flex;align-items:center;gap:6px;margin-top:9px;font-size:11px;color:var(--text-3)}
+.up{color:var(--success);font-family:var(--font-num);font-weight:500}
+.down{color:var(--danger);font-family:var(--font-num);font-weight:500}
+
+/* ---------- 徽标 ---------- */
+.badge{display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:1px 6px;
+  font-size:10.5px;font-weight:600;letter-spacing:.015em;line-height:17px}
+.b-success{background:rgba(48,164,108,.12);color:#187a4e}
+.b-warning{background:rgba(255,162,0,.16);color:#9b5f00}
+.b-danger{background:rgba(229,72,77,.12);color:#be282e}
+.b-gray{background:var(--n-100);color:var(--n-600)}
+.b-primary{background:var(--p-50);color:var(--p-700)}
+html.dark .b-success{background:rgba(48,164,108,.16);color:#6ed2a0}
+html.dark .b-warning{background:rgba(255,162,0,.14);color:#ffbe50}
+html.dark .b-danger{background:rgba(229,72,77,.16);color:#ff8286}
+html.dark .b-gray{background:#0d161a;color:var(--n-400)}
+html.dark .b-primary{background:rgba(139,75,247,.18);color:var(--p-300)}
+.b-live{background:rgba(200,255,0,.14);color:#5c7a00}
+html.dark .b-live{background:rgba(200,255,0,.12);color:var(--lime)}
+
+/* ---------- 表格 ---------- */
+.tw{overflow:hidden;border-radius:0 0 var(--radius-xl) var(--radius-xl)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;padding:8px 16px;font-size:10px;font-weight:600;letter-spacing:.075em;
+  text-transform:uppercase;color:var(--text-3);border-bottom:1px solid var(--hairline);
+  white-space:nowrap;background:transparent}
+td{padding:10px 16px;border-bottom:1px solid var(--hairline);color:var(--n-700)}
+html.dark td{color:var(--n-600)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:var(--n-50)}
+html.dark tbody tr:hover td{background:#0a1215}
+th.r,td.r{text-align:right}
+td.r{font-family:var(--font-num);font-variant-numeric:tabular-nums}
+.acct{display:flex;align-items:center;gap:8px}
+.av{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;
+  font-size:9.5px;font-weight:700;flex:0 0 22px;font-family:var(--font-num)}
+.muted{color:var(--text-3);font-family:var(--font-num);font-size:11px}
+
+/* ---------- 输入 ---------- */
+.field{display:flex;flex-direction:column;gap:5px}
+.lab2{font-size:11.5px;font-weight:600;color:var(--n-700)}
+html.dark .lab2{color:var(--n-600)}
+.input{height:32px;padding:0 10px;border:1px solid var(--n-200);border-radius:var(--radius-lg);
+  background:var(--surface);font-size:12.5px;color:var(--text);font-family:inherit;width:100%}
+html.dark .input{background:#0a1215;border-color:var(--hairline);color:var(--n-700)}
+.input:focus{outline:none;border-color:var(--p-500);box-shadow:0 0 0 3px rgba(118,36,244,.14)}
+.hint{font-size:10.5px;color:var(--text-3)}
+
+/* ---------- 条形 ---------- */
+.bar{height:4px;border-radius:2px;background:var(--n-100);overflow:hidden;margin-top:9px}
+html.dark .bar{background:#132026}
+.bar>i{display:block;height:100%;border-radius:2px;background:var(--p-600)}
+html.dark .bar>i{background:var(--p-400)}
+
+/* ---------- 对照 ---------- */
+.section{margin:30px 0 11px;display:flex;align-items:baseline;gap:10px}
+.section h2{font-size:12.5px;font-weight:650;letter-spacing:-.015em}
+.section span{font-size:11.5px;color:var(--text-3)}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.chead{display:flex;align-items:center;gap:8px;margin-bottom:9px;font-size:10.5px;
+  font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)}
+.tag{font-size:10px;padding:1px 6px;border-radius:4px;background:var(--n-100);
+  color:var(--text-2);letter-spacing:0;text-transform:none;font-weight:500}
+html.dark .tag{background:#0d161a}
+
+/* 旧皮肤（企业蓝版）模拟 */
+.navy{--p-600:#164cba;--p-700:#143c96;--p-50:#eef5ff;--p-700c:#143c96}
+.navy .card,.navy .ch,.navy .cf{border-color:rgba(15,23,42,.10)}
+.navy .btn-primary{background:#164cba;box-shadow:0 1px 2px rgba(15,23,42,.08)}
+.navy .badge{border-radius:4px}
+.navy .stat .v{font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+
+.note{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:40px}
+.note .card{padding:14px}
+.note b{font-size:12px;font-weight:650;display:block;margin-bottom:6px;letter-spacing:-.01em}
+.note p{font-size:11.5px;color:var(--text-3);line-height:1.55}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <strong>Sub2API — OpenRouter 风格</strong>
+  <span class="sub">紫 #7624f4 · 青黑画布 · 发丝线 · 青柠点缀</span>
+  <div class="right">
+    <button class="btn btn-secondary btn-sm" id="themeBtn">切换深色</button>
+    <button class="btn btn-secondary btn-sm" id="cmpBtn">隐藏对照</button>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- ================= 完整界面 ================= -->
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">S<i style="display:none"></i></div>
+      <div class="brand-name">Sub2API</div>
+      <div class="env">PROD</div>
+    </div>
+
+    <div class="nav-label">Overview</div>
+    <div class="nav-item active">
+      <svg class="ico" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      仪表盘
+    </div>
+    <div class="nav-item">
+      <svg class="ico" viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 5-7 4 4"/></svg>
+      实时监控<span class="live"></span>
+    </div>
+    <div class="nav-item">
+      <svg class="ico" viewBox="0 0 24 24"><path d="M4 19V5m0 14h16"/><rect x="7" y="11" width="3" height="8" rx="1"/><rect x="13" y="7" width="3" height="12" rx="1"/></svg>
+      用量统计
+    </div>
+
+    <div class="nav-label">Routing</div>
+    <div class="nav-item">
+      <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/></svg>
+      上游账号<span class="count">42</span>
+    </div>
+    <div class="nav-item">
+      <svg class="ico" viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0110 0v3"/><rect x="5" y="11" width="14" height="9" rx="2"/></svg>
+      API 密钥<span class="count">12</span>
+    </div>
+    <div class="nav-item">
+      <svg class="ico" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h12"/></svg>
+      渠道分组
+    </div>
+
+    <div class="nav-label">Operations</div>
+    <div class="nav-item">
+      <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0114 0"/></svg>
+      用户管理
+    </div>
+    <div class="nav-item">
+      <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 00-1.7-1L14.5 3h-4l-.4 2.1a7 7 0 00-1.7 1l-2.3-1-2 3.4L6 10a7 7 0 000 2l-2 1.5 2 3.4 2.3-1a7 7 0 001.7 1l.4 2.1h4l.4-2.1a7 7 0 001.7-1l2.3 1 2-3.4-2-1.5a7 7 0 00.1-1z"/></svg>
+      系统设置
+    </div>
+
+    <div style="margin-top:auto;padding-top:12px;border-top:1px solid var(--hairline)">
+      <div style="display:flex;align-items:center;gap:8px;padding:0 4px">
+        <div class="av" style="border-radius:99px;width:24px;height:24px;flex:0 0 24px;
+             background:var(--p-50);color:var(--p-700)">W</div>
+        <div style="min-width:0">
+          <div style="font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Wei Shaw</div>
+          <div style="font-size:10px;color:var(--text-3)">admin@sub2api</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumb"><b>仪表盘</b> <span style="opacity:.5">/</span> 概览</div>
+      <div class="tr">
+        <div class="search">
+          <svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          搜索账号、密钥
+          <kbd>⌘K</kbd>
+        </div>
+        <button class="btn btn-ghost btn-sm">文档</button>
+        <div class="av" style="border-radius:99px;width:24px;height:24px;
+             background:var(--p-50);color:var(--p-700)">W</div>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="ph">
+        <div>
+          <h1>仪表盘</h1>
+          <p>过去 24 小时网关运行状况与用量</p>
+        </div>
+        <div class="acts">
+          <button class="btn btn-secondary">导出</button>
+          <button class="btn btn-primary">
+            <svg class="ico" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M12 5v14M5 12h14"/></svg>
+            新建密钥
+          </button>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="card stat">
+          <div class="lab">今日请求 <span class="live" style="margin:0"></span></div>
+          <div class="v">1,284,930</div>
+          <div class="f"><span class="up">+12.4%</span> 较昨日</div>
+          <div class="bar"><i style="width:72%"></i></div>
+        </div>
+        <div class="card stat">
+          <div class="lab">消耗额度</div>
+          <div class="v">$8,412.60</div>
+          <div class="f"><span class="up">+3.1%</span> 较昨日</div>
+          <div class="bar"><i style="width:54%"></i></div>
+        </div>
+        <div class="card stat">
+          <div class="lab">平均延迟</div>
+          <div class="v">412<small>ms</small></div>
+          <div class="f"><span class="down">+18ms</span> 较昨日</div>
+          <div class="bar"><i style="width:41%"></i></div>
+        </div>
+        <div class="card stat">
+          <div class="lab">成功率</div>
+          <div class="v">99.6<small>%</small></div>
+          <div class="f"><span class="badge b-success">健康</span></div>
+          <div class="bar"><i style="width:99.6%"></i></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="ch">
+          <div class="t">上游账号</div>
+          <span class="badge b-gray">42</span>
+          <span class="badge b-live">LIVE</span>
+          <div style="margin-left:auto;display:flex;gap:6px">
+            <button class="btn btn-ghost btn-sm">筛选</button>
+            <button class="btn btn-secondary btn-sm">刷新</button>
+          </div>
+        </div>
+        <div class="tw">
+          <table>
+            <thead>
+              <tr>
+                <th>账号</th><th>平台</th><th>状态</th>
+                <th class="r">今日调用</th><th class="r">额度余量</th><th>最近同步</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="acct">
+                  <div class="av" style="background:var(--p-50);color:var(--p-700)">A</div>
+                  <div><div style="font-weight:550">acct-anthropic-01</div><div class="muted">OAuth</div></div>
+                </div></td>
+                <td>Claude</td>
+                <td><span class="badge b-success">运行中</span></td>
+                <td class="r">418,204</td>
+                <td class="r">$1,240.00</td>
+                <td class="muted">2 分钟前</td>
+                <td class="r"><button class="btn btn-ghost btn-sm">管理</button></td>
+              </tr>
+              <tr>
+                <td><div class="acct">
+                  <div class="av" style="background:var(--n-100);color:var(--n-600)">B</div>
+                  <div><div style="font-weight:550">acct-openai-07</div><div class="muted">API Key</div></div>
+                </div></td>
+                <td>OpenAI</td>
+                <td><span class="badge b-warning">限流中</span></td>
+                <td class="r">302,918</td>
+                <td class="r">$86.40</td>
+                <td class="muted">5 分钟前</td>
+                <td class="r"><button class="btn btn-ghost btn-sm">管理</button></td>
+              </tr>
+              <tr>
+                <td><div class="acct">
+                  <div class="av" style="background:var(--n-100);color:var(--n-600)">C</div>
+                  <div><div style="font-weight:550">acct-grok-02</div><div class="muted">OAuth</div></div>
+                </div></td>
+                <td>Grok</td>
+                <td><span class="badge b-danger">已失效</span></td>
+                <td class="r">0</td>
+                <td class="r">$0.00</td>
+                <td class="muted">3 天前</td>
+                <td class="r"><button class="btn btn-ghost btn-sm">管理</button></td>
+              </tr>
+              <tr>
+                <td><div class="acct">
+                  <div class="av" style="background:var(--p-50);color:var(--p-700)">D</div>
+                  <div><div style="font-weight:550">acct-anthropic-04</div><div class="muted">OAuth</div></div>
+                </div></td>
+                <td>Claude</td>
+                <td><span class="badge b-success">运行中</span></td>
+                <td class="r">194,672</td>
+                <td class="r">$2,008.10</td>
+                <td class="muted">1 分钟前</td>
+                <td class="r"><button class="btn btn-ghost btn-sm">管理</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="cf">
+          <span style="font-size:11px;color:var(--text-3)">显示 1–4，共 42 条</span>
+          <div style="margin-left:auto;display:flex;gap:6px">
+            <button class="btn btn-secondary btn-sm">上一页</button>
+            <button class="btn btn-secondary btn-sm">下一页</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1.35fr 1fr;gap:16px">
+        <div class="card">
+          <div class="ch"><div class="t">新建密钥</div></div>
+          <div class="cb" style="display:flex;flex-direction:column;gap:13px">
+            <div class="field">
+              <label class="lab2">密钥名称</label>
+              <input class="input" value="生产环境 / 计费系统">
+              <span class="hint">仅用于区分用途，不影响鉴权。</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="field">
+                <label class="lab2">额度上限</label>
+                <input class="input num" value="500.00">
+              </div>
+              <div class="field">
+                <label class="lab2">速率限制</label>
+                <input class="input num" value="60 / min">
+              </div>
+            </div>
+          </div>
+          <div class="cf">
+            <button class="btn btn-ghost">取消</button>
+            <button class="btn btn-primary" style="margin-left:auto">创建密钥</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="ch"><div class="t">渠道健康度</div><span class="badge b-live">实时</span></div>
+          <div class="cb" style="display:flex;flex-direction:column;gap:15px">
+            <div>
+              <div style="display:flex;font-size:11.5px"><span>Claude</span><span class="num" style="margin-left:auto;color:var(--text-3)">99.8%</span></div>
+              <div class="bar"><i style="width:99.8%"></i></div>
+            </div>
+            <div>
+              <div style="display:flex;font-size:11.5px"><span>OpenAI</span><span class="num" style="margin-left:auto;color:var(--text-3)">97.2%</span></div>
+              <div class="bar"><i style="width:97.2%"></i></div>
+            </div>
+            <div>
+              <div style="display:flex;font-size:11.5px"><span>Grok</span><span class="num" style="margin-left:auto;color:var(--text-3)">61.4%</span></div>
+              <div class="bar"><i style="width:61.4%;background:var(--warning)"></i></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 对照 ================= -->
+<div id="cmpBlock">
+<div class="section"><h2>与上一版（企业海军蓝）的差异</h2><span>同一份 markup，只换 token</span></div>
+<div class="compare">
+  <div class="navy">
+    <div class="chead">企业海军蓝 <span class="tag">上一版</span></div>
+    <div class="card" style="padding:16px">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px">
+        <div class="av" style="background:#eef5ff;color:#143c96">S</div>
+        <div style="font-size:13px;font-weight:650">Sub2API</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="btn btn-primary">新建密钥</button>
+        <button class="btn btn-secondary">导出</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div class="card" style="padding:12px">
+          <div style="font-size:10.5px;color:var(--text-3)">今日请求</div>
+          <div class="v" style="font-family:var(--font-num);font-size:20px;margin-top:6px">1,284,930</div>
+        </div>
+        <div class="card" style="padding:12px">
+          <div style="font-size:10.5px;color:var(--text-3)">消耗额度</div>
+          <div class="v" style="font-family:var(--font-num);font-size:20px;margin-top:6px">$8,412.60</div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>账号</th><th>状态</th><th class="r">调用</th></tr></thead>
+        <tbody>
+          <tr><td>acct-anthropic-01</td><td><span class="badge b-success">运行中</span></td><td class="r">418,204</td></tr>
+          <tr><td>acct-openai-07</td><td><span class="badge b-warning">限流中</span></td><td class="r">302,918</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div>
+    <div class="chead">OpenRouter 风 <span class="tag">本版</span></div>
+    <div class="card" style="padding:16px">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px">
+        <div class="av" style="background:var(--p-50);color:var(--p-700);border-radius:7px">S</div>
+        <div style="font-size:13px;font-weight:650">Sub2API</div>
+        <span class="env" style="margin-left:auto">PROD</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="btn btn-primary">新建密钥</button>
+        <button class="btn btn-secondary">导出</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div class="card" style="padding:12px">
+          <div style="font-size:10.5px;color:var(--text-3);display:flex;gap:5px;align-items:center">今日请求<span class="live" style="margin:0"></span></div>
+          <div class="num" style="font-size:20px;margin-top:6px;font-weight:500;-webkit-letter-spacing:-.03em">1,284,930</div>
+        </div>
+        <div class="card" style="padding:12px">
+          <div style="font-size:10.5px;color:var(--text-3)">消耗额度</div>
+          <div class="num" style="font-size:20px;margin-top:6px;font-weight:500;letter-spacing:-.03em">$8,412.60</div>
+        </div>
+      </div>
+      <div class="tw"><table>
+        <thead><tr><th>账号</th><th>状态</th><th class="r">调用</th></tr></thead>
+        <tbody>
+          <tr><td>acct-anthropic-01</td><td><span class="badge b-success">运行中</span></td><td class="r">418,204</td></tr>
+          <tr><td>acct-openai-07</td><td><span class="badge b-warning">限流中</span></td><td class="r">302,918</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="section"><h2>这一版的设计决策</h2><span>每条都对应一个可验证的约束</span></div>
+<div class="note">
+  <div class="card">
+    <b>青黑而非炭黑</b>
+    <p>画布锁在 195° 色相、2.5% 亮度。这是 OpenRouter 辨识度最高的特征——同样的暗度，色相一换气质全变。</p>
+  </div>
+  <div class="card">
+    <b>发丝线代替阴影</b>
+    <p>边框是墨色 8% 透明度的 1px 线，不是灰色实线。深色模式下反过来用白色 9%。</p>
+  </div>
+  <div class="card">
+    <b>青柠只做状态</b>
+    <p>#c8ff00 在深色底上 17:1，但浅色底上几乎不可读。只用于实时点和 LIVE 标记，面积不超过 1%。</p>
+  </div>
+  <div class="card">
+    <b>紫的对比度陷阱</b>
+    <p>#7624f4 在白底 6.3:1 合格，在青黑底只有 3.2:1。深色模式的强调文字必须换 #a78bfa（7.4:1）。</p>
+  </div>
+</div>
+
+</div>
+
+<script>
+document.getElementById('themeBtn').onclick = () => {
+  document.documentElement.classList.toggle('dark')
+  document.getElementById('themeBtn').textContent =
+    document.documentElement.classList.contains('dark') ? '切换浅色' : '切换深色'
+}
+let hidden = false
+document.getElementById('cmpBtn').onclick = () => {
+  hidden = !hidden
+  document.getElementById('cmpBlock').style.display = hidden ? 'none' : ''
+  document.getElementById('cmpBtn').textContent = hidden ? '显示对照' : '隐藏对照'
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,224 @@
+/* ==========================================================================
+   Sub2API — OpenRouter 风格：壳层版式
+   --------------------------------------------------------------------------
+   这一层解决的是「屏幕装得有多满」，不是配色。上一轮预览把整个应用塞进一个
+   1320px 的圆角框里，在 1440 屏上只渲染出 1272px，右边露出灰边——那正是
+   "看起来还是 sub2api" 的原因。
+
+   OpenRouter 线上实测（从其 HTML/CSS 提取）：
+     · 顶栏        通栏（w-full），仅 px-4 lg:px-6 = 16/24px 内边距，无 max-width
+     · 品牌/侧栏列  w-60 = 240px
+     · 内容区上限   max-w-7xl = 1280px，且 mx-auto 居中
+     · 内容内边距   px-6 md:px-8 = 24/32px
+     · 顶栏高度     --navbar-height: 3.5rem = 56px
+     · 页面底部留白 --dashboard-page-pad-b: 2.5rem / 2rem
+
+   与 sub2api 默认的差异（不是配色问题，是布局问题）：
+     · sub2api 侧栏 w-64 = 256px        → 改 240px（更窄，主区更宽）
+     · sub2api main p-4 md:p-6 lg:p-8    → 改 24/32px，并加 1280 居中容器
+     · sub2api 内容无 max-width（全通栏） → OpenRouter 是 1280 居中
+       两者观感差别在于：全通栏在 2K/4K 屏上会拉出极长的表格行，扫读困难；
+       1280 居中把行宽锁在可读区间，这才是"宽屏"的正确做法——不是更宽，是更稳。
+
+   接入方式见 DESIGN-OPENROUTER.md「壳层接入」一节。
+   ========================================================================== */
+
+:root {
+  --shell-sidebar-w: 15rem;        /* 240px */
+  --shell-sidebar-w-collapsed: 4.5rem; /* 72px，与上游折叠宽度一致 */
+  --shell-header-h: 3.5rem;        /* 56px */
+  --shell-container-max: 80rem;    /* 1280px */
+  --shell-pad-x: 2rem;             /* 32px，md 以上 */
+  --shell-pad-x-sm: 1.5rem;        /* 24px，小屏 */
+  --shell-pad-b: 3.5rem;           /* 56px 底部呼吸 */
+}
+
+/* ==========================================================================
+   1) 侧栏
+   结构改成 OpenRouter 那样：顶栏通栏在上，侧栏从顶栏下方开始，
+   因此侧栏不再 fixed 通高，而是 sticky 到顶栏下沿。
+   ========================================================================== */
+.app-shell-sidebar {
+  width: var(--shell-sidebar-w);
+}
+
+.sidebar {
+  /* 上游是 fixed inset-y-0，会盖住通栏顶栏；这里改成 sticky 到顶栏下方 */
+  position: sticky;
+  top: var(--shell-header-h);
+  height: calc(100vh - var(--shell-header-h));
+  z-index: 20;
+}
+
+/* 移动端仍然走抽屉，保留上游的 fixed 行为 */
+@media (max-width: 1023px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    height: 100vh;
+    z-index: 40;
+  }
+}
+
+/* ==========================================================================
+   2) 内容区
+   ========================================================================== */
+.app-container {
+  width: 100%;
+  margin-inline: 0;
+  padding-inline: 0;
+  padding-bottom: 0;
+}
+
+/* ==========================================================================
+   2.5) 页面主标题 —— 产品化的视觉锚点
+   上游把标题放在顶栏（15px），页面没有视觉主角。这里把它提到内容区，
+   用 24px/700 定调；顶栏退回面包屑层级。
+   ========================================================================== */
+.app-page-title {
+  margin-bottom: 1.5rem;
+}
+
+.app-page-title h1 {
+  font-size: 1.5rem;        /* 24px */
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+  color: rgb(var(--n-900));
+  margin: 0;
+}
+
+.app-page-title p {
+  margin: 0.35rem 0 0;
+  font-size: 0.8125rem;     /* 13px */
+  font-weight: 450;
+  letter-spacing: -0.005em;
+  color: rgb(var(--n-500));
+}
+
+.dark .app-page-title h1 { color: rgb(var(--n-50)); }
+.dark .app-page-title p  { color: rgb(var(--n-400)); }
+
+/* 少数视图（风控、渠道监控、渠道状态、运维看板）自带标题，
+   隐藏这里的副本，避免同一屏出现两个 h1。 */
+main:has(.page-title) > .app-page-title,
+main:has(header h1) > .app-page-title {
+  display: none;
+}
+
+/* 面包屑：站点名是低对比链接，当前页是中性文字 */
+.app-crumb-link {
+  color: rgb(var(--n-400));
+  transition: color 120ms ease;
+}
+.app-crumb-link:hover { color: rgb(var(--n-700)); }
+.dark .app-crumb-link { color: rgb(var(--n-500)); }
+.dark .app-crumb-link:hover { color: rgb(var(--n-300)); }
+
+/* ==========================================================================
+   3) 顶栏：通栏 + 发丝线（不是玻璃拟态）
+   OpenRouter 顶栏是实底 92% 不透明 + 12px 模糊，1px 发丝线收口。
+   ========================================================================== */
+.app-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  width: 100%;
+  height: var(--shell-header-h);
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgb(3 8 10 / 0.08);
+  background-color: rgb(255 255 255 / 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dark .app-topbar {
+  border-bottom-color: rgb(255 255 255 / 0.09);
+  background-color: rgb(7 13 16 / 0.94);
+}
+
+/* 上游顶栏里的标题用 text-lg font-semibold，设计稿要更小更紧 */
+/* 顶栏里的标题降为面包屑层级：真正的视觉主角在内容区 */
+.app-topbar h1 {
+  font-size: 0.8125rem;     /* 13px */
+  font-weight: 550;
+  letter-spacing: -0.01em;
+  color: rgb(var(--n-500));
+}
+
+.dark .app-topbar h1 {
+  color: rgb(var(--n-400));
+}
+
+.app-topbar p {
+  font-size: 0.7rem;
+  color: rgb(var(--n-400));
+}
+
+.dark .app-topbar p {
+  color: rgb(var(--n-500));
+}
+
+/* ==========================================================================
+   4) 宽屏下的两栏内容布局
+   OpenRouter 用 minmax 而不是固定比例，保证窄屏也能收得住：
+     grid-template-columns: minmax(0,1fr) minmax(18rem,24rem)
+   上游多个页面是写死的 grid-cols-3 / 固定列宽，2K 屏上会被拉得很丑。
+   下面的类供你替换这些写死的栅格，不必逐个页面改。
+   ========================================================================== */
+.app-split {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 64rem) {
+  .app-split {
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+  }
+}
+
+/* 表格行数多时的宽屏优化：不要让操作列被挤到屏幕最右端 */
+@media (min-width: 100rem) {
+  :root { --shell-container-max: 88rem; } /* 1600 屏上放宽到 1408，避免两侧留白过大 */
+}
+
+/* ==========================================================================
+   5) 表格页：让页面填满视口，而不是靠魔法数字
+   --------------------------------------------------------------------------
+   TablePageLayout 里写的是
+     height: calc(100vh - 64px - 4rem)
+   这个数字在「顶栏 56px + 内容区 p-8 + 页面主标题」三者叠加之后就对不上了，
+   结果是内容实际高度超出视口，页面出现外层滚动条，而表格内部又自带一条
+   滚动条 —— 双滚动条是典型的后台"工程味"。
+
+   正确做法：把 main 变成高度确定的 flex 列，表格页 flex:1 吃掉剩余空间。
+   注意特异性：`.table-page-layout[data-v-x]` 是 (0,2,0)，所以这里至少要
+   (0,2,1)。
+   ========================================================================== */
+/* 只在桌面端锁定高度：小屏上浏览器地址栏会伸缩，100dvh 不稳定，
+   而且移动端 TablePageLayout 本来就是卡片流式布局 */
+@media (min-width: 1024px) {
+main:has(> .table-page-layout) {
+  display: flex;
+  flex-direction: column;
+  /* 必须是确定高度，不能是 min-height：
+     min-height 只保证下限，内容更高时 main 会继续长高，内层 flex 就收不住，
+     表格区于是把页面顶出视口，出现外层滚动条。 */
+  height: calc(100dvh - var(--shell-header-h));
+  min-height: 0;
+  overflow: hidden;
+}
+
+main > .app-page-title {
+  flex-shrink: 0;
+}
+
+main > .table-page-layout.table-page-layout {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+  /* 上游 scoped 样式里的 gap-6 需要压过去：类名重复一次提升权重 */
+  gap: 1rem;
+}
+}

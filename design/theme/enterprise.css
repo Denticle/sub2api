@@ -1,0 +1,8 @@
+/* Sub2API Enterprise — 入口
+ * 在 frontend/src/style.css 之后引入，全局只加载一次。
+ *
+ * main.ts 里只加一行：
+ *     import './style.css'
+ *     import './theme/enterprise.css'   // ← 新增
+ */
+@import './tokens.css';

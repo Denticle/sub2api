@@ -1,0 +1,294 @@
+/* ==========================================================================
+   Sub2API Enterprise — Design Tokens & Component Skin
+   --------------------------------------------------------------------------
+   风格：企业级控制台。冷灰中性色 + 深海军蓝品牌色 + 紧致圆角 + 边框分层。
+   许可：本文件为独立原创实现，未复制 new-api（AGPLv3+§7）的任何源码或 token。
+         详见 design/DESIGN.md「许可边界」。
+
+   接入：在 src/style.css 之后加载一次即可，不修改任何上游 .vue。
+   ========================================================================== */
+
+:root {
+  /* ---------- 品牌色：深海军蓝 Ink Navy ----------
+     与 new-api 的亮天蓝（oklch 0.692 0.141 243.7 ≈ #4ba3e3）拉开距离：
+     低亮度、高饱和度，适合大面积主按钮与选中态。 */
+  --brand-50:  238 245 255;
+  --brand-100: 219 233 254;
+  --brand-200: 187 213 252;
+  --brand-300: 137 179 248;
+  --brand-400:  78 137 238;
+  --brand-500:  40  99 214;
+  --brand-600:  22  76 186;
+  --brand-700:  20  60 150;
+  --brand-800:  20  50 122;
+  --brand-900:  20  43  99;
+  --brand-950:  13  27  66;
+
+  /* ---------- 中性色：冷灰 Slate ----------
+     必须定义完整 50→950 阶梯：tailwind.theme.js 把上游的
+     gray-50..950 全部映射到这套变量，缺任何一档都会让对应
+     的 bg-/text-/border- 工具类退化成无效声明。 */
+  --n-50:  248 250 252;
+  --n-100: 241 245 249;
+  --n-200: 226 232 240;
+  --n-300: 203 213 225;
+  --n-400: 148 163 184;
+  --n-500: 100 116 139;
+  --n-600:  71  85 105;
+  --n-700:  51  65  85;
+  --n-800:  30  41  59;
+  --n-900:  15  23  42;
+  --n-950:   8  13  26;
+
+  /* ---------- 深色画布：深海军蓝，不是纯炭黑 ----------
+     new-api 深色模式是去饱和炭黑 oklch(0.235 0 0)。
+     这里保留品牌色相（约 218°），让深色模式仍有"企业蓝"气质。 */
+  --d-950:  11  17  28;
+  --d-900:  17  25  39;
+  --d-800:  22  31  47;
+  --d-700:  32  43  61;
+  --d-600:  46  59  80;
+
+  /* ---------- 语义色：低饱和深色系，避免刺眼 ---------- */
+  --success:  22 128  84;
+  --warning: 180 108  12;
+  --danger:  190  40  52;
+  --info:     30 110 190;
+
+  /* ---------- 阴影：几乎不用弥散阴影，靠 1px 边框分层 ---------- */
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --shadow-card-hover: 0 4px 12px -2px rgb(15 23 42 / 0.08),
+                       0 2px 4px -2px rgb(15 23 42 / 0.04);
+  --shadow-pop: 0 12px 32px -8px rgb(15 23 42 / 0.16),
+                0 4px 8px -4px rgb(15 23 42 / 0.08);
+
+  /* ---------- 版式 ----------
+     几何无衬线做 UI，等宽做数字（金额/调用量/延迟对齐）。 */
+  --font-ui: 'Inter', 'Geist', system-ui, -apple-system, 'Segoe UI',
+             'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-numeric: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ---------- 壳层刻度 ---------- */
+  --shell-sidebar-w: 15rem;
+  --shell-header-h: 3.5rem;
+}
+
+.dark {
+  --shadow-card: inset 0 1px 0 0 rgb(255 255 255 / 0.04);
+  --shadow-card-hover: inset 0 1px 0 0 rgb(255 255 255 / 0.06);
+  --shadow-pop: 0 16px 40px -12px rgb(0 0 0 / 0.7);
+}
+
+/* ==========================================================================
+   A. 底色与文字
+   上游 body: bg-gray-50 text-gray-900 dark:bg-dark-950 dark:text-gray-100
+   ========================================================================== */
+body {
+  font-family: var(--font-ui);
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+}
+
+.dark body {
+  background-color: rgb(var(--d-950));
+  color: rgb(var(--n-200));
+}
+
+/* ==========================================================================
+   B. 按钮 —— 实心、无渐变、8px 圆角
+   上游 .btn-primary 是 from-primary-500 to-primary-600 渐变 + shadow-glow，
+   企业控制台里渐变会显得廉价，改为单色实心。
+   ========================================================================== */
+.btn {
+  font-weight: 500;
+  letter-spacing: -0.006em;
+  transform: none;                       /* 去掉 active:scale-[0.98] 的弹跳感 */
+  transition: background-color 120ms ease, border-color 120ms ease,
+              box-shadow 120ms ease, color 120ms ease;
+}
+.btn:active { transform: none; }
+
+.btn-primary {
+  background-image: none;
+  background-color: rgb(var(--brand-600));
+  color: #fff;
+  box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.08);
+}
+.btn-primary:hover {
+  background-color: rgb(var(--brand-700));
+  background-image: none;
+  box-shadow: 0 2px 6px 0 rgb(15 23 42 / 0.14);
+}
+
+.btn-secondary {
+  background-color: #fff;
+  border-color: rgb(var(--n-200));
+  color: rgb(var(--n-700));
+  box-shadow: var(--shadow-card);
+}
+.btn-secondary:hover {
+  background-color: rgb(var(--n-50));
+  border-color: rgb(var(--n-300));
+}
+
+.btn-ghost { color: rgb(var(--n-600)); }
+.btn-ghost:hover { background-color: rgb(var(--n-100)); }
+
+.btn-danger,
+.btn-success,
+.btn-warning {
+  background-image: none;
+}
+.btn-danger  { background-color: rgb(var(--danger)); }
+.btn-success { background-color: rgb(var(--success)); }
+.btn-warning { background-color: rgb(var(--warning)); color: #fff; }
+
+.dark .btn-secondary {
+  background-color: rgb(var(--d-900));
+  border-color: rgb(var(--d-700));
+  color: rgb(var(--n-300));
+}
+.dark .btn-secondary:hover { background-color: rgb(var(--d-800)); }
+.dark .btn-ghost:hover { background-color: rgb(var(--d-800)); }
+
+/* ==========================================================================
+   C. 输入框 —— 1px 边框，聚焦用 3px 柔环而非发光
+   ========================================================================== */
+.input {
+  background-color: #fff;
+  border-color: rgb(var(--n-300));
+  box-shadow: none;
+}
+.input:focus {
+  border-color: rgb(var(--brand-500));
+  box-shadow: 0 0 0 3px rgb(var(--brand-500) / 0.12);
+  outline: none;
+}
+.dark .input {
+  background-color: rgb(var(--d-900));
+  border-color: rgb(var(--d-700));
+}
+
+/* ==========================================================================
+   D. 卡片 —— 重点：上游 .stat-card 用 @apply card 内联了样式，
+   只覆盖 .card 管不到它，必须并列声明。
+   ========================================================================== */
+.card,
+.stat-card,
+.card-glass,
+.glass-card {
+  background-color: #fff;
+  background-image: none;
+  border: 1px solid rgb(var(--n-200));
+  box-shadow: var(--shadow-card);
+  backdrop-filter: none;
+}
+.glass {
+  background-color: #fff;
+  background-image: none;
+  backdrop-filter: none;
+}
+
+.dark .card,
+.dark .stat-card,
+.dark .card-glass,
+.dark .glass-card,
+.dark .glass {
+  background-color: rgb(var(--d-900));
+  border-color: rgb(var(--d-700));
+  box-shadow: var(--shadow-card);
+}
+
+/* 卡片分区：分隔线统一，内边距收紧一档（企业控制台信息密度更高） */
+.card-header { border-bottom-color: rgb(var(--n-200)); }
+.card-footer { border-top-color: rgb(var(--n-200)); }
+.dark .card-header { border-bottom-color: rgb(var(--d-700)); }
+.dark .card-footer { border-top-color: rgb(var(--d-700)); }
+
+/* ==========================================================================
+   E. 表格 —— 去掉外框圆角的大容器感，表头用微底 + 字距，行分隔极浅
+   上游 .table-container 是 rounded-xl + 灰色边框。
+   ========================================================================== */
+.table-container,
+.table {
+  font-variant-numeric: tabular-nums;
+}
+.table th {
+  background-color: rgb(var(--n-50));
+  color: rgb(var(--n-500));
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom-color: rgb(var(--n-200));
+}
+.table td {
+  border-bottom-color: rgb(var(--n-100));
+}
+.dark .table th {
+  background-color: rgb(var(--d-900));
+  color: rgb(var(--n-400));
+  border-bottom-color: rgb(var(--d-700));
+}
+.dark .table td {
+  border-bottom-color: rgb(var(--d-800));
+}
+
+/* ==========================================================================
+   F. 徽标 —— 上游是 rounded-full 大胶囊，改为小方 pill
+   上游 .badge 由 `@apply rounded-full` 内联出 border-radius: 9999px，
+   它落在 components 层；本文件在 style.css 之后加载，同特异性下后到者胜，
+   所以这里可以直接改。注意不能改 rounded-full 这个 scale 本身——
+   542 处头像/图标底依赖它保持圆形。
+   ========================================================================== */
+.badge {
+  border-radius: 4px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.badge-primary { background-color: rgb(var(--brand-50)); color: rgb(var(--brand-700)); }
+.badge-success { background-color: rgb(var(--success) / 0.10); color: rgb(var(--success)); }
+.badge-warning { background-color: rgb(var(--warning) / 0.12); color: rgb(var(--warning)); }
+.badge-danger  { background-color: rgb(var(--danger)  / 0.10); color: rgb(var(--danger)); }
+.badge-gray    { background-color: rgb(var(--n-100)); color: rgb(var(--n-600)); }
+
+.dark .badge-primary { background-color: rgb(var(--brand-500) / 0.16); color: rgb(var(--brand-300)); }
+.dark .badge-success { background-color: rgb(var(--success) / 0.18); color: rgb(110 200 160); }
+.dark .badge-warning { background-color: rgb(var(--warning) / 0.18); color: rgb(230 170 80); }
+.dark .badge-danger  { background-color: rgb(var(--danger)  / 0.18); color: rgb(230 120 128); }
+.dark .badge-gray    { background-color: rgb(var(--d-800)); color: rgb(var(--n-400)); }
+
+/* ==========================================================================
+   G. 弹窗 —— 重阴影只在这一层出现，强化"浮起"层级
+   ========================================================================== */
+.modal-content {
+  border: 1px solid rgb(var(--n-200));
+  box-shadow: var(--shadow-pop);
+}
+.dark .modal-content {
+  background-color: rgb(var(--d-900));
+  border-color: rgb(var(--d-700));
+}
+.modal-overlay {
+  background-color: rgb(15 23 42 / 0.45);
+  backdrop-filter: none;                /* 去掉模糊，聚焦更干净 */
+}
+
+/* ==========================================================================
+   H. 数字与数据展示
+   ========================================================================== */
+.stat-value {
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* 选中文字用品牌色 */
+::selection {
+  background-color: rgb(var(--brand-500) / 0.18);
+  color: rgb(var(--brand-900));
+}
+.dark ::selection {
+  background-color: rgb(var(--brand-400) / 0.28);
+  color: #fff;
+}

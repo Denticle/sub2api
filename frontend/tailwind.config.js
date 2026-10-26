@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+import { openrouterTheme } from './src/theme/tailwind.openrouter.js'
+
 export default {
   content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
   darkMode: 'class',
@@ -127,7 +129,11 @@ export default {
       },
       borderRadius: {
         '4xl': '2rem'
-      }
+      },
+      // OpenRouter 风格皮肤：放在最后展开，覆盖上面五个键
+      // （colors / fontFamily / boxShadow / backgroundImage / borderRadius）。
+      // animation、keyframes、backdropBlur 保持上游不动。
+      ...openrouterTheme
     }
   },
   plugins: []
