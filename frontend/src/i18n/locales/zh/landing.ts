@@ -50,6 +50,8 @@ export default {
       subtitle: '简单三步，开始省心使用 AI'
     },
     features: {
+      title: '平台能力',
+      subtitle: '把多账号调度、计费与可观测性放在同一层',
       unifiedGateway: '一键接入',
       unifiedGatewayDesc: '获取一个 API 密钥，即可调用所有已接入的 AI 模型，无需分别申请。',
       multiAccount: '稳定可靠',
@@ -93,15 +95,50 @@ export default {
         }
       }
     },
+    hero: {
+      eyebrow: '一个密钥，接入全部模型',
+      description: '兼容 OpenAI / Anthropic / Gemini 协议，只需替换 Base URL，现有代码不用改。',
+      compatible: '兼容 OpenAI SDK、Anthropic SDK、LangChain 与 Vercel AI SDK'
+    },
+    stats: {
+      providers: '支持平台',
+      protocols: '兼容协议',
+      billing: '账单延迟',
+      uptime: '服务可用性'
+    },
     providers: {
-      title: '已支持的 AI 模型',
-      description: '一个 API，多种选择',
+      title: '支持的模型',
+      description: '一个密钥调用多个上游，无需逐个申请账号',
+      viewAll: '查看全部',
       supported: '已支持',
       soon: '即将推出',
       claude: 'Claude',
+      gpt: 'GPT',
       gemini: 'Gemini',
       antigravity: 'Antigravity',
-      more: '更多'
+      more: '更多',
+      claudeDesc: '长上下文推理与代码生成，适合复杂任务',
+      gptDesc: '通用对话与工具调用，生态最完整',
+      geminiDesc: '多模态理解，图片与长文档处理见长',
+      antigravityDesc: '面向 Agent 场景的调用能力',
+      deepseekDesc: '性价比高的推理与代码模型',
+      grokDesc: '实时信息与推理能力',
+      kimiDesc: '超长上下文，适合整库阅读',
+      glmDesc: '中文理解与工具调用表现稳定',
+      tagChat: '对话',
+      tagMultimodal: '多模态',
+      tagAgent: 'Agent',
+      tagLongContext: '长上下文'
+    },
+    steps: {
+      title: '三步接入',
+      subtitle: '从注册到发出第一个请求，只需要几分钟',
+      signup: '注册账号',
+      signupDesc: '用邮箱注册即可获得初始额度，无需绑定信用卡。',
+      credits: '充值额度',
+      creditsDesc: '按需购买额度，用多少扣多少，余额随时可查。',
+      key: '创建 API Key',
+      keyDesc: '在控制台生成密钥，替换 Base URL 后即可直接调用。'
     },
     // CTA 区块
     cta: {
@@ -110,7 +147,8 @@ export default {
       button: '免费注册'
     },
     footer: {
-      allRightsReserved: '保留所有权利。'
+      allRightsReserved: '保留所有权利。',
+      keyUsage: '用量查询'
     }
   },
 

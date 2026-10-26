@@ -90,404 +90,239 @@
     </footer>
   </div>
 
-  <!-- Default Home Page -->
-  <div
-    v-else
-    class="relative flex min-h-screen flex-col overflow-hidden bg-gradient-to-br from-gray-50 via-primary-50/30 to-gray-100 dark:from-dark-950 dark:via-dark-900 dark:to-dark-950"
-  >
-    <!-- Background Decorations -->
-    <div class="pointer-events-none absolute inset-0 overflow-hidden">
-      <div
-        class="absolute -right-40 -top-40 h-96 w-96 rounded-full bg-primary-400/20 blur-3xl"
-      ></div>
-      <div
-        class="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-primary-500/15 blur-3xl"
-      ></div>
-      <div
-        class="absolute left-1/3 top-1/4 h-72 w-72 rounded-full bg-primary-300/10 blur-3xl"
-      ></div>
-      <div
-        class="absolute bottom-1/4 right-1/4 h-64 w-64 rounded-full bg-primary-400/10 blur-3xl"
-      ></div>
-      <div
-        class="absolute inset-0 bg-[linear-gradient(rgba(20,184,166,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(20,184,166,0.03)_1px,transparent_1px)] bg-[size:64px_64px]"
-      ></div>
-    </div>
-
+  <!-- Default Home Page — OpenRouter 式版面：通栏导航 + 居中主视觉 + 分区内容 -->
+  <div v-else class="flex min-h-screen flex-col bg-gray-50 text-gray-900 dark:bg-dark-950 dark:text-gray-100">
     <!-- Header -->
-    <header class="relative z-20 px-6 py-4">
-      <nav class="mx-auto flex max-w-6xl items-center justify-between">
-        <!-- Logo -->
-        <div class="flex items-center">
-          <div class="h-10 w-10 overflow-hidden rounded-xl shadow-md">
-            <img :src="siteLogo || '/logo.svg'" alt="Logo" class="h-full w-full object-contain" />
-          </div>
-        </div>
+    <header class="sticky top-0 z-30 border-b border-gray-200/70 bg-gray-50/85 backdrop-blur-xl dark:border-dark-800/80 dark:bg-dark-950/85">
+      <nav class="flex h-14 w-full items-center gap-3 px-6 lg:px-10">
+        <router-link to="/home" class="flex shrink-0 items-center gap-2">
+          <img :src="siteLogo || '/logo.svg'" alt="Logo" class="h-7 w-7 rounded-lg object-contain" />
+          <span class="text-[15px] font-bold tracking-tight">{{ siteName }}</span>
+        </router-link>
 
-        <!-- Nav Actions -->
-        <div class="flex items-center gap-3">
-          <!-- Language Switcher -->
+        <div class="ml-auto flex items-center gap-1">
+          <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer" class="hidden rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-gray-600 transition-colors hover:bg-gray-200/60 hover:text-gray-900 sm:block dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white">{{ t('home.docs') }}</a>
+          <router-link v-if="showModelPlazaEntry" to="/model-plaza" class="hidden rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-gray-600 transition-colors hover:bg-gray-200/60 hover:text-gray-900 sm:block dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white">{{ t('nav.modelPlaza') }}</router-link>
           <LocaleSwitcher />
-
-          <!-- Doc Link -->
-          <a
-            v-if="docUrl"
-            :href="docUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white"
-            :title="t('home.viewDocs')"
-          >
-            <Icon name="book" size="md" />
-          </a>
-
-          <!-- Model Plaza Link -->
-          <router-link
-            v-if="showModelPlazaEntry"
-            to="/model-plaza"
-            class="inline-flex items-center gap-1.5 rounded-lg p-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white"
-            :title="t('nav.modelPlaza')"
-          >
-            <Icon name="grid" size="md" />
-            <span class="hidden sm:inline">{{ t('nav.modelPlaza') }}</span>
-          </router-link>
-
-          <!-- Theme Toggle -->
-          <button
-            @click="toggleTheme"
-            class="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white"
-            :title="isDark ? t('home.switchToLight') : t('home.switchToDark')"
-          >
-            <Icon v-if="isDark" name="sun" size="md" />
-            <Icon v-else name="moon" size="md" />
+          <button class="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-200/60 hover:text-gray-900 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white" :title="isDark ? t('home.switchToLight') : t('home.switchToDark')" @click="toggleTheme">
+            <Icon v-if="isDark" name="sun" size="sm" />
+            <Icon v-else name="moon" size="sm" />
           </button>
-
-          <!-- Login / Dashboard Button -->
-          <router-link
-            v-if="isAuthenticated"
-            :to="dashboardPath"
-            class="inline-flex items-center gap-1.5 rounded-full bg-gray-900 py-1 pl-1 pr-2.5 transition-colors hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
-          >
-            <span
-              class="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[10px] font-semibold text-white"
-            >
-              {{ userInitial }}
-            </span>
-            <span class="text-xs font-medium text-white">{{ t('home.dashboard') }}</span>
-            <svg
-              class="h-3 w-3 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"
-              />
-            </svg>
-          </router-link>
-          <router-link
-            v-else
-            to="/login"
-            class="inline-flex items-center rounded-full bg-gray-900 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
-          >
-            {{ t('home.login') }}
-          </router-link>
+          <router-link v-if="isAuthenticated" :to="dashboardPath" class="btn btn-primary ml-1">{{ t('home.dashboard') }}</router-link>
+          <router-link v-else to="/login" class="btn btn-primary ml-1">{{ t('home.login') }}</router-link>
         </div>
       </nav>
     </header>
 
-    <!-- Main Content -->
-    <main class="relative z-10 flex-1 px-6 py-16">
-      <div class="mx-auto max-w-6xl">
-        <!-- Hero Section - Left/Right Layout -->
-        <div class="mb-12 flex flex-col items-center justify-between gap-12 lg:flex-row lg:gap-16">
-          <!-- Left: Text Content -->
-          <div class="flex-1 text-center lg:text-left">
-            <h1
-              class="mb-4 text-4xl font-bold text-gray-900 dark:text-white md:text-5xl lg:text-6xl"
-            >
-              {{ siteName }}
-            </h1>
-            <p class="mb-8 text-lg text-gray-600 dark:text-dark-300 md:text-xl">
-              {{ siteSubtitle }}
-            </p>
+    <main class="flex-1">
+      <!-- Hero -->
+      <section class="relative overflow-hidden border-b border-gray-200/70 dark:border-dark-800/80">
+        <div class="pointer-events-none absolute inset-x-0 -top-48 h-96 bg-[radial-gradient(ellipse_at_center,rgba(34,197,94,0.12),transparent_65%)]"></div>
 
-            <!-- CTA Button -->
-            <div>
-              <router-link
-                :to="isAuthenticated ? dashboardPath : '/login'"
-                class="btn btn-primary px-8 py-3 text-base shadow-lg shadow-primary-500/30"
-              >
-                {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
-                <Icon name="arrowRight" size="md" class="ml-2" :stroke-width="2" />
-              </router-link>
+        <div class="relative w-full px-6 pb-14 pt-16 sm:pt-20 lg:px-10">
+          <div class="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)]">
+            <!-- 左：文案 -->
+            <div class="text-center lg:text-left">
+              <span class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11.5px] font-semibold text-gray-600 dark:border-dark-800 dark:bg-dark-900 dark:text-dark-400">
+                <span class="h-1.5 w-1.5 rounded-full bg-primary-500"></span>
+                {{ t('home.hero.eyebrow') }}
+              </span>
+
+              <h1 class="mt-5 text-[clamp(2rem,4.4vw,3.25rem)] font-extrabold leading-[1.08] tracking-[-0.04em]">
+                {{ siteName }}
+              </h1>
+              <p class="mt-4 max-w-xl text-[clamp(0.95rem,1.4vw,1.0625rem)] leading-relaxed text-gray-600 lg:mx-0 dark:text-dark-400">
+                {{ siteSubtitle }}
+              </p>
+              <p class="mt-2 max-w-xl text-[13px] leading-relaxed text-gray-500 dark:text-dark-500">
+                {{ t('home.hero.description') }}
+              </p>
+
+              <div class="mt-7 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+                <router-link :to="isAuthenticated ? dashboardPath : '/login'" class="btn btn-primary h-10 px-5 text-[13.5px]">
+                  {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
+                  <Icon name="arrowRight" size="sm" class="ml-1" />
+                </router-link>
+                <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer" class="btn btn-secondary h-10 px-5 text-[13.5px]">
+                  <Icon name="book" size="sm" class="mr-1" />
+                  {{ t('home.viewDocs') }}
+                </a>
+                <router-link v-else-if="showModelPlazaEntry" to="/model-plaza" class="btn btn-secondary h-10 px-5 text-[13.5px]">
+                  {{ t('nav.modelPlaza') }}
+                </router-link>
+              </div>
+
+              <div class="mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[12.5px] text-gray-500 lg:justify-start dark:text-dark-500">
+                <span v-for="tag in tags" :key="tag.key" class="inline-flex items-center gap-1.5">
+                  <Icon :name="tag.icon" size="xs" class="text-primary-600 dark:text-primary-400" />
+                  {{ tag.label }}
+                </span>
+              </div>
             </div>
-          </div>
 
-          <!-- Right: Terminal Animation -->
-          <div class="flex flex-1 justify-center lg:justify-end">
-            <div class="terminal-container">
-              <div class="terminal-window">
-                <!-- Window header -->
-                <div class="terminal-header">
-                  <div class="terminal-buttons">
-                    <span class="btn-close"></span>
-                    <span class="btn-minimize"></span>
-                    <span class="btn-maximize"></span>
-                  </div>
-                  <span class="terminal-title">terminal</span>
-                </div>
-                <!-- Terminal content -->
-                <div class="terminal-body">
-                  <div class="code-line line-1">
-                    <span class="code-prompt">$</span>
-                    <span class="code-cmd">curl</span>
-                    <span class="code-flag">-X POST</span>
-                    <span class="code-url">/v1/messages</span>
-                  </div>
-                  <div class="code-line line-2">
-                    <span class="code-comment"># Routing to upstream...</span>
-                  </div>
-                  <div class="code-line line-3">
-                    <span class="code-success">200 OK</span>
-                    <span class="code-response">{ "content": "Hello!" }</span>
-                  </div>
-                  <div class="code-line line-4">
-                    <span class="code-prompt">$</span>
-                    <span class="cursor"></span>
-                  </div>
-                </div>
+            <!-- 右：调用示例 -->
+            <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-dark-800 dark:bg-dark-900">
+              <div class="flex items-center gap-1.5 border-b border-gray-200/80 px-3.5 py-2.5 dark:border-dark-800">
+                <span class="h-2.5 w-2.5 rounded-full bg-[#ff5f57]"></span>
+                <span class="h-2.5 w-2.5 rounded-full bg-[#febc2e]"></span>
+                <span class="h-2.5 w-2.5 rounded-full bg-[#28c840]"></span>
+                <span class="ml-2 text-[11.5px] font-medium text-gray-400 dark:text-dark-600">request.sh</span>
+                <span class="ml-auto rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10.5px] text-gray-500 dark:bg-dark-800 dark:text-dark-500">cURL</span>
+              </div>
+              <pre class="overflow-x-auto px-4 py-4 font-mono text-[12px] leading-[1.75] text-gray-600 dark:text-dark-400"><code><span class="text-gray-400 dark:text-dark-600"># 只需换掉 base_url，无需改调用代码</span>
+<span class="text-primary-700 dark:text-primary-400">curl</span> {{ baseUrl }}/v1/chat/completions \
+  -H <span class="text-amber-600 dark:text-amber-400">"Authorization: Bearer $API_KEY"</span> \
+  -H <span class="text-amber-600 dark:text-amber-400">"Content-Type: application/json"</span> \
+  -d <span class="text-amber-600 dark:text-amber-400">'{
+    "model": "claude-sonnet-4-5",
+    "messages": [{"role": "user", "content": "hi"}]
+  }'</span></code></pre>
+              <div class="border-t border-gray-200/80 px-4 py-2.5 text-[11.5px] text-gray-500 dark:border-dark-800 dark:text-dark-500">
+                {{ t('home.hero.compatible') }}
               </div>
             </div>
           </div>
         </div>
+      </section>
 
-        <!-- Feature Tags - Centered -->
-        <div class="mb-12 flex flex-wrap items-center justify-center gap-4 md:gap-6">
-          <div
-            class="inline-flex items-center gap-2.5 rounded-full border border-gray-200/50 bg-white/80 px-5 py-2.5 shadow-sm backdrop-blur-sm dark:border-dark-700/50 dark:bg-dark-800/80"
-          >
-            <Icon name="swap" size="sm" class="text-primary-500" />
-            <span class="text-sm font-medium text-gray-700 dark:text-dark-200">{{
-              t('home.tags.subscriptionToApi')
-            }}</span>
-          </div>
-          <div
-            class="inline-flex items-center gap-2.5 rounded-full border border-gray-200/50 bg-white/80 px-5 py-2.5 shadow-sm backdrop-blur-sm dark:border-dark-700/50 dark:bg-dark-800/80"
-          >
-            <Icon name="shield" size="sm" class="text-primary-500" />
-            <span class="text-sm font-medium text-gray-700 dark:text-dark-200">{{
-              t('home.tags.stickySession')
-            }}</span>
-          </div>
-          <div
-            class="inline-flex items-center gap-2.5 rounded-full border border-gray-200/50 bg-white/80 px-5 py-2.5 shadow-sm backdrop-blur-sm dark:border-dark-700/50 dark:bg-dark-800/80"
-          >
-            <Icon name="chart" size="sm" class="text-primary-500" />
-            <span class="text-sm font-medium text-gray-700 dark:text-dark-200">{{
-              t('home.tags.realtimeBilling')
-            }}</span>
+      <!-- 指标条 -->
+      <section class="border-b border-gray-200/70 dark:border-dark-800/80">
+        <div class="grid w-full grid-cols-2 divide-x divide-gray-200/70 sm:grid-cols-4 dark:divide-dark-800/80">
+          <div v-for="stat in stats" :key="stat.key" class="px-6 py-6 lg:px-10">
+            <div class="font-mono text-[22px] font-semibold tracking-tight">{{ stat.value }}</div>
+            <div class="mt-1 text-[12.5px] text-gray-500 dark:text-dark-500">{{ stat.label }}</div>
           </div>
         </div>
+      </section>
 
-        <!-- Features Grid -->
-        <div class="mb-12 grid gap-6 md:grid-cols-3">
-          <!-- Feature 1: Unified Gateway -->
-          <div
-            class="group rounded-2xl border border-gray-200/50 bg-white/60 p-6 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/10 dark:border-dark-700/50 dark:bg-dark-800/60"
-          >
-            <div
-              class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30 transition-transform group-hover:scale-110"
-            >
-              <Icon name="server" size="lg" class="text-white" />
-            </div>
-            <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
-              {{ t('home.features.unifiedGateway') }}
-            </h3>
-            <p class="text-sm leading-relaxed text-gray-600 dark:text-dark-400">
-              {{ t('home.features.unifiedGatewayDesc') }}
-            </p>
+      <!-- 支持的模型 -->
+      <section data-testid="home-providers" class="w-full px-6 pb-16 pt-14 lg:px-10">
+        <div class="mb-5 flex items-end justify-between gap-4">
+          <div>
+            <h2 class="text-[17px] font-bold tracking-tight">{{ t('home.providers.title') }}</h2>
+            <p class="mt-1 text-[13px] text-gray-500 dark:text-dark-500">{{ t('home.providers.description') }}</p>
           </div>
-
-          <!-- Feature 2: Account Pool -->
-          <div
-            class="group rounded-2xl border border-gray-200/50 bg-white/60 p-6 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/10 dark:border-dark-700/50 dark:bg-dark-800/60"
-          >
-            <div
-              class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-lg shadow-primary-500/30 transition-transform group-hover:scale-110"
-            >
-              <svg
-                class="h-6 w-6 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="1.5"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"
-                />
-              </svg>
-            </div>
-            <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
-              {{ t('home.features.multiAccount') }}
-            </h3>
-            <p class="text-sm leading-relaxed text-gray-600 dark:text-dark-400">
-              {{ t('home.features.multiAccountDesc') }}
-            </p>
-          </div>
-
-          <!-- Feature 3: Billing & Quota -->
-          <div
-            class="group rounded-2xl border border-gray-200/50 bg-white/60 p-6 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/10 dark:border-dark-700/50 dark:bg-dark-800/60"
-          >
-            <div
-              class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/30 transition-transform group-hover:scale-110"
-            >
-              <svg
-                class="h-6 w-6 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="1.5"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"
-                />
-              </svg>
-            </div>
-            <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
-              {{ t('home.features.balanceQuota') }}
-            </h3>
-            <p class="text-sm leading-relaxed text-gray-600 dark:text-dark-400">
-              {{ t('home.features.balanceQuotaDesc') }}
-            </p>
-          </div>
+          <router-link v-if="showModelPlazaEntry" to="/model-plaza" class="inline-flex items-center gap-1 text-[13px] font-semibold text-primary-700 hover:underline dark:text-primary-400">
+            {{ t('home.providers.viewAll') }}
+            <Icon name="chevronRight" size="xs" />
+          </router-link>
         </div>
 
-        <!-- Supported Providers -->
-        <div class="mb-8 text-center">
-          <h2 class="mb-3 text-2xl font-bold text-gray-900 dark:text-white">
-            {{ t('home.providers.title') }}
-          </h2>
-          <p class="text-sm text-gray-600 dark:text-dark-400">
-            {{ t('home.providers.description') }}
-          </p>
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div
+            v-for="provider in providers"
+            :key="provider.key"
+            class="group flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 transition-colors hover:border-gray-300 dark:border-dark-800 dark:bg-dark-900 dark:hover:border-dark-700"
+          >
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[13px] font-bold text-white" :style="{ background: provider.tint }">{{ provider.mark }}</span>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="truncate text-[13.5px] font-semibold">{{ provider.name }}</span>
+                <span class="shrink-0 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-500 dark:bg-dark-800 dark:text-dark-500">{{ provider.tag }}</span>
+              </div>
+              <p class="mt-1 text-[12.5px] leading-relaxed text-gray-500 dark:text-dark-500">{{ provider.desc }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 三步接入 -->
+      <section class="border-y border-gray-200/70 bg-white/60 dark:border-dark-800/80 dark:bg-dark-900/40">
+        <div class="w-full px-6 py-16 lg:px-10">
+          <div class="max-w-xl">
+            <h2 class="text-[17px] font-bold tracking-tight">{{ t('home.steps.title') }}</h2>
+            <p class="mt-1.5 text-[13px] text-gray-500 dark:text-dark-500">{{ t('home.steps.subtitle') }}</p>
+          </div>
+
+          <div class="mt-9 grid gap-8 md:grid-cols-3">
+            <div v-for="(step, i) in steps" :key="step.key">
+              <div class="flex items-center gap-2.5">
+                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary-500/12 text-[11.5px] font-bold text-primary-700 dark:text-primary-400">{{ i + 1 }}</span>
+                <h3 class="text-[14px] font-semibold">{{ step.title }}</h3>
+              </div>
+              <p class="mt-2 pl-[34px] text-[13px] leading-relaxed text-gray-600 dark:text-dark-400">{{ step.desc }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 能力 -->
+      <section class="w-full px-6 py-16 lg:px-10">
+        <div class="max-w-xl">
+          <h2 class="text-[17px] font-bold tracking-tight">{{ t('home.features.title') }}</h2>
+          <p class="mt-1.5 text-[13px] text-gray-500 dark:text-dark-500">{{ t('home.features.subtitle') }}</p>
         </div>
 
-        <div class="mb-16 flex flex-wrap items-center justify-center gap-4">
-          <!-- Claude - Supported -->
-          <div
-            class="flex items-center gap-2 rounded-xl border border-primary-200 bg-white/60 px-5 py-3 ring-1 ring-primary-500/20 backdrop-blur-sm dark:border-primary-800 dark:bg-dark-800/60"
-          >
-            <div
-              class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-orange-400 to-orange-500"
-            >
-              <span class="text-xs font-bold text-white">C</span>
-            </div>
-            <span class="text-sm font-medium text-gray-700 dark:text-dark-200">{{ t('home.providers.claude') }}</span>
-            <span
-              class="rounded bg-primary-100 px-1.5 py-0.5 text-[10px] font-medium text-primary-600 dark:bg-primary-900/30 dark:text-primary-400"
-              >{{ t('home.providers.supported') }}</span
-            >
-          </div>
-          <!-- GPT - Supported -->
-          <div
-            class="flex items-center gap-2 rounded-xl border border-primary-200 bg-white/60 px-5 py-3 ring-1 ring-primary-500/20 backdrop-blur-sm dark:border-primary-800 dark:bg-dark-800/60"
-          >
-            <div
-              class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-green-600"
-            >
-              <span class="text-xs font-bold text-white">G</span>
-            </div>
-            <span class="text-sm font-medium text-gray-700 dark:text-dark-200">GPT</span>
-            <span
-              class="rounded bg-primary-100 px-1.5 py-0.5 text-[10px] font-medium text-primary-600 dark:bg-primary-900/30 dark:text-primary-400"
-              >{{ t('home.providers.supported') }}</span
-            >
-          </div>
-          <!-- Gemini - Supported -->
-          <div
-            class="flex items-center gap-2 rounded-xl border border-primary-200 bg-white/60 px-5 py-3 ring-1 ring-primary-500/20 backdrop-blur-sm dark:border-primary-800 dark:bg-dark-800/60"
-          >
-            <div
-              class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600"
-            >
-              <span class="text-xs font-bold text-white">G</span>
-            </div>
-            <span class="text-sm font-medium text-gray-700 dark:text-dark-200">{{ t('home.providers.gemini') }}</span>
-            <span
-              class="rounded bg-primary-100 px-1.5 py-0.5 text-[10px] font-medium text-primary-600 dark:bg-primary-900/30 dark:text-primary-400"
-              >{{ t('home.providers.supported') }}</span
-            >
-          </div>
-          <!-- Antigravity - Supported -->
-          <div
-            class="flex items-center gap-2 rounded-xl border border-primary-200 bg-white/60 px-5 py-3 ring-1 ring-primary-500/20 backdrop-blur-sm dark:border-primary-800 dark:bg-dark-800/60"
-          >
-            <div
-              class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-rose-500 to-pink-600"
-            >
-              <span class="text-xs font-bold text-white">A</span>
-            </div>
-            <span class="text-sm font-medium text-gray-700 dark:text-dark-200">{{ t('home.providers.antigravity') }}</span>
-            <span
-              class="rounded bg-primary-100 px-1.5 py-0.5 text-[10px] font-medium text-primary-600 dark:bg-primary-900/30 dark:text-primary-400"
-              >{{ t('home.providers.supported') }}</span
-            >
-          </div>
-          <!-- More - Coming Soon -->
-          <div
-            class="flex items-center gap-2 rounded-xl border border-gray-200/50 bg-white/40 px-5 py-3 opacity-60 backdrop-blur-sm dark:border-dark-700/50 dark:bg-dark-800/40"
-          >
-            <div
-              class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-gray-500 to-gray-600"
-            >
-              <span class="text-xs font-bold text-white">+</span>
-            </div>
-            <span class="text-sm font-medium text-gray-700 dark:text-dark-200">{{ t('home.providers.more') }}</span>
-            <span
-              class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-dark-700 dark:text-dark-400"
-              >{{ t('home.providers.soon') }}</span
-            >
+        <div class="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div v-for="feature in features" :key="feature.key" class="rounded-xl border border-gray-200 bg-white p-5 dark:border-dark-800 dark:bg-dark-900">
+            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600 dark:bg-dark-800 dark:text-dark-400">
+              <Icon :name="feature.icon" size="sm" />
+            </span>
+            <h3 class="mt-3 text-[14px] font-semibold">{{ feature.title }}</h3>
+            <p class="mt-1.5 text-[13px] leading-relaxed text-gray-600 dark:text-dark-400">{{ feature.desc }}</p>
           </div>
         </div>
-      </div>
+      </section>
+
+      <!-- 对比 -->
+      <section class="border-y border-gray-200/70 bg-white/60 dark:border-dark-800/80 dark:bg-dark-900/40">
+        <div class="w-full px-6 py-16 lg:px-10">
+          <h2 class="text-[17px] font-bold tracking-tight">{{ t('home.comparison.title') }}</h2>
+
+          <div class="mt-6 overflow-x-auto rounded-xl border border-gray-200 dark:border-dark-800">
+            <table class="w-full min-w-[640px] border-collapse bg-white text-[13px] dark:bg-dark-900">
+              <thead>
+                <tr class="border-b border-gray-200 dark:border-dark-800">
+                  <th class="px-4 py-3 text-left text-[12px] font-bold text-gray-500 dark:text-dark-500">{{ t('home.comparison.headers.feature') }}</th>
+                  <th class="px-4 py-3 text-left text-[12px] font-bold text-gray-500 dark:text-dark-500">{{ t('home.comparison.headers.official') }}</th>
+                  <th class="px-4 py-3 text-left text-[12px] font-bold text-primary-700 dark:text-primary-400">{{ siteName }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in comparisonRows" :key="row.key" class="border-b border-gray-100 last:border-0 dark:border-dark-800/60">
+                  <td class="px-4 py-3 font-medium text-gray-700 dark:text-dark-300">{{ row.feature }}</td>
+                  <td class="px-4 py-3 text-gray-500 dark:text-dark-500">{{ row.official }}</td>
+                  <td class="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{{ row.us }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 收尾 CTA -->
+      <section class="w-full px-6 py-20 lg:px-10">
+        <div class="rounded-2xl border border-gray-200 bg-white px-6 py-12 text-center dark:border-dark-800 dark:bg-dark-900">
+          <h2 class="text-[22px] font-extrabold tracking-tight">{{ t('home.cta.title') }}</h2>
+          <p class="mx-auto mt-2 max-w-lg text-[13px] leading-relaxed text-gray-600 dark:text-dark-400">{{ t('home.cta.description') }}</p>
+          <router-link :to="isAuthenticated ? dashboardPath : '/login'" class="btn btn-primary mt-6 inline-flex h-10 px-6 text-[13.5px]">
+            {{ isAuthenticated ? t('home.goToDashboard') : t('home.cta.button') }}
+          </router-link>
+        </div>
+      </section>
     </main>
 
     <!-- Footer -->
-    <footer class="relative z-10 border-t border-gray-200/50 px-6 py-8 dark:border-dark-800/50">
-      <div
-        class="mx-auto flex max-w-6xl flex-col items-center justify-center gap-4 text-center sm:flex-row sm:text-left"
-      >
-        <p class="text-sm text-gray-500 dark:text-dark-400">
-          &copy; {{ currentYear }} {{ siteName }}. {{ t('home.footer.allRightsReserved') }}
-        </p>
-        <div class="flex items-center gap-4">
-          <a
-            v-if="docUrl"
-            :href="docUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-dark-400 dark:hover:text-white"
-          >
-            {{ t('home.docs') }}
-          </a>
-          <a
-            :href="githubUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-dark-400 dark:hover:text-white"
-          >
-            GitHub
-          </a>
+    <footer class="border-t border-gray-200/70 dark:border-dark-800/80">
+      <div class="w-full px-6 py-10 lg:px-10">
+        <div class="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div class="flex items-center gap-2">
+              <img :src="siteLogo || '/logo.svg'" alt="Logo" class="h-6 w-6 rounded-md object-contain" />
+              <span class="text-[13.5px] font-semibold">{{ siteName }}</span>
+            </div>
+            <p class="mt-2 max-w-xs text-[12.5px] leading-relaxed text-gray-500 dark:text-dark-500">{{ siteSubtitle }}</p>
+          </div>
+
+          <div class="flex flex-wrap gap-x-10 gap-y-4 text-[13px]">
+            <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer" class="text-gray-600 transition-colors hover:text-gray-900 dark:text-dark-400 dark:hover:text-white">{{ t('home.docs') }}</a>
+            <router-link v-if="showModelPlazaEntry" to="/model-plaza" class="text-gray-600 transition-colors hover:text-gray-900 dark:text-dark-400 dark:hover:text-white">{{ t('nav.modelPlaza') }}</router-link>
+            <router-link to="/key-usage" class="text-gray-600 transition-colors hover:text-gray-900 dark:text-dark-400 dark:hover:text-white">{{ t('home.footer.keyUsage') }}</router-link>
+            <a :href="githubUrl" target="_blank" rel="noopener noreferrer" class="text-gray-600 transition-colors hover:text-gray-900 dark:text-dark-400 dark:hover:text-white">GitHub</a>
+          </div>
         </div>
+
+        <p class="mt-8 text-[12px] text-gray-500 dark:text-dark-500">&copy; {{ currentYear }} {{ siteName }}. {{ t('home.footer.allRightsReserved') }}</p>
       </div>
     </footer>
   </div>
@@ -539,10 +374,143 @@ const showModelPlazaEntry = computed(
 )
 const isAdmin = computed(() => authStore.isAdmin)
 const dashboardPath = computed(() => isAdmin.value ? '/admin/dashboard' : '/dashboard')
-const userInitial = computed(() => {
-  const user = authStore.user
-  if (!user || !user.email) return ''
-  return user.email.charAt(0).toUpperCase()
+type IconName = InstanceType<typeof Icon>['$props']['name']
+
+// 指标条
+const stats = computed(() => [
+  { key: 'providers', value: String(providers.value.length), label: t('home.stats.providers') },
+  { key: 'protocol', value: '4', label: t('home.stats.protocols') },
+  { key: 'billing', value: '24h', label: t('home.stats.billing') },
+  { key: 'uptime', value: '99.9%', label: t('home.stats.uptime') },
+])
+
+// 顶部标签
+const tags = computed(() => [
+  { key: 'sub2api', icon: 'swap' as IconName, label: t('home.tags.subscriptionToApi') },
+  { key: 'sticky', icon: 'shield' as IconName, label: t('home.tags.stickySession') },
+  { key: 'billing', icon: 'chart' as IconName, label: t('home.tags.realtimeBilling') },
+])
+
+// 调用的 base_url：展示站点自身的地址，示例才不是假的
+const baseUrl = computed(() => {
+  if (typeof window === 'undefined') return 'https://api.example.com'
+  return window.location.origin
+})
+
+// 首页内容块：不写死在模板里，便于按语言维护文案
+const providers = computed<{
+  key: string
+  mark: string
+  tint: string
+  name: string
+  desc: string
+  tag: string
+}[]>(() => [
+  {
+    key: 'claude',
+    mark: 'C',
+    tint: 'linear-gradient(135deg,#d97757,#b85a3c)',
+    name: t('home.providers.claude'),
+    desc: t('home.providers.claudeDesc'),
+    tag: t('home.providers.tagChat'),
+  },
+  {
+    key: 'gpt',
+    mark: 'G',
+    tint: 'linear-gradient(135deg,#10a37f,#0a7c5f)',
+    name: 'GPT',
+    desc: t('home.providers.gptDesc'),
+    tag: t('home.providers.tagChat'),
+  },
+  {
+    key: 'gemini',
+    mark: 'G',
+    tint: 'linear-gradient(135deg,#4285f4,#2b6de0)',
+    name: t('home.providers.gemini'),
+    desc: t('home.providers.geminiDesc'),
+    tag: t('home.providers.tagMultimodal'),
+  },
+  {
+    key: 'antigravity',
+    mark: 'A',
+    tint: 'linear-gradient(135deg,#f43f5e,#be123c)',
+    name: t('home.providers.antigravity'),
+    desc: t('home.providers.antigravityDesc'),
+    tag: t('home.providers.tagAgent'),
+  },
+  {
+    key: 'deepseek',
+    mark: 'D',
+    tint: 'linear-gradient(135deg,#4d6bfe,#3350d8)',
+    name: 'DeepSeek',
+    desc: t('home.providers.deepseekDesc'),
+    tag: t('home.providers.tagChat'),
+  },
+  {
+    key: 'grok',
+    mark: 'X',
+    tint: 'linear-gradient(135deg,#1f2937,#0b1016)',
+    name: 'Grok',
+    desc: t('home.providers.grokDesc'),
+    tag: t('home.providers.tagChat'),
+  },
+  {
+    key: 'kimi',
+    mark: 'K',
+    tint: 'linear-gradient(135deg,#6366f1,#4338ca)',
+    name: 'Kimi',
+    desc: t('home.providers.kimiDesc'),
+    tag: t('home.providers.tagLongContext'),
+  },
+  {
+    key: 'glm',
+    mark: 'Z',
+    tint: 'linear-gradient(135deg,#0ea5e9,#0369a1)',
+    name: 'Zhipu GLM',
+    desc: t('home.providers.glmDesc'),
+    tag: t('home.providers.tagChat'),
+  },
+])
+
+const steps = computed(() => [
+  { key: 'signup', title: t('home.steps.signup'), desc: t('home.steps.signupDesc') },
+  { key: 'credits', title: t('home.steps.credits'), desc: t('home.steps.creditsDesc') },
+  { key: 'key', title: t('home.steps.key'), desc: t('home.steps.keyDesc') },
+])
+
+const features = computed<{ key: string; icon: IconName; title: string; desc: string }[]>(() => [
+  {
+    key: 'gateway',
+    icon: 'server',
+    title: t('home.features.unifiedGateway'),
+    desc: t('home.features.unifiedGatewayDesc'),
+  },
+  {
+    key: 'pool',
+    icon: 'users',
+    title: t('home.features.multiAccount'),
+    desc: t('home.features.multiAccountDesc'),
+  },
+  {
+    key: 'billing',
+    icon: 'chart',
+    title: t('home.features.balanceQuota'),
+    desc: t('home.features.balanceQuotaDesc'),
+  },
+])
+
+// 对比表
+interface ComparisonRow { key: string; feature: string; official: string; us: string }
+
+// 逐字段取文案，不依赖 tm() 的对象返回形态（不同 i18n 配置下不稳定）
+const comparisonRows = computed<ComparisonRow[]>(() => {
+  const keys = ['pricing', 'models', 'management', 'stability', 'control'] as const
+  return keys.map((key) => ({
+    key,
+    feature: t(`home.comparison.items.${key}.feature`),
+    official: t(`home.comparison.items.${key}.official`),
+    us: t(`home.comparison.items.${key}.us`),
+  }))
 })
 
 // Current year for footer
@@ -581,164 +549,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Terminal Container */
-.terminal-container {
-  position: relative;
-  display: inline-block;
-}
-
-/* Terminal Window */
-.terminal-window {
-  width: 420px;
-  background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
-  border-radius: 14px;
-  box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  overflow: hidden;
-  transform: perspective(1000px) rotateX(2deg) rotateY(-2deg);
-  transition: transform 0.3s ease;
-}
-
-.terminal-window:hover {
-  transform: perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(-4px);
-}
-
-/* Terminal Header */
-.terminal-header {
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
-  background: rgba(30, 41, 59, 0.8);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.terminal-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.terminal-buttons span {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-}
-
-.btn-close {
-  background: #ef4444;
-}
-.btn-minimize {
-  background: #eab308;
-}
-.btn-maximize {
-  background: #22c55e;
-}
-
-.terminal-title {
-  flex: 1;
-  text-align: center;
-  font-size: 12px;
-  font-family: ui-monospace, monospace;
-  color: #64748b;
-  margin-right: 52px;
-}
-
-/* Terminal Body */
-.terminal-body {
-  padding: 20px 24px;
-  font-family: ui-monospace, 'Fira Code', monospace;
-  font-size: 14px;
-  line-height: 2;
-}
-
-.code-line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  opacity: 0;
-  animation: line-appear 0.5s ease forwards;
-}
-
-.line-1 {
-  animation-delay: 0.3s;
-}
-.line-2 {
-  animation-delay: 1s;
-}
-.line-3 {
-  animation-delay: 1.8s;
-}
-.line-4 {
-  animation-delay: 2.5s;
-}
-
-@keyframes line-appear {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.code-prompt {
-  color: #22c55e;
-  font-weight: bold;
-}
-.code-cmd {
-  color: #38bdf8;
-}
-.code-flag {
-  color: #a78bfa;
-}
-.code-url {
-  color: #14b8a6;
-}
-.code-comment {
-  color: #64748b;
-  font-style: italic;
-}
-.code-success {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.15);
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-weight: 600;
-}
-.code-response {
-  color: #fbbf24;
-}
-
-/* Blinking Cursor */
-.cursor {
-  display: inline-block;
-  width: 8px;
-  height: 16px;
-  background: #22c55e;
-  animation: blink 1s step-end infinite;
-}
-
-@keyframes blink {
-  0%,
-  50% {
-    opacity: 1;
-  }
-  51%,
-  100% {
-    opacity: 0;
-  }
-}
-
-/* Dark mode adjustments */
-:deep(.dark) .terminal-window {
-  box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(20, 184, 166, 0.2),
-    0 0 40px rgba(20, 184, 166, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
+/* 首页不需要额外样式：版式全部由 theme 层与 Tailwind 工具类承担。
+   上一版的终端动画（.terminal-* / .code-line 等）随版面改为一屏式落地页后
+   已无引用，删掉避免死代码。 */
 </style>

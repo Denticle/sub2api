@@ -50,6 +50,8 @@ export default {
       subtitle: 'Three simple steps to stress-free AI access'
     },
     features: {
+      title: 'Platform capabilities',
+      subtitle: 'Routing, billing and observability in one layer',
       unifiedGateway: 'One-Click Access',
       unifiedGatewayDesc: 'Get a single API key to call all connected AI models. No separate applications needed.',
       multiAccount: 'Always Reliable',
@@ -93,15 +95,50 @@ export default {
         }
       }
     },
+    hero: {
+      eyebrow: 'One key for every model',
+      description: 'Compatible with OpenAI, Anthropic and Gemini protocols. Swap the base URL, keep your code.',
+      compatible: 'Works with OpenAI SDK, Anthropic SDK, LangChain and Vercel AI SDK'
+    },
+    stats: {
+      providers: 'Providers',
+      protocols: 'Protocols',
+      billing: 'Billing lag',
+      uptime: 'Uptime'
+    },
     providers: {
-      title: 'Supported AI Models',
-      description: 'One API, Multiple Choices',
+      title: 'Supported Models',
+      description: 'Call several upstreams with one key, no separate accounts',
+      viewAll: 'View all',
       supported: 'Supported',
       soon: 'Soon',
       claude: 'Claude',
+      gpt: 'GPT',
       gemini: 'Gemini',
       antigravity: 'Antigravity',
-      more: 'More'
+      more: 'More',
+      claudeDesc: 'Long-context reasoning and code generation',
+      gptDesc: 'General chat and tool calling, broadest ecosystem',
+      geminiDesc: 'Multimodal understanding for images and long docs',
+      antigravityDesc: 'Agent-oriented invocation capabilities',
+      deepseekDesc: 'Cost-effective reasoning and code models',
+      grokDesc: 'Real-time information and reasoning',
+      kimiDesc: 'Very long context for whole-repo reading',
+      glmDesc: 'Solid Chinese understanding and tool calling',
+      tagChat: 'Chat',
+      tagMultimodal: 'Multimodal',
+      tagAgent: 'Agent',
+      tagLongContext: 'Long context'
+    },
+    steps: {
+      title: 'How it works',
+      subtitle: 'From signup to your first request in a few minutes',
+      signup: 'Sign up',
+      signupDesc: 'Create an account with your email and get starting credits. No card required.',
+      credits: 'Add credits',
+      creditsDesc: 'Buy credits as you need them. Pay only for what you use, check balance anytime.',
+      key: 'Create an API key',
+      keyDesc: 'Generate a key in the console, swap the base URL, and start calling.'
     },
     // CTA section
     cta: {
@@ -110,7 +147,8 @@ export default {
       button: 'Sign Up Free'
     },
     footer: {
-      allRightsReserved: 'All rights reserved.'
+      allRightsReserved: 'All rights reserved.',
+      keyUsage: 'Key usage'
     }
   },
 

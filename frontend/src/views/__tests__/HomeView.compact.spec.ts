@@ -108,7 +108,9 @@ describe('HomeView compact mode', () => {
     const wrapper = mountHome(settings)
 
     expect(wrapper.find('[data-testid="compact-home"]').exists()).toBe(false)
-    expect(wrapper.find('.terminal-container').exists()).toBe(true)
+    // 默认首页现在是 OpenRouter 式落地页：通栏导航 + 主视觉 + 模型/步骤/特性分区
+    expect(wrapper.find('h1').text()).toContain('Test site')
+    expect(wrapper.find('[data-testid="home-providers"]').exists()).toBe(true)
   })
 
   it('links unauthenticated visitors to login', () => {
