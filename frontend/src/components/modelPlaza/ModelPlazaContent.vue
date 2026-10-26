@@ -2,14 +2,14 @@
   <div class="space-y-5">
     <!-- 页头(独立形态下展示标题;后台形态 AppHeader 已有页面标题) -->
     <div v-if="!embedded">
-      <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl">{{ t('modelPlaza.title') }}</h1>
-      <p class="mt-1.5 text-sm text-gray-500 dark:text-dark-400">{{ t('modelPlaza.description') }}</p>
+      <h1 class="text-[26px] font-extrabold tracking-[-0.02em] text-gray-900 dark:text-white">{{ t('modelPlaza.title') }}</h1>
+      <p class="mt-1.5 text-[13px] text-gray-500 dark:text-dark-600">{{ t('modelPlaza.description') }}</p>
     </div>
 
     <!-- 全局价格说明(管理员配置,Markdown) -->
     <div
       v-if="descriptionHtml"
-      class="plaza-description rounded-2xl border border-gray-100 bg-white px-5 py-4 text-sm shadow-card dark:border-dark-700/50 dark:bg-dark-800/50"
+      class="plaza-description rounded-xl border border-gray-200 bg-white px-5 py-4 text-[13px] dark:border-dark-800 dark:bg-dark-900"
       v-html="descriptionHtml"
     ></div>
 
@@ -28,7 +28,7 @@
     </div>
     <div
       v-else-if="error"
-      class="rounded-2xl border border-red-200 bg-red-50 px-5 py-8 text-center text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
+      class="rounded-xl border border-red-200 bg-red-50 px-5 py-8 text-center text-[13px] text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
     >
       {{ t('modelPlaza.loadFailed') }}
     </div>
@@ -49,12 +49,12 @@
       />
 
       <!-- 分组分节的模型清单(默认按生效倍率升序) -->
-      <div v-if="filteredGroups.length > 0" class="space-y-5">
+      <div v-if="filteredGroups.length > 0" class="space-y-8">
         <PlazaGroupSection v-for="g in filteredGroups" :key="g.id" :group="g" />
       </div>
       <div
         v-else
-        class="rounded-2xl border border-dashed border-gray-300 px-5 py-12 text-center text-sm text-gray-500 dark:border-dark-600 dark:text-dark-400"
+        class="rounded-xl border border-dashed border-gray-300 px-5 py-12 text-center text-[13px] text-gray-500 dark:border-dark-700 dark:text-dark-500"
       >
         {{ searchActive ? t('modelPlaza.noSearchResult') : t('modelPlaza.empty') }}
       </div>

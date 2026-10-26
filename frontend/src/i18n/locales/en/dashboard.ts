@@ -663,7 +663,8 @@ export default {
       rateLabel: 'Rate',
       modelLabel: 'Model',
       searchPlaceholder: 'Search models',
-      all: 'All'
+      all: 'All',
+      allPlatforms: 'All platforms'
     },
     badges: {
       exclusive: 'Exclusive',

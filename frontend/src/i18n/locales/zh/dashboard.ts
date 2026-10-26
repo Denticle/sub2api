@@ -668,7 +668,8 @@ export default {
       rateLabel: '倍率',
       modelLabel: '模型',
       searchPlaceholder: '搜索模型名称',
-      all: '全部'
+      all: '全部',
+      allPlatforms: '全部平台'
     },
     badges: {
       exclusive: '专属分组',

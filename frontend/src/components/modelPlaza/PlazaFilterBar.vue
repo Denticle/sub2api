@@ -1,110 +1,84 @@
 <template>
-  <div class="space-y-3">
-    <!-- 一级:平台 -->
-    <div class="flex items-start gap-2">
-      <span class="w-10 shrink-0 pt-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-dark-500">
-        {{ t('modelPlaza.filters.platformLabel') }}
-      </span>
-      <div class="flex flex-wrap items-center gap-2">
-        <button
-          v-for="p in ['all', ...platforms]"
-          :key="`platform-${p}`"
-          type="button"
-          class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 disabled:grayscale"
-          :class="p === 'all' ? chipClass(platform === 'all') : platform === p ? 'chip-tinted-active' : 'chip-tinted'"
-          :style="p === 'all' ? undefined : { '--chip-accent': platformAccentColor(p) }"
-          :disabled="p !== 'all' && !platformEnabled(p)"
-          @click="$emit('update:platform', p)"
-        >
-          <PlatformIcon v-if="p !== 'all'" :platform="p as GroupPlatform" size="xs" />
-          {{ p === 'all' ? t('modelPlaza.filters.all') : p }}
-        </button>
-      </div>
-    </div>
-
-    <!-- 二级:分组(按所属平台着色,当前组合下无结果的置灰) -->
-    <div class="flex items-start gap-2">
-      <span class="w-10 shrink-0 pt-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-dark-500">
-        {{ t('modelPlaza.filters.groupLabel') }}
-      </span>
-      <div class="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          class="rounded-lg px-3 py-1.5 text-sm font-medium transition"
-          :class="chipClass(groupId === 'all')"
-          @click="$emit('update:groupId', 'all')"
-        >
-          {{ t('modelPlaza.filters.all') }}
-        </button>
-        <button
-          v-for="g in groups"
-          :key="`group-${g.id}`"
-          type="button"
-          class="rounded-lg px-3 py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 disabled:grayscale"
-          :class="groupId === g.id ? 'chip-tinted-active' : 'chip-tinted'"
-          :style="{ '--chip-accent': platformAccentColor(g.platform) }"
-          :disabled="!groupEnabled(g)"
-          @click="$emit('update:groupId', g.id)"
-        >
-          {{ g.name }}
-        </button>
-      </div>
-    </div>
-
-    <!-- 三级:倍率(当前组合下不存在的置灰) -->
-    <div class="flex items-start gap-2">
-      <span class="w-10 shrink-0 pt-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-dark-500">
-        {{ t('modelPlaza.filters.rateLabel') }}
-      </span>
-      <div class="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          class="rounded-lg px-3 py-1.5 text-sm font-medium transition"
-          :class="chipClass(rate === 'all')"
-          @click="$emit('update:rate', 'all')"
-        >
-          {{ t('modelPlaza.filters.all') }}
-        </button>
-        <button
-          v-for="r in rates"
-          :key="`rate-${r}`"
-          type="button"
-          class="rounded-lg px-3 py-1.5 font-mono text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 disabled:grayscale"
-          :class="chipClass(rate === r)"
-          :disabled="!rateEnabled(r)"
-          @click="$emit('update:rate', r)"
-        >
-          {{ r }}x
-        </button>
-      </div>
-    </div>
-
-    <!-- 四级:模型名搜索(纯前端过滤) -->
-    <div class="flex flex-wrap items-start gap-2">
-      <span class="w-10 shrink-0 pt-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-dark-500">
-        {{ t('modelPlaza.filters.modelLabel') }}
-      </span>
-      <div class="relative w-full sm:w-72">
-        <Icon
-          name="search"
-          size="sm"
-          class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-dark-500"
-        />
+  <div class="rounded-xl border border-gray-200 bg-white dark:border-dark-800 dark:bg-dark-900">
+    <!-- 工具条：搜索在前（模型页的主要操作），筛选在后 -->
+    <div class="flex flex-col gap-3 p-3 sm:flex-row sm:items-center">
+      <div class="relative w-full sm:max-w-xs">
+        <Icon name="search" size="sm" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-dark-600" />
         <input
           :value="search"
           type="text"
           :placeholder="t('modelPlaza.filters.searchPlaceholder')"
-          class="input rounded-lg py-1.5 pl-9 pr-9"
+          class="input w-full pl-9 pr-9"
           @input="$emit('update:search', ($event.target as HTMLInputElement).value)"
         />
         <button
           v-if="search"
           type="button"
-          class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:text-dark-500 dark:hover:text-gray-300"
+          class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:text-dark-600 dark:hover:text-dark-300"
           @click="$emit('update:search', '')"
         >
-          <Icon name="x" size="xs" class="h-3.5 w-3.5" />
+          <Icon name="x" size="xs" />
         </button>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-1.5 sm:ml-auto">
+        <!-- 平台 -->
+        <button
+          v-for="p in ['all', ...platforms]"
+          :key="`platform-${p}`"
+          type="button"
+          class="inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[12.5px] font-medium transition disabled:cursor-not-allowed disabled:opacity-35"
+          :class="chipClass(platform === p)"
+          :disabled="p !== 'all' && !platformEnabled(p)"
+          @click="$emit('update:platform', p)"
+        >
+          <PlatformIcon v-if="p !== 'all'" :platform="p as GroupPlatform" size="xs" />
+          {{ p === 'all' ? t('modelPlaza.filters.allPlatforms') : platformLabel(p) }}
+        </button>
+      </div>
+    </div>
+
+    <!-- 第二行：分组与倍率，仅在存在多个可选项时出现，避免单值噪音 -->
+    <div
+      v-if="groups.length > 1 || rates.length > 1"
+      class="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-gray-200/70 px-3 py-2.5 dark:border-dark-800"
+    >
+      <div v-if="groups.length > 1" class="flex flex-wrap items-center gap-1.5">
+        <span class="text-[11.5px] font-semibold text-gray-400 dark:text-dark-600">{{ t('modelPlaza.filters.groupLabel') }}</span>
+        <button
+          type="button"
+          class="h-6 rounded px-2 text-[12px] font-medium transition"
+          :class="chipClass(groupId === 'all')"
+          @click="$emit('update:groupId', 'all')"
+        >{{ t('modelPlaza.filters.all') }}</button>
+        <button
+          v-for="g in groups"
+          :key="`group-${g.id}`"
+          type="button"
+          class="h-6 rounded px-2 text-[12px] font-medium transition disabled:cursor-not-allowed disabled:opacity-35"
+          :class="chipClass(groupId === g.id)"
+          :disabled="!groupEnabled(g)"
+          @click="$emit('update:groupId', g.id)"
+        >{{ g.name }}</button>
+      </div>
+
+      <div v-if="rates.length > 1" class="flex flex-wrap items-center gap-1.5">
+        <span class="text-[11.5px] font-semibold text-gray-400 dark:text-dark-600">{{ t('modelPlaza.filters.rateLabel') }}</span>
+        <button
+          type="button"
+          class="h-6 rounded px-2 font-mono text-[12px] font-medium transition"
+          :class="chipClass(rate === 'all')"
+          @click="$emit('update:rate', 'all')"
+        >{{ t('modelPlaza.filters.all') }}</button>
+        <button
+          v-for="r in rates"
+          :key="`rate-${r}`"
+          type="button"
+          class="h-6 rounded px-2 font-mono text-[12px] font-medium transition disabled:cursor-not-allowed disabled:opacity-35"
+          :class="chipClass(rate === r)"
+          :disabled="!rateEnabled(r)"
+          @click="$emit('update:rate', r)"
+        >{{ r }}x</button>
       </div>
     </div>
   </div>
@@ -114,7 +88,7 @@
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
 import PlatformIcon from '@/components/common/PlatformIcon.vue'
-import { platformAccentColor } from '@/utils/platformColors'
+import { platformLabel } from '@/utils/platformColors'
 import type { GroupPlatform } from '@/types'
 
 const props = defineProps<{
@@ -171,51 +145,12 @@ function rateEnabled(r: number): boolean {
 
 function chipClass(active: boolean): string {
   return active
-    ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-sm shadow-primary-500/30'
-    : 'bg-white text-gray-600 ring-1 ring-inset ring-gray-200 enabled:hover:bg-gray-50 enabled:hover:text-gray-900 enabled:hover:ring-gray-300 dark:bg-dark-800/60 dark:text-dark-300 dark:ring-dark-700 dark:enabled:hover:bg-dark-800 dark:enabled:hover:text-white'
+    ? 'bg-primary-500/12 text-primary-700 dark:bg-primary-500/15 dark:text-primary-400'
+    : 'text-gray-600 enabled:hover:bg-gray-100 enabled:hover:text-gray-900 dark:text-dark-400 dark:enabled:hover:bg-dark-800 dark:enabled:hover:text-white'
 }
 </script>
 
 <style scoped>
-/* 平台/分组 chip 的配色统一从 --chip-accent(平台主色)派生,新增平台无需扩展样式。
-   激活态与非激活态在模板上互斥挂载,避免选择器优先级互相覆盖。 */
-.chip-tinted {
-  color: var(--chip-accent);
-  color: color-mix(in srgb, var(--chip-accent) 78%, black);
-  background-color: color-mix(in srgb, var(--chip-accent) 9%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chip-accent) 25%, transparent);
-}
-
-.chip-tinted:not(:disabled):hover {
-  background-color: color-mix(in srgb, var(--chip-accent) 16%, transparent);
-}
-
-.dark .chip-tinted {
-  color: color-mix(in srgb, var(--chip-accent) 72%, white);
-  background-color: color-mix(in srgb, var(--chip-accent) 12%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chip-accent) 30%, transparent);
-}
-
-.dark .chip-tinted:not(:disabled):hover {
-  background-color: color-mix(in srgb, var(--chip-accent) 18%, transparent);
-}
-
-.chip-tinted-active {
-  color: #fff;
-  background-color: var(--chip-accent);
-  background-color: color-mix(in srgb, var(--chip-accent) 85%, black);
-  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--chip-accent) 35%, transparent);
-}
-
-.chip-tinted-active:not(:disabled):hover {
-  background-color: color-mix(in srgb, var(--chip-accent) 75%, black);
-}
-
-.dark .chip-tinted-active {
-  background-color: color-mix(in srgb, var(--chip-accent) 80%, transparent);
-}
-
-.dark .chip-tinted-active:not(:disabled):hover {
-  background-color: var(--chip-accent);
-}
+/* 筛选控件统一走中性色 + 主色选中态。
+   上游按平台主色给 chip 上色，一屏会出现七八种颜色，像色卡。 */
 </style>
