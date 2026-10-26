@@ -27,7 +27,7 @@
   --shell-sidebar-w: 15rem;        /* 240px */
   --shell-sidebar-w-collapsed: 4.5rem; /* 72px，与上游折叠宽度一致 */
   --shell-header-h: 3.5rem;        /* 56px，OpenRouter --navbar-height */
-  --shell-container-max: 90rem;    /* 1440px，含目录列 */
+  --shell-container-max: none;     /* 铺满，不做居中限宽 */
   --shell-pad-x: 2rem;             /* 32px，md 以上 */
   --shell-pad-x-sm: 1.5rem;        /* 24px，小屏 */
   --shell-pad-b: 3.5rem;           /* 56px 底部呼吸 */
@@ -49,8 +49,9 @@
   display: flex;
   align-items: flex-start;
   width: 100%;
-  max-width: var(--shell-container-max);
-  margin-inline: auto;
+  /* 铺满视口：不加 max-width，否则宽屏两侧会空出一大片 */
+  max-width: none;
+  margin-inline: 0;
   padding-inline: var(--shell-pad-x-sm);
 }
 
@@ -235,10 +236,6 @@ main:has(header h1) > .app-page-title {
 }
 
 /* 表格行数多时的宽屏优化：不要让操作列被挤到屏幕最右端 */
-@media (min-width: 120rem) {
-  :root { --shell-container-max: 100rem; } /* 1920+ 屏放宽到 1600 */
-}
-
 /* ==========================================================================
    5) 表格页：让页面填满视口，而不是靠魔法数字
    --------------------------------------------------------------------------
