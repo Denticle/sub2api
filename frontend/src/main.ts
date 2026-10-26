@@ -7,8 +7,8 @@ import { useAppStore } from '@/stores/app'
 import { updateFavicon } from '@/utils/branding'
 import { isIOSDevice } from '@/utils/device'
 import './style.css'
-// OpenRouter 风格皮肤：必须在 style.css 之后加载，才能覆盖同名组件类
-import './theme/tokens-openrouter.css'
+// Forapi 风格皮肤：必须在 style.css 之后加载，才能覆盖同名组件类
+import './theme/tokens-forapi.css'
 import './theme/layout.css'
 
 function initIOSViewportZoomFix() {

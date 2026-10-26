@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-import { openrouterTheme } from './src/theme/tailwind.openrouter.js'
+import { forapiTheme } from './src/theme/tailwind.forapi.js'
 
 export default {
   content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
@@ -130,10 +130,10 @@ export default {
       borderRadius: {
         '4xl': '2rem'
       },
-      // OpenRouter 风格皮肤：放在最后展开，覆盖上面五个键
+      // Forapi 风格皮肤：放在最后展开，覆盖上面五个键
       // （colors / fontFamily / boxShadow / backgroundImage / borderRadius）。
       // animation、keyframes、backdropBlur 保持上游不动。
-      ...openrouterTheme
+      ...forapiTheme
     }
   },
   plugins: []

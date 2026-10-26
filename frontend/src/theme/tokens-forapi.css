@@ -1,0 +1,906 @@
+/* ==========================================================================
+   Sub2API — Forapi 皮肤：组件层
+   --------------------------------------------------------------------------
+   配色与尺度直接取自线上 forapi.cloud 的 theme-refine.css / dashboard.css
+   （--seed-* 与 --admin-* 两套 token），不是凭感觉调的。
+
+   关键事实：
+     · 主色是绿 #22c55e（深色）/ #16a34a（浅色），不是紫。
+       紫 #a78bfa 在 forapi 里是 --seed-accent，只用于渐变中段与高亮，
+       把紫当主色会整屏偏紫——这正是上一版的问题。
+     · 深色画布是暖中性黑 #141413，不是冷青黑 #03080a。
+     · 圆角 12px（小号 8px），控件高度 38px，正文 13px。
+     · 字体 Inter，数字 JetBrains Mono。
+
+   本文件在 style.css 之后加载，用同特异性或更高特异性覆盖上游组件类。
+   ========================================================================== */
+
+/* ==========================================================================
+   0. 字体 —— 真实打包，不只是声明
+   ========================================================================== */
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource-variable/jetbrains-mono/index.css';
+
+:root {
+  /* ---------- 品牌绿（Tailwind green 阶，对应 --seed-primary） ---------- */
+  --p-50:  240 253 244;
+  --p-100: 220 252 231;
+  --p-200: 187 247 208;
+  --p-300: 134 239 172;
+  --p-400:  74 222 128;
+  --p-500:  34 197  94;   /* #22c55e —— forapi 深色主色 */
+  --p-600:  22 163  74;   /* #16a34a —— forapi 浅色主色 */
+  --p-700:  21 128  61;
+  --p-800:  22 101  52;
+  --p-900:  20  83  45;
+  --p-950:   5  46  22;
+
+  /* ---------- 辅助紫：只用于高亮/渐变，不当主色 ---------- */
+  --accent:        167 139 250;   /* #a78bfa */
+  --accent-soft:   196 181 253;   /* #c4b5fd */
+
+  /* ---------- 青色：次要强调 ---------- */
+  --cyan:  45 212 191;
+
+  /* ---------- 中性色：暖灰（不是纯 zinc，底色偏暖才和 #141413 同族） ---------- */
+  --n-50:  248 248 246;   /* #f8f8f6 页面底 */
+  --n-100: 240 240 237;   /* #f0f0ed 抬升面 */
+  --n-200: 230 230 226;   /* 描边 */
+  --n-300: 212 212 208;
+  --n-400: 161 161 156;
+  --n-500: 113 113 122;   /* #71717a subtle */
+  --n-600:  82  82  91;   /* #52525b muted */
+  --n-700:  63  63  66;
+  --n-800:  42  42  44;
+  --n-900:  31  31  32;   /* #1f1f20 正文 */
+  --n-950:  20  20  19;   /* #141413 */
+
+  /* ---------- 深色表面：暖黑阶（对应 --seed-bg / elevated / surface / hover） ---------- */
+  --d-950:  20  20  19;   /* #141413 页面底 */
+  --d-900:  26  26  25;   /* #1a1a19 侧栏/抬升面 */
+  --d-800:  31  31  30;   /* #1f1f1e 卡片 */
+  --d-700:  39  39  38;   /* #272726 hover */
+  --d-600:  58  58  56;
+
+  /* ---------- 发丝线：forapi 用 rgba(138,138,130,.11) ---------- */
+  --line:        138 138 130;
+  --line-light:   28  28  25;
+  --line-a:     0.11;
+  --line-a-hover: 0.19;
+  --line-a-light: 0.10;
+
+  /* ---------- 语义色 ---------- */
+  --success:  34 197  94;
+  --warning: 234 179   8;   /* #eab308 */
+  --danger:  239  68  68;
+  --info:     45 212 191;   /* forapi 用青色做 info */
+
+  /* 主色按模式切换：深色用亮一档的绿，浅色用深一档的绿 */
+  --primary:       22 163  74;
+  --primary-hover: 21 128  61;
+  --primary-ink:    6  32  20;   /* 绿底上的深绿字，对比度约 7.9:1 */
+
+  /* 圆角尺度（forapi: 12 / 8 / 20） */
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 20px;
+
+  /* ---------- 版式 ---------- */
+  --font-ui: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont,
+             'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+             'Microsoft YaHei', sans-serif;
+  --font-numeric: 'JetBrains Mono Variable', 'JetBrains Mono',
+                  'SFMono-Regular', Consolas, ui-monospace, Menlo, monospace;
+}
+
+.dark {
+  --primary:       34 197  94;
+  --primary-hover: 74 222 128;
+}
+
+body {
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.004em;
+}
+
+/* 数字一律等宽对齐：金额、调用量、延迟、时间戳 */
+.stat-value,
+.num,
+.font-mono,
+.font-numeric {
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   0.5 浅色模式的底色：forapi 是暖白 #f8f8f6，不是冷灰 #f9fafb
+   ========================================================================== */
+body {
+  background-color: rgb(var(--n-50));
+}
+
+.dark body {
+  background-color: rgb(var(--d-950));
+}
+
+/* ==========================================================================
+   1. 侧栏
+   上游 .sidebar-link: rounded-xl / py-2.5 / text-sm font-medium
+   forapi .ud-nav-item: min-height 42px / radius 10px / 14px / 650
+   ========================================================================== */
+.sidebar {
+  background-color: rgb(var(--n-100));
+  border-right-color: rgb(var(--line-light) / var(--line-a-light));
+}
+
+.dark .sidebar {
+  background-color: rgb(var(--d-900));
+  border-right-color: rgb(var(--line) / var(--line-a));
+}
+
+.sidebar-link {
+  min-height: 2.5rem;
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;     /* 13px */
+  font-weight: 550;
+  letter-spacing: -0.002em;
+  color: rgb(var(--n-600));
+  transition: background-color 120ms ease, color 120ms ease,
+              border-color 120ms ease;
+}
+
+.sidebar-link:hover {
+  background-color: rgb(var(--n-200) / 0.55);
+  color: rgb(var(--n-900));
+}
+
+.dark .sidebar-link {
+  color: rgb(var(--n-400));
+}
+
+.dark .sidebar-link:hover {
+  background-color: rgb(var(--d-700) / 0.7);
+  color: rgb(var(--n-100));
+}
+
+/* 选中态：forapi 用绿→青的极淡渐变 + 绿色描边，不是实心色块 */
+.sidebar-link-active,
+.sidebar-link-active:hover {
+  background-image: linear-gradient(
+    135deg,
+    rgb(var(--p-500) / 0.16),
+    rgb(var(--cyan) / 0.09)
+  );
+  background-color: transparent;
+  color: rgb(var(--p-700));
+  font-weight: 650;
+  box-shadow: inset 0 0 0 1px rgb(var(--p-500) / 0.26);
+}
+
+.dark .sidebar-link-active,
+.dark .sidebar-link-active:hover {
+  background-color: transparent;
+  color: rgb(var(--n-50));
+  box-shadow: inset 0 0 0 1px rgb(var(--p-500) / 0.28);
+}
+
+/* 分组标题：12px / 700，forapi 不用大写 */
+.sidebar-section {
+  margin-bottom: 1.125rem;
+}
+
+.sidebar-section-title {
+  margin-bottom: 0.5rem;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  font-size: 0.75rem;       /* 12px */
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: rgb(var(--n-500));
+}
+
+.dark .sidebar-section-title {
+  color: rgb(var(--n-600));
+}
+
+.sidebar-header {
+  height: 4.5rem;
+  padding-left: 0.9rem;
+  padding-right: 0.9rem;
+  border-bottom-color: rgb(var(--line-light) / var(--line-a-light));
+}
+
+.dark .sidebar-header {
+  border-bottom-color: rgb(var(--line) / var(--line-a));
+}
+
+/* ==========================================================================
+   2. 页头
+   forapi 后台页 h1: 26px / 800 / letter-spacing 0
+   ========================================================================== */
+.page-header {
+  margin-bottom: 1.5rem;
+}
+
+.page-title {
+  font-size: 1.625rem;      /* 26px */
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: rgb(var(--n-900));
+}
+
+.dark .page-title {
+  color: rgb(var(--n-50));
+}
+
+.page-description {
+  margin-top: 0.375rem;
+  font-size: 0.8125rem;     /* 13px */
+  font-weight: 450;
+  letter-spacing: 0;
+  color: rgb(var(--n-600));
+}
+
+.dark .page-description {
+  color: rgb(var(--n-400));
+}
+
+h1, h2, h3 {
+  letter-spacing: -0.02em;
+}
+
+/* ==========================================================================
+   3. 卡片
+   forapi .admin-card: padding 18px / radius 12px / 1px 发丝线 / surface 底
+   ========================================================================== */
+.card,
+.stat-card {
+  border-radius: var(--r-lg);
+  border: 1px solid rgb(var(--line-light) / var(--line-a-light));
+  background-color: #fff;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+}
+
+.dark .card,
+.dark .stat-card {
+  background-color: rgb(var(--d-800));
+  border-color: rgb(var(--line) / var(--line-a));
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.24);
+}
+
+.card-header {
+  padding: 0.875rem 1.125rem;  /* 14px 18px */
+  border-bottom-color: rgb(var(--line-light) / var(--line-a-light));
+}
+
+.card-body {
+  padding: 1.125rem;           /* 18px */
+}
+
+.card-footer {
+  padding: 0.75rem 1.125rem;
+  border-top-color: rgb(var(--line-light) / var(--line-a-light));
+}
+
+.dark .card-header {
+  border-bottom-color: rgb(var(--line) / var(--line-a));
+}
+.dark .card-footer {
+  border-top-color: rgb(var(--line) / var(--line-a));
+}
+
+/* 统计卡：标签小、数值等宽，去掉花哨的图标块底色 */
+.stat-card {
+  padding: 1.125rem;           /* 18px */
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.stat-icon {
+  display: none;               /* forapi 的指标卡没有图标块 */
+}
+
+.stat-label {
+  font-size: 0.8125rem;        /* 13px */
+  font-weight: 450;
+  letter-spacing: 0;
+  color: rgb(var(--n-600));
+}
+
+.dark .stat-label {
+  color: rgb(var(--n-400));
+}
+
+.stat-value {
+  margin-top: 0.375rem;
+  font-size: 1.625rem;         /* 26px */
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+  color: rgb(var(--n-900));
+}
+
+.dark .stat-value {
+  color: rgb(var(--n-50));
+}
+
+.stat-trend {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   4. 表格 —— 本文件最关键的一段
+   --------------------------------------------------------------------------
+   DataTable.vue 的结构：
+     <div class="table-wrapper">
+       <table>
+         <thead class="table-header bg-gray-50">
+           <th class="sticky-header-cell py-3 text-left text-xs font-medium
+                      uppercase tracking-wider text-gray-500">
+   表头字号/字距/大小写都由行内工具类决定，因此必须用
+   `.table-wrapper th`（0,1,1）覆盖 `.py-3`（0,1,0）这类单类选择器。
+
+   forapi .ud-table: th/td 13px 12px 内边距，th 12px/800 subtle，仅发丝线分隔。
+   ========================================================================== */
+.table-wrapper table {
+  font-size: 0.8125rem;        /* 13px */
+  border-collapse: collapse;
+}
+
+/* --- 表头 ---
+   注意特异性：TablePageLayout.vue 的 scoped 样式里有
+     .table-scroll-container :deep(th)  →  .table-scroll-container[data-v-xxx] th
+   特异性为 (0,2,1)，高于 `.table-wrapper th` 的 (0,1,1)，会盖掉这里的规则。
+   因此必须写成 `.table-scroll-container .table-wrapper th`（0,3,1）才生效。 */
+.table-wrapper th,
+.table-wrapper thead th,
+.table-scroll-container .table-wrapper th,
+.table-scroll-container .table-wrapper thead th {
+  padding: 0.8125rem 0.75rem;  /* 13px 12px */
+  font-size: 0.75rem;          /* 12px */
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: left;
+  white-space: nowrap;
+  color: rgb(var(--n-500));
+  background-color: transparent;
+  border-bottom: 1px solid rgb(var(--line-light) / var(--line-a-light));
+}
+
+.dark .table-wrapper th,
+.dark .table-wrapper thead th,
+.dark .table-scroll-container .table-wrapper th,
+.dark .table-scroll-container .table-wrapper thead th {
+  color: rgb(var(--n-600));
+  background-color: transparent;
+  border-bottom-color: rgb(var(--line) / var(--line-a));
+}
+
+/* --- 表头底板 ---
+   DataTable.vue 的 scoped 样式给 thead / .sticky-header-cell 写了实底
+   （浅色 rgb(249 250 251)、深色 rgb(31 41 55)），特异性是
+     .dark .sticky-header-cell[data-v-x]  → (0,3,0)
+   比 `.dark .table-wrapper th` 的 (0,1,1) 高，所以必须显式提高这里的权重，
+   否则深色模式下会出现一条与暖黑画布冲突的蓝灰色横带。
+
+   forapi 的表头没有底块，只有一条发丝线收口。 */
+.table-wrapper table thead.table-header,
+.table-wrapper thead.table-header {
+  background-color: transparent;
+  backdrop-filter: none;
+}
+
+.dark .table-wrapper table thead.table-header,
+.dark .table-wrapper thead.table-header {
+  background-color: transparent;
+}
+
+.table-wrapper thead .sticky-header-cell,
+.table-wrapper thead th.sticky-header-cell {
+  background-color: #fff;
+  border-bottom: 1px solid rgb(var(--line-light) / var(--line-a-light));
+}
+
+.dark .table-wrapper thead .sticky-header-cell,
+.dark .table-wrapper thead th.sticky-header-cell {
+  background-color: rgb(var(--d-800));
+  border-bottom-color: rgb(var(--line) / var(--line-a));
+}
+
+/* 表头 hover 保持克制 */
+.table-wrapper th.cursor-pointer:hover {
+  background-color: rgb(var(--n-100));
+}
+
+.dark .table-wrapper th.cursor-pointer:hover {
+  background-color: rgb(var(--d-700));
+}
+
+/* --- 单元格 ---
+   与表头同理：TablePageLayout 的 `.table-scroll-container[data-v-x] td`
+   特异性是 (0,2,1)，与 `.table-scroll-container .table-wrapper td` 打平，
+   谁生效取决于样式注入顺序（dev 模式下不稳定）。
+   加 `tbody` 提到 (0,2,2)，稳定胜出。 */
+.table-wrapper td,
+.table-scroll-container .table-wrapper tbody td,
+.table-scroll-container .table-wrapper td {
+  padding: 0.8125rem 0.75rem;  /* 13px 12px → 约 48px 行高 */
+  line-height: 1.45;
+  vertical-align: middle;
+  font-size: 0.8125rem;        /* 13px */
+  font-weight: 450;
+  letter-spacing: 0;
+  color: rgb(var(--n-600));
+  border-bottom: 1px solid rgb(var(--line-light) / var(--line-a-light));
+  background-color: transparent;
+}
+
+.dark .table-wrapper td,
+.dark .table-scroll-container .table-wrapper tbody td {
+  color: rgb(var(--n-400));
+  border-bottom-color: rgb(var(--line) / var(--line-a));
+}
+
+/* 外层滚动容器 */
+.table-scroll-container {
+  border-radius: var(--r-lg);
+  box-shadow: none;
+  border-color: rgb(var(--line-light) / var(--line-a-light));
+  background-color: #fff;
+}
+
+.dark .table-scroll-container {
+  border-color: rgb(var(--line) / var(--line-a));
+  background-color: rgb(var(--d-800));
+}
+
+/* thead 上游有 bg-gray-50/80 + backdrop-blur，改成透明 + 发丝线 */
+.table-scroll-container thead {
+  background-color: transparent;
+  backdrop-filter: none;
+}
+
+.dark .table-scroll-container thead {
+  background-color: transparent;
+}
+
+/* 最后一行不要多余的分隔线 */
+.table-wrapper tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* 行 hover：forapi 的表格 hover 用的是 surface-hover 的极淡一档 */
+.table-wrapper tbody tr:hover td {
+  background-color: rgb(var(--n-100) / 0.7);
+}
+
+.dark .table-wrapper tbody tr:hover td {
+  background-color: rgb(var(--d-700) / 0.55);
+}
+
+/* sticky 列要跟行 hover 同色，否则会出现色块割裂 */
+.table-wrapper tbody tr:hover .sticky-col {
+  background-color: rgb(var(--n-100) / 0.7);
+}
+
+.dark .table-wrapper tbody tr:hover .sticky-col {
+  background-color: rgb(var(--d-700));
+}
+
+.table-wrapper tbody .sticky-col,
+.table-wrapper tbody td.sticky-col {
+  background-color: #fff;
+}
+
+.dark .table-wrapper tbody .sticky-col,
+.dark .table-wrapper tbody td.sticky-col {
+  /* 透明会让横向滚动时内容透出来，所以必须给实色 */
+  background-color: rgb(var(--d-800));
+}
+
+/* 表格里的数字列 */
+.table-wrapper td .font-mono,
+.table-wrapper td .tabular-nums {
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   5. 按钮
+   forapi .admin-btn: 38px 高 / 13px / 700 / radius 8px
+   主按钮是绿底深绿字（#062014），不是白字 —— 白字在 #22c55e 上只有 2.3:1
+   ========================================================================== */
+.btn {
+  height: 2.375rem;            /* 38px */
+  padding-left: 0.875rem;
+  padding-right: 0.875rem;
+  border-radius: var(--r-md);
+  font-size: 0.8125rem;        /* 13px */
+  font-weight: 700;
+  letter-spacing: 0;
+  font-family: var(--font-ui);
+  transform: none;
+  transition: background-color 120ms ease, border-color 120ms ease,
+              box-shadow 120ms ease, color 120ms ease;
+}
+
+.btn:active { transform: none; }
+
+.btn-primary {
+  background-image: none;
+  background-color: rgb(var(--primary));
+  color: rgb(var(--primary-ink));
+  box-shadow: none;
+}
+
+.btn-primary:hover {
+  background-image: none;
+  background-color: rgb(var(--primary-hover));
+  box-shadow: 0 2px 10px rgb(var(--primary) / 0.25);
+}
+
+.btn-secondary {
+  background-color: #fff;
+  border: 1px solid rgb(var(--line-light) / var(--line-a-light));
+  color: rgb(var(--n-900));
+  box-shadow: none;
+}
+
+.btn-secondary:hover {
+  background-color: rgb(var(--n-100));
+  border-color: rgb(var(--line-light) / var(--line-a-hover));
+}
+
+.dark .btn-secondary {
+  background-color: rgb(var(--d-800));
+  border-color: rgb(var(--line) / var(--line-a));
+  color: rgb(var(--n-50));
+}
+
+.dark .btn-secondary:hover {
+  background-color: rgb(var(--d-700));
+  border-color: rgb(var(--line) / var(--line-a-hover));
+}
+
+.btn-ghost { color: rgb(var(--n-600)); }
+.btn-ghost:hover { background-color: rgb(var(--n-100)); }
+.dark .btn-ghost { color: rgb(var(--n-400)); }
+.dark .btn-ghost:hover { background-color: rgb(var(--d-700)); }
+
+.btn-danger, .btn-success, .btn-warning { background-image: none; }
+.btn-danger  { background-color: rgb(var(--danger)); color: #fff; }
+.btn-success { background-color: rgb(var(--primary)); color: rgb(var(--primary-ink)); }
+.btn-warning { background-color: rgb(var(--warning)); color: #1a1200; }
+
+.btn-sm {
+  height: 1.875rem;            /* 30px */
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+  font-size: 0.75rem;          /* 12px */
+  border-radius: 7px;
+}
+
+.btn-lg {
+  height: 2.75rem;             /* 44px */
+  padding-left: 1.125rem;
+  padding-right: 1.125rem;
+  font-size: 0.875rem;
+  border-radius: 10px;
+}
+
+/* ==========================================================================
+   6. 输入框 / 选择器
+   forapi .admin-field input: min-height 38px / radius 8px / bg-elevated 底
+   ========================================================================== */
+.input {
+  height: 2.375rem;            /* 38px */
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  border-radius: var(--r-md);
+  border: 1px solid rgb(var(--line-light) / var(--line-a-light));
+  background-color: #fff;
+  font-size: 0.8125rem;
+  font-family: var(--font-ui);
+  color: rgb(var(--n-900));
+  box-shadow: none;
+}
+
+.input:focus {
+  outline: none;
+  border-color: rgb(var(--primary) / 0.55);
+  box-shadow: 0 0 0 3px rgb(var(--primary) / 0.14);
+}
+
+.dark .input {
+  background-color: rgb(var(--d-900));
+  border-color: rgb(var(--line) / var(--line-a));
+  color: rgb(var(--n-50));
+}
+
+.dark .input:focus {
+  border-color: rgb(var(--primary) / 0.6);
+  box-shadow: 0 0 0 3px rgb(var(--primary) / 0.18);
+}
+
+.input-label {
+  font-size: 0.75rem;          /* 12px */
+  font-weight: 600;
+  color: rgb(var(--n-600));
+}
+
+.dark .input-label { color: rgb(var(--n-400)); }
+
+.input-hint {
+  font-size: 0.75rem;
+  color: rgb(var(--n-500));
+}
+
+.dark .input-hint { color: rgb(var(--n-600)); }
+
+/* ==========================================================================
+   7. 徽标
+   forapi .fx-badge: 胶囊 / 5px 9px / 12px 700 / 带状态小圆点
+   ========================================================================== */
+.badge {
+  border-radius: 999px;
+  padding: 0.1875rem 0.5rem;
+  font-size: 0.75rem;          /* 12px */
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.2;
+  border: 1px solid transparent;
+}
+
+.badge-primary {
+  background-color: rgb(var(--p-500) / 0.12);
+  border-color: rgb(var(--p-500) / 0.22);
+  color: rgb(21 128 61);
+}
+
+.badge-success {
+  background-color: rgb(var(--success) / 0.12);
+  border-color: rgb(var(--success) / 0.2);
+  color: rgb(22 128 61);
+}
+
+.badge-warning {
+  background-color: rgb(var(--warning) / 0.14);
+  border-color: rgb(var(--warning) / 0.24);
+  color: rgb(146 100 4);
+}
+
+.badge-danger {
+  background-color: rgb(var(--danger) / 0.12);
+  border-color: rgb(var(--danger) / 0.2);
+  color: rgb(185 28 28);
+}
+
+.badge-gray {
+  background-color: rgb(var(--n-100));
+  border-color: rgb(var(--line-light) / var(--line-a-light));
+  color: rgb(var(--n-600));
+}
+
+.dark .badge-primary {
+  background-color: rgb(var(--p-500) / 0.16);
+  border-color: rgb(var(--p-500) / 0.26);
+  color: rgb(var(--p-300));
+}
+
+.dark .badge-success {
+  background-color: rgb(var(--success) / 0.16);
+  border-color: rgb(var(--success) / 0.24);
+  color: rgb(var(--p-400));
+}
+
+.dark .badge-warning {
+  background-color: rgb(var(--warning) / 0.14);
+  border-color: rgb(var(--warning) / 0.22);
+  color: rgb(250 204 21);
+}
+
+.dark .badge-danger {
+  background-color: rgb(var(--danger) / 0.16);
+  border-color: rgb(var(--danger) / 0.24);
+  color: rgb(252 165 165);
+}
+
+.dark .badge-gray {
+  background-color: rgb(var(--d-700));
+  border-color: rgb(var(--line) / var(--line-a));
+  color: rgb(var(--n-400));
+}
+
+/* ==========================================================================
+   8. 表格容器与分页
+   ========================================================================== */
+.table-wrapper {
+  border-radius: 0;
+}
+
+/* --- 分页条 ---
+   TablePageLayout 把分页放在 .layout-section-fixed 里，视图内部又套了一层
+   `border-t bg-white px-4 py-3` —— 视觉上是卡片页脚，但它其实在卡片外面，
+   于是屏幕底部多出一条与表格割裂的白条。这里把它压平。 */
+.table-page-layout > .layout-section-fixed:last-child > div {
+  border-top-width: 0;
+  background-color: transparent;
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 0.75rem;
+  padding-bottom: 0;
+}
+
+/* 分页：小号按钮 + 等宽页码 */
+.pagination,
+.pagination * {
+  font-size: 0.75rem;
+}
+
+.table-page-layout .layout-section-fixed:last-child .btn,
+.table-page-layout .layout-section-fixed:last-child button {
+  height: 2rem;
+  border-radius: var(--r-md);
+}
+
+/* 表格页三段之间的间距收紧：上游 gap-6 = 24px */
+.table-page-layout {
+  gap: 1rem;
+}
+
+/* ==========================================================================
+   9. 弹窗
+   ========================================================================== */
+.modal-content {
+  border-radius: var(--r-lg);
+  border: 1px solid rgb(var(--line-light) / var(--line-a-light));
+  background-color: #fff;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.18);
+}
+
+.dark .modal-content {
+  background-color: rgb(var(--d-800));
+  border-color: rgb(var(--line) / var(--line-a));
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.5);
+}
+
+.modal-overlay {
+  background-color: rgb(20 20 19 / 0.6);
+  backdrop-filter: blur(3px);
+}
+
+.modal-header {
+  border-bottom: 1px solid rgb(var(--line-light) / var(--line-a-light));
+}
+
+.modal-title {
+  font-size: 1rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.dark .modal-header {
+  border-bottom-color: rgb(var(--line) / var(--line-a));
+}
+
+/* 下拉菜单 */
+.dropdown {
+  border-radius: var(--r-lg);
+  border: 1px solid rgb(var(--line-light) / var(--line-a-light));
+  background-color: #fff;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.12);
+}
+
+.dark .dropdown {
+  background-color: rgb(var(--d-800));
+  border-color: rgb(var(--line) / var(--line-a));
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
+}
+
+.dropdown-item {
+  font-size: 0.8125rem;
+  color: rgb(var(--n-700));
+}
+
+.dark .dropdown-item {
+  color: rgb(var(--n-300));
+}
+
+.dropdown-item:hover {
+  background-color: rgb(var(--n-100));
+}
+
+.dark .dropdown-item:hover {
+  background-color: rgb(var(--d-700));
+}
+
+/* ==========================================================================
+   10. 其他细节
+   ========================================================================== */
+::selection {
+  background-color: rgb(var(--p-500) / 0.26);
+  color: rgb(var(--n-900));
+}
+
+.dark ::selection {
+  background-color: rgb(var(--primary) / 0.3);
+  color: #fff;
+}
+
+/* 表格内的 badge 与按钮不要撑高行 */
+.table-wrapper .badge { vertical-align: middle; }
+
+/* 标签页：forapi 的 segmented 是内凹底色 + 选中实心面 */
+.tabs {
+  border-radius: 14px;
+  background-color: rgb(var(--n-100));
+  padding: 0.25rem;
+}
+
+.dark .tabs {
+  background-color: rgb(var(--d-900));
+}
+
+.tab {
+  border-radius: 9px;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: rgb(var(--n-600));
+}
+
+.dark .tab {
+  color: rgb(var(--n-400));
+}
+
+.tab-active {
+  background-color: #fff;
+  color: rgb(var(--n-900));
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+}
+
+.dark .tab-active {
+  background-color: rgb(var(--d-700));
+  color: rgb(var(--n-50));
+}
+
+/* ==========================================================================
+   11. 操作列 —— 别把按钮堆成"开发者工具箱"
+   --------------------------------------------------------------------------
+   上游把操作按钮写成「图标在上、文字在下」的竖排块（flex flex-col），
+   每个按钮 46px 高，`编辑` / `更多` 两行叠在一起。这是典型的
+   "每个功能都自己拼一个按钮" 的开发味，商用后台是紧凑的行内操作。
+
+   这里只改布局方向，不动任何 JS 绑定：竖排改横排、去掉多余的上下内边距。
+   ========================================================================== */
+.table-wrapper td.sticky-col-right > div > button,
+.table-wrapper td.sticky-col-right button.flex-col {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1875rem 0.375rem;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.table-wrapper td.sticky-col-right button > span {
+  font-size: 0.75rem;          /* 12px */
+  font-weight: 600;
+}
+
+.table-wrapper td.sticky-col-right button > svg {
+  height: 0.875rem;
+  width: 0.875rem;
+  flex-shrink: 0;
+}
+
+/* 操作列的按钮之间不要用 gap 撑开，靠自身内边距就够 */
+.table-wrapper td.sticky-col-right > div {
+  gap: 0.125rem;
+}
