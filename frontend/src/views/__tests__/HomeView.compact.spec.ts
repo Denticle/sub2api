@@ -108,8 +108,9 @@ describe('HomeView compact mode', () => {
     const wrapper = mountHome(settings)
 
     expect(wrapper.find('[data-testid="compact-home"]').exists()).toBe(false)
-    // 默认首页现在是 OpenRouter 式落地页：通栏导航 + 主视觉 + 模型/步骤/特性分区
-    expect(wrapper.find('h1').text()).toContain('Test site')
+    // 默认首页是落地页：主标题承载主张，站点名落在品牌位与页脚
+    expect(wrapper.find('h1').text()).toContain('home.lp.headlineOne')
+    expect(wrapper.get('.lp-brand-name').text()).toBe('Test site')
     expect(wrapper.find('[data-testid="home-providers"]').exists()).toBe(true)
   })
 
