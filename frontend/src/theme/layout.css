@@ -297,7 +297,9 @@ main:has(> .table-page-layout) > .table-page-layout.table-page-layout {
 main:has(> .table-page-layout) > .table-page-layout > .layout-section-fixed:has(> .flex.justify-end) {
   grid-column: 2;
   grid-row: 1;
-  align-self: center;
+  /* 筛选区常有两行（搜索行 + 端点行），操作按钮跟第一行的搜索框对齐，
+     居中的话会比输入框低一截，看起来像没对齐。 */
+  align-self: start;
   justify-self: end;
   padding-left: 1rem;
 }
