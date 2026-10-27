@@ -930,160 +930,154 @@ h1, h2, h3 {
    数据取 settings.contact_info 的真实值（QQ / 微信），折叠侧栏时隐藏。
    分两段：可点的标题行 + 键值对齐的明细行，避免一整段自由文本。
    ========================================================================== */
-/* 联系方式横幅
+/* 联系方式
    --------------------------------------------------------------------------
-   侧栏底部需要一个有重量的收尾，所以它是一张横幅而不是一张表：
-   深墨渐变底（浅色也走深色，让它在浅色画布里立起来）+ 右上角一抹品牌绿光晕，
-   标题在上、渠道按钮在下。两个渠道各用自家标志，塞进实心按钮里。
-   旗帜色只出现在标志和光晕上，不做整块填充——绿色在这个系统里是动作色。 */
-.contact-banner {
-  position: relative;
-  overflow: hidden;
+   它属于侧栏「导航」这一层，不是独立海报：所以复用 .sidebar-section-title
+   的小标题与侧栏链接的行高节奏，不加容器底色、不加每行描边。
+   唯一带品牌色的是平台图标本身 —— QQ 蓝、微信绿，用来区分渠道即可。 */
+.sidebar-contact-block {
   margin-bottom: 0.5rem;
-  padding: 0.75rem 0.75rem 0.6875rem;
-  border-radius: var(--r-lg);
-  background:
-    radial-gradient(120% 90% at 100% 0%, rgb(var(--p-500) / 0.34) 0%, rgb(var(--p-600) / 0.06) 46%, transparent 70%),
-    linear-gradient(158deg, #262622 0%, #1c1c1b 48%, #161615 100%);
-  border: 1px solid rgb(var(--p-500) / 0.22);
-  box-shadow:
-    0 1px 0 rgb(255 255 255 / 0.05) inset,
-    0 8px 20px -14px rgb(0 0 0 / 0.7);
 }
 
-.dark .contact-banner {
-  border-color: rgb(var(--p-500) / 0.26);
-  box-shadow:
-    0 1px 0 rgb(255 255 255 / 0.045) inset,
-    0 10px 24px -18px rgb(0 0 0 / 0.9);
-}
-
-.contact-banner-head {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  margin-bottom: 0.5625rem;
-}
-
-.contact-banner-title {
-  margin: 0;
-  font-size: 0.8125rem;    /* 13px */
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: #f6f6f3;
-}
-
-.contact-banner-sub {
-  margin: 0;
-  font-size: 0.6875rem;    /* 11px */
-  line-height: 1.35;
-  color: rgb(246 246 243 / 0.55);
-}
-
-.contact-banner-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3125rem;
-}
-
-/* 渠道按钮：半透明白底压深墨，标志是唯一带品牌色的东西 */
-.contact-banner-btn {
+/* 行：与 .sidebar-link 同高同内边距，hover 才浮起 */
+.sidebar-contact-item {
   display: flex;
   align-items: center;
-  gap: 0.4375rem;
+  gap: 0.5rem;
   width: 100%;
-  padding: 0.375rem 0.5rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  min-height: 2.25rem;
+  padding: 0.4375rem 0.625rem;
+  border: 0;
   border-radius: var(--r-md);
-  background-color: rgb(255 255 255 / 0.07);
+  background: transparent;
   text-align: left;
   cursor: pointer;
-  transition: background-color 130ms ease, border-color 130ms ease;
+  transition: background-color 120ms ease;
 }
 
-.contact-banner-btn:hover {
-  background-color: rgb(255 255 255 / 0.13);
-  border-color: rgb(255 255 255 / 0.2);
+.sidebar-contact-item:hover {
+  background-color: rgb(var(--line-light) / 0.05);
 }
 
-.contact-banner-btn:focus-visible {
-  outline: 2px solid rgb(var(--p-400) / 0.7);
-  outline-offset: 1px;
+.dark .sidebar-contact-item:hover {
+  background-color: rgb(255 255 255 / 0.045);
 }
 
-.contact-banner-mark {
+.sidebar-contact-item:focus-visible {
+  outline: 2px solid rgb(var(--p-500) / 0.55);
+  outline-offset: -1px;
+}
+
+/* 标志：只有图形带品牌色，不做色块底板 */
+.sidebar-contact-mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.125rem;
-  height: 1.125rem;
+  width: 1.0625rem;
+  height: 1.0625rem;
   flex-shrink: 0;
 }
 
-.contact-banner-mark svg {
-  width: 1.0625rem;
-  height: 1.0625rem;
+.sidebar-contact-mark svg {
+  width: 1rem;
+  height: 1rem;
 }
 
-.contact-banner-mark--qq { color: #1ebafc; }
-.contact-banner-mark--wechat { color: #07c160; }
-.contact-banner-mark--other { color: rgb(246 246 243 / 0.7); }
+.sidebar-contact-mark--qq { color: #1ebafc; }
+.sidebar-contact-mark--wechat { color: #07c160; }
+.sidebar-contact-mark--other { color: rgb(var(--n-500)); }
 
-.contact-banner-value {
+/* 渠道名：与侧栏链接同一字号字重，读起来是一列里的第二项 */
+.sidebar-contact-name {
+  flex-shrink: 0;
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(var(--n-700));
+}
+
+.dark .sidebar-contact-name {
+  color: rgb(var(--n-300));
+}
+
+/* 号码：等宽、次级色，不和左侧导航抢注意力 */
+.sidebar-contact-value {
   flex: 1 1 auto;
   min-width: 0;
+  margin-left: auto;
   font-family: var(--font-numeric);
-  font-size: 0.75rem;      /* 12px */
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
-  color: #f2f2ee;
-  overflow-wrap: anywhere;
+  text-align: right;
+  color: rgb(var(--n-500));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.contact-banner-tail {
+.dark .sidebar-contact-value {
+  color: rgb(var(--n-500));
+}
+
+/* 尾部动作：低对比，hover 才提亮 */
+.sidebar-contact-tail {
   flex-shrink: 0;
-  color: rgb(246 246 243 / 0.4);
-  transition: color 130ms ease;
+  color: rgb(var(--n-300));
+  transition: color 120ms ease;
 }
 
-.contact-banner-btn:hover .contact-banner-tail {
-  color: rgb(246 246 243 / 0.8);
+.sidebar-contact-item:hover .sidebar-contact-tail {
+  color: rgb(var(--n-600));
 }
 
-.contact-banner-tail--done {
+.dark .sidebar-contact-tail {
+  color: rgb(var(--n-600));
+}
+
+.dark .sidebar-contact-item:hover .sidebar-contact-tail {
+  color: rgb(var(--n-300));
+}
+
+.sidebar-contact-tail--done {
+  color: rgb(var(--p-600));
+}
+
+.dark .sidebar-contact-tail--done {
   color: rgb(var(--p-400));
 }
 
-/* 折叠态：横幅压成一个方块，保留同一套底色与描边 */
-.contact-banner-fab {
+/* 折叠态：一个与收起点同宽的图标入口 */
+.sidebar-contact-fab {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 2.25rem;
   height: 2.25rem;
   margin-inline: auto;
-  border: 1px solid rgb(var(--p-500) / 0.28);
+  border: 0;
   border-radius: var(--r-md);
-  background:
-    radial-gradient(120% 90% at 100% 0%, rgb(var(--p-500) / 0.36) 0%, transparent 70%),
-    linear-gradient(158deg, #262622 0%, #181817 100%);
+  background: transparent;
   color: #1ebafc;
-  transition: border-color 130ms ease, filter 130ms ease;
+  transition: background-color 120ms ease;
 }
 
-.contact-banner-fab:hover {
-  border-color: rgb(var(--p-500) / 0.5);
-  filter: brightness(1.15);
+.sidebar-contact-fab:hover {
+  background-color: rgb(var(--line-light) / 0.05);
 }
 
-.contact-banner-fab:focus-visible {
-  outline: 2px solid rgb(var(--p-400) / 0.7);
-  outline-offset: 2px;
+.dark .sidebar-contact-fab:hover {
+  background-color: rgb(255 255 255 / 0.045);
 }
 
-.contact-banner-fab svg {
-  width: 1.1875rem;
-  height: 1.1875rem;
+.sidebar-contact-fab:focus-visible {
+  outline: 2px solid rgb(var(--p-500) / 0.55);
+  outline-offset: 1px;
+}
+
+.sidebar-contact-fab svg {
+  width: 1.125rem;
+  height: 1.125rem;
 }
 

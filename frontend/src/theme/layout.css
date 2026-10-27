@@ -293,6 +293,14 @@ main:has(> .table-page-layout) > .table-page-layout.table-page-layout {
   align-content: stretch;
 }
 
+/* 筛选：第一行左侧 */
+main:has(> .table-page-layout) > .table-page-layout > .layout-section-fixed:has(+ .layout-section-scrollable) {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+  min-width: 0;
+}
+
 /* 操作区：第一行右侧 */
 main:has(> .table-page-layout) > .table-page-layout > .layout-section-fixed:has(> .flex.justify-end) {
   grid-column: 2;
@@ -302,14 +310,6 @@ main:has(> .table-page-layout) > .table-page-layout > .layout-section-fixed:has(
   align-self: start;
   justify-self: end;
   padding-left: 1rem;
-}
-
-/* 筛选：第一行左侧 */
-main:has(> .table-page-layout) > .table-page-layout > .layout-section-fixed:has(+ .layout-section-scrollable) {
-  grid-column: 1;
-  grid-row: 1;
-  align-self: center;
-  min-width: 0;
 }
 
 /* 表格：整行，吃掉剩余高度 */
@@ -323,13 +323,6 @@ main:has(> .table-page-layout) > .table-page-layout > .layout-section-scrollable
 main:has(> .table-page-layout) > .table-page-layout > .layout-section-scrollable + .layout-section-fixed {
   grid-column: 1 / -1;
   grid-row: 3;
-}
-
-/* 只有操作区、没有筛选的页面（多数列表页）：操作区仍然靠右占第一行，
-   但同行左侧空着没有意义，此时让它自己成一行靠右即可。 */
-main:has(> .table-page-layout) > .table-page-layout > .layout-section-fixed:has(> .flex.justify-end):first-child {
-  grid-column: 1 / -1;
-  justify-self: end;
 }
 
 main:has(> .table-page-layout) > .app-page-title {
