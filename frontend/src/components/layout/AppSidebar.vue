@@ -150,59 +150,59 @@
 
     <!-- Bottom Section -->
     <div class="mt-auto border-t border-gray-100 p-3 dark:border-dark-800">
-      <!-- 联系方式：站点公开设置里的「QQ：xxx 微信：yyy」，渲染成一张卡片。
-           每行用各自的品牌图标，尾部给出该渠道真正能做的事：
-           QQ 有网页会话链接就跳转，微信没有可用链接就复制号。 -->
-      <div
-        v-if="contactChannels.length"
-        class="sidebar-contact-card"
-        :class="{ 'sidebar-contact-card--collapsed': sidebarCollapsed }"
-      >
+      <!-- 联系方式：一张横幅，不是一张表。
+           侧栏底部这块在视觉上需要一个收尾的重量，所以给它深墨渐变底 +
+           品牌色光晕；两个渠道做成实心按钮，标志直接放在按钮里。
+           QQ 能开网页会话就跳转，微信没有可用链接就复制号。 -->
+      <div v-if="contactChannels.length" class="contact-banner">
         <template v-if="!sidebarCollapsed">
-          <p class="sidebar-contact-head">{{ t('nav.contactUs') }}</p>
-          <component
-            :is="channel.href ? 'a' : 'button'"
-            v-for="channel in contactChannels"
-            :key="channel.key"
-            class="sidebar-contact-row"
-            :href="channel.href || undefined"
-            :target="channel.href ? '_blank' : undefined"
-            :rel="channel.href ? 'noopener noreferrer' : undefined"
-            :type="channel.href ? undefined : 'button'"
-            :aria-label="
-              channel.href
-                ? `${channel.label} ${channel.value}`
-                : `${t('common.copy')} ${channel.label} ${channel.value}`
-            "
-            @click="channel.href ? undefined : copyContact(channel.value)"
-          >
-            <span class="sidebar-contact-mark" :class="`sidebar-contact-mark--${channel.brand}`" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path :d="brandPaths[channel.brand]" /></svg>
-            </span>
-            <span class="sidebar-contact-meta">
-              <span class="sidebar-contact-label">{{ channel.label }}</span>
-              <span class="sidebar-contact-value">{{ channel.value }}</span>
-            </span>
-            <Icon
-              v-if="channel.href"
-              name="externalLink"
-              size="xs"
-              class="sidebar-contact-action"
-            />
-            <Icon
-              v-else
-              :name="copiedValue === channel.value ? 'check' : 'copy'"
-              size="xs"
-              class="sidebar-contact-action"
-              :class="{ 'sidebar-contact-action--done': copiedValue === channel.value }"
-            />
-          </component>
+          <div class="contact-banner-head">
+            <p class="contact-banner-title">{{ t('nav.contactUs') }}</p>
+            <p class="contact-banner-sub">{{ t('nav.contactUsHint') }}</p>
+          </div>
+
+          <div class="contact-banner-actions">
+            <component
+              :is="channel.href ? 'a' : 'button'"
+              v-for="channel in contactChannels"
+              :key="channel.key"
+              class="contact-banner-btn"
+              :href="channel.href || undefined"
+              :target="channel.href ? '_blank' : undefined"
+              :rel="channel.href ? 'noopener noreferrer' : undefined"
+              :type="channel.href ? undefined : 'button'"
+              :aria-label="
+                channel.href
+                  ? `${channel.label} ${channel.value}`
+                  : `${t('common.copy')} ${channel.label} ${channel.value}`
+              "
+              @click="channel.href ? undefined : copyContact(channel.value)"
+            >
+              <span class="contact-banner-mark" :class="`contact-banner-mark--${channel.brand}`" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path :d="brandPaths[channel.brand]" /></svg>
+              </span>
+              <span class="contact-banner-value">{{ channel.value }}</span>
+              <Icon
+                v-if="channel.href"
+                name="externalLink"
+                size="xs"
+                class="contact-banner-tail"
+              />
+              <Icon
+                v-else
+                :name="copiedValue === channel.value ? 'check' : 'copy'"
+                size="xs"
+                class="contact-banner-tail"
+                :class="{ 'contact-banner-tail--done': copiedValue === channel.value }"
+              />
+            </component>
+          </div>
         </template>
 
-        <!-- 折叠态：只留一个入口图标 -->
+        <!-- 折叠态：同一张横幅压成一个 36px 方块 -->
         <a
           v-else
-          class="sidebar-contact-fab"
+          class="contact-banner-fab"
           :href="primaryChannel?.href || undefined"
           :target="primaryChannel?.href ? '_blank' : undefined"
           rel="noopener noreferrer"

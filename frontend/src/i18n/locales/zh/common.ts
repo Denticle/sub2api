@@ -190,6 +190,7 @@ export default {
     settings: '系统设置',
     myAccount: '我的账户',
     contactUs: '联系我们',
+    contactUsHint: '加好友，随时问',
     wechat: '微信',
     lightMode: '浅色模式',
     darkMode: '深色模式',

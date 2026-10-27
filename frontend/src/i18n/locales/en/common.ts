@@ -190,6 +190,7 @@ export default {
     settings: 'Settings',
     myAccount: 'My Account',
     contactUs: 'Contact us',
+    contactUsHint: 'Add us, ask anything',
     wechat: 'WeChat',
     lightMode: 'Light Mode',
     darkMode: 'Dark Mode',

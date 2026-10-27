@@ -930,73 +930,88 @@ h1, h2, h3 {
    数据取 settings.contact_info 的真实值（QQ / 微信），折叠侧栏时隐藏。
    分两段：可点的标题行 + 键值对齐的明细行，避免一整段自由文本。
    ========================================================================== */
-/* 联系方式卡片
+/* 联系方式横幅
    --------------------------------------------------------------------------
-   它是侧栏最后一块，读的人只想要一个号。所以收成一张卡片：
-   发丝线描边（不用品牌绿填充——绿色在这个系统里是动作色，
-   一片被动信息染成绿色会让人以为整块能点）、内部行间用同一条发丝线分隔。
-   每行以一个真实平台标志开头，尾部给出该渠道唯一能做的那件事。 */
-.sidebar-contact-card {
-  border: 1px solid rgb(var(--line-light) / 0.12);
-  border-radius: var(--r-lg);
-  background-color: rgb(var(--n-100) / 0.55);
+   侧栏底部需要一个有重量的收尾，所以它是一张横幅而不是一张表：
+   深墨渐变底（浅色也走深色，让它在浅色画布里立起来）+ 右上角一抹品牌绿光晕，
+   标题在上、渠道按钮在下。两个渠道各用自家标志，塞进实心按钮里。
+   旗帜色只出现在标志和光晕上，不做整块填充——绿色在这个系统里是动作色。 */
+.contact-banner {
+  position: relative;
   overflow: hidden;
   margin-bottom: 0.5rem;
+  padding: 0.75rem 0.75rem 0.6875rem;
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgb(var(--p-500) / 0.34) 0%, rgb(var(--p-600) / 0.06) 46%, transparent 70%),
+    linear-gradient(158deg, #262622 0%, #1c1c1b 48%, #161615 100%);
+  border: 1px solid rgb(var(--p-500) / 0.22);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.05) inset,
+    0 8px 20px -14px rgb(0 0 0 / 0.7);
 }
 
-.dark .sidebar-contact-card {
-  border-color: rgb(var(--line) / var(--line-a));
-  background-color: rgb(var(--d-800) / 0.6);
+.dark .contact-banner {
+  border-color: rgb(var(--p-500) / 0.26);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.045) inset,
+    0 10px 24px -18px rgb(0 0 0 / 0.9);
 }
 
-.sidebar-contact-head {
+.contact-banner-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  margin-bottom: 0.5625rem;
+}
+
+.contact-banner-title {
   margin: 0;
-  padding: 0.5625rem 0.625rem 0.4375rem;
-  font-size: 0.75rem;      /* 12px */
-  font-weight: 650;
-  letter-spacing: 0;
-  color: rgb(var(--n-600));
+  font-size: 0.8125rem;    /* 13px */
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #f6f6f3;
 }
 
-.dark .sidebar-contact-head {
-  color: rgb(var(--n-400));
+.contact-banner-sub {
+  margin: 0;
+  font-size: 0.6875rem;    /* 11px */
+  line-height: 1.35;
+  color: rgb(246 246 243 / 0.55);
 }
 
-/* 行：整行可点，左右内边距与标题对齐 */
-.sidebar-contact-row {
+.contact-banner-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem;
+}
+
+/* 渠道按钮：半透明白底压深墨，标志是唯一带品牌色的东西 */
+.contact-banner-btn {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4375rem;
   width: 100%;
-  padding: 0.4375rem 0.625rem;
-  border: 0;
-  border-top: 1px solid rgb(var(--line-light) / 0.08);
-  background: transparent;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: var(--r-md);
+  background-color: rgb(255 255 255 / 0.07);
   text-align: left;
   cursor: pointer;
-  transition: background-color 120ms ease;
+  transition: background-color 130ms ease, border-color 130ms ease;
 }
 
-.dark .sidebar-contact-row {
-  border-top-color: rgb(var(--line) / 0.08);
+.contact-banner-btn:hover {
+  background-color: rgb(255 255 255 / 0.13);
+  border-color: rgb(255 255 255 / 0.2);
 }
 
-.sidebar-contact-row:hover {
-  background-color: rgb(var(--line-light) / 0.05);
+.contact-banner-btn:focus-visible {
+  outline: 2px solid rgb(var(--p-400) / 0.7);
+  outline-offset: 1px;
 }
 
-.dark .sidebar-contact-row:hover {
-  background-color: rgb(255 255 255 / 0.04);
-}
-
-.sidebar-contact-row:focus-visible {
-  outline: 2px solid rgb(var(--p-500) / 0.55);
-  outline-offset: -2px;
-}
-
-/* 品牌标志：只给图形上品牌色，不加底色块——
-   底色块会变成两个抢眼的圆，比号本身还响。 */
-.sidebar-contact-mark {
+.contact-banner-mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1005,109 +1020,70 @@ h1, h2, h3 {
   flex-shrink: 0;
 }
 
-.sidebar-contact-mark svg {
+.contact-banner-mark svg {
   width: 1.0625rem;
   height: 1.0625rem;
 }
 
-.sidebar-contact-mark--qq { color: #1ebafc; }      /* QQ 品牌蓝 */
-.sidebar-contact-mark--wechat { color: #07c160; }  /* WeChat 品牌绿 */
-.sidebar-contact-mark--other { color: rgb(var(--n-500)); }
+.contact-banner-mark--qq { color: #1ebafc; }
+.contact-banner-mark--wechat { color: #07c160; }
+.contact-banner-mark--other { color: rgb(246 246 243 / 0.7); }
 
-.sidebar-contact-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.03125rem;
-  min-width: 0;
+.contact-banner-value {
   flex: 1 1 auto;
-}
-
-.sidebar-contact-label {
-  font-size: 0.65625rem;   /* 10.5px：行首的小标签，不抢号的注意力 */
-  font-weight: 600;
-  line-height: 1.2;
-  color: rgb(var(--n-500));
-}
-
-.dark .sidebar-contact-label {
-  color: rgb(var(--n-500));
-}
-
-/* 号本身：等宽，复制时不会错位，也更像"一个 ID" */
-.sidebar-contact-value {
+  min-width: 0;
   font-family: var(--font-numeric);
   font-size: 0.75rem;      /* 12px */
   font-weight: 500;
-  line-height: 1.35;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
-  color: rgb(var(--n-900));
+  color: #f2f2ee;
   overflow-wrap: anywhere;
 }
 
-.dark .sidebar-contact-value {
-  color: rgb(var(--n-100));
-}
-
-/* 尾部动作：常驻而不是 hover 才现——手机上根本没有 hover */
-.sidebar-contact-action {
+.contact-banner-tail {
   flex-shrink: 0;
-  color: rgb(var(--n-400));
-  transition: color 120ms ease;
+  color: rgb(246 246 243 / 0.4);
+  transition: color 130ms ease;
 }
 
-.sidebar-contact-row:hover .sidebar-contact-action {
-  color: rgb(var(--n-700));
+.contact-banner-btn:hover .contact-banner-tail {
+  color: rgb(246 246 243 / 0.8);
 }
 
-.dark .sidebar-contact-row:hover .sidebar-contact-action {
-  color: rgb(var(--n-300));
-}
-
-.sidebar-contact-action--done {
-  color: rgb(var(--p-600));
-}
-
-.dark .sidebar-contact-action--done {
+.contact-banner-tail--done {
   color: rgb(var(--p-400));
 }
 
-/* 折叠态：只剩一个入口，藏在卡片外形的圆角方块里 */
-.sidebar-contact-fab {
+/* 折叠态：横幅压成一个方块，保留同一套底色与描边 */
+.contact-banner-fab {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 2.25rem;
   height: 2.25rem;
   margin-inline: auto;
-  border: 1px solid rgb(var(--line-light) / 0.12);
+  border: 1px solid rgb(var(--p-500) / 0.28);
   border-radius: var(--r-md);
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgb(var(--p-500) / 0.36) 0%, transparent 70%),
+    linear-gradient(158deg, #262622 0%, #181817 100%);
   color: #1ebafc;
-  transition: background-color 120ms ease, border-color 120ms ease;
+  transition: border-color 130ms ease, filter 130ms ease;
 }
 
-.sidebar-contact-fab:hover {
-  background-color: rgb(var(--line-light) / 0.05);
-  border-color: rgb(var(--line-light) / 0.2);
+.contact-banner-fab:hover {
+  border-color: rgb(var(--p-500) / 0.5);
+  filter: brightness(1.15);
 }
 
-.dark .sidebar-contact-fab {
-  border-color: rgb(var(--line) / var(--line-a));
+.contact-banner-fab:focus-visible {
+  outline: 2px solid rgb(var(--p-400) / 0.7);
+  outline-offset: 2px;
 }
 
-.dark .sidebar-contact-fab:hover {
-  background-color: rgb(255 255 255 / 0.05);
-  border-color: rgb(var(--line) / 0.2);
-}
-
-.sidebar-contact-fab svg {
+.contact-banner-fab svg {
   width: 1.1875rem;
   height: 1.1875rem;
-}
-
-.sidebar-contact-card--collapsed {
-  border: 0;
-  background: transparent;
-  overflow: visible;
 }
 
