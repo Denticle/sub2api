@@ -190,7 +190,7 @@ export default {
     settings: 'Settings',
     myAccount: 'My Account',
     contactUs: 'Contact us',
-    contactUsSub: 'Weekdays 10:00–22:00',
+    wechat: 'WeChat',
     lightMode: 'Light Mode',
     darkMode: 'Dark Mode',
     collapse: 'Collapse',

@@ -930,117 +930,184 @@ h1, h2, h3 {
    数据取 settings.contact_info 的真实值（QQ / 微信），折叠侧栏时隐藏。
    分两段：可点的标题行 + 键值对齐的明细行，避免一整段自由文本。
    ========================================================================== */
-.sidebar-contact {
+/* 联系方式卡片
+   --------------------------------------------------------------------------
+   它是侧栏最后一块，读的人只想要一个号。所以收成一张卡片：
+   发丝线描边（不用品牌绿填充——绿色在这个系统里是动作色，
+   一片被动信息染成绿色会让人以为整块能点）、内部行间用同一条发丝线分隔。
+   每行以一个真实平台标志开头，尾部给出该渠道唯一能做的那件事。 */
+.sidebar-contact-card {
+  border: 1px solid rgb(var(--line-light) / 0.12);
+  border-radius: var(--r-lg);
+  background-color: rgb(var(--n-100) / 0.55);
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.dark .sidebar-contact-card {
+  border-color: rgb(var(--line) / var(--line-a));
+  background-color: rgb(var(--d-800) / 0.6);
+}
+
+.sidebar-contact-head {
+  margin: 0;
+  padding: 0.5625rem 0.625rem 0.4375rem;
+  font-size: 0.75rem;      /* 12px */
+  font-weight: 650;
+  letter-spacing: 0;
+  color: rgb(var(--n-600));
+}
+
+.dark .sidebar-contact-head {
+  color: rgb(var(--n-400));
+}
+
+/* 行：整行可点，左右内边距与标题对齐 */
+.sidebar-contact-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0.5rem 0.4375rem;
-  border-radius: var(--r-md);
-  text-decoration: none;
-  background-color: rgb(var(--p-500) / 0.1);
-  border: 1px solid rgb(var(--p-500) / 0.18);
-  transition: background-color 130ms ease, border-color 130ms ease;
+  width: 100%;
+  padding: 0.4375rem 0.625rem;
+  border: 0;
+  border-top: 1px solid rgb(var(--line-light) / 0.08);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease;
 }
 
-a.sidebar-contact:hover {
-  background-color: rgb(var(--p-500) / 0.16);
-  border-color: rgb(var(--p-500) / 0.3);
+.dark .sidebar-contact-row {
+  border-top-color: rgb(var(--line) / 0.08);
 }
 
-.dark .sidebar-contact {
-  background-color: rgb(var(--p-500) / 0.13);
-  border-color: rgb(var(--p-500) / 0.22);
+.sidebar-contact-row:hover {
+  background-color: rgb(var(--line-light) / 0.05);
 }
 
-.dark a.sidebar-contact:hover {
-  background-color: rgb(var(--p-500) / 0.19);
-  border-color: rgb(var(--p-500) / 0.34);
+.dark .sidebar-contact-row:hover {
+  background-color: rgb(255 255 255 / 0.04);
 }
 
-.sidebar-contact-icon {
+.sidebar-contact-row:focus-visible {
+  outline: 2px solid rgb(var(--p-500) / 0.55);
+  outline-offset: -2px;
+}
+
+/* 品牌标志：只给图形上品牌色，不加底色块——
+   底色块会变成两个抢眼的圆，比号本身还响。 */
+.sidebar-contact-mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.625rem;
-  height: 1.625rem;
+  width: 1.125rem;
+  height: 1.125rem;
   flex-shrink: 0;
-  border-radius: 7px;
-  background-color: rgb(var(--p-600));
-  color: #fff;
 }
 
-.dark .sidebar-contact-icon {
-  background-color: rgb(var(--p-500));
-  color: rgb(var(--p-950));
+.sidebar-contact-mark svg {
+  width: 1.0625rem;
+  height: 1.0625rem;
 }
 
-.sidebar-contact-icon svg {
-  width: 0.9375rem;
-  height: 0.9375rem;
-}
+.sidebar-contact-mark--qq { color: #1ebafc; }      /* QQ 品牌蓝 */
+.sidebar-contact-mark--wechat { color: #07c160; }  /* WeChat 品牌绿 */
+.sidebar-contact-mark--other { color: rgb(var(--n-500)); }
 
-.sidebar-contact-body {
+.sidebar-contact-meta {
   display: flex;
   flex-direction: column;
-  gap: 0.0625rem;
+  gap: 0.03125rem;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
-.sidebar-contact-title {
-  font-size: 0.8125rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: rgb(var(--p-800));
-}
-
-.dark .sidebar-contact-title {
-  color: rgb(var(--p-200));
-}
-
-.sidebar-contact-sub {
-  font-size: 0.6875rem;
-  line-height: 1.3;
-  color: rgb(var(--p-700) / 0.8);
-}
-
-.dark .sidebar-contact-sub {
-  color: rgb(var(--p-300) / 0.75);
-}
-
-/* 明细：左键右值，等宽数字，扫读时对齐 */
-.sidebar-contact-lines {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.5rem 0.5625rem 0.5625rem;
-}
-
-.sidebar-contact-line {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  font-size: 0.6875rem;
-  line-height: 1.4;
-}
-
-.sidebar-contact-line-key {
-  flex-shrink: 0;
-  width: 2.25rem;
+.sidebar-contact-label {
+  font-size: 0.65625rem;   /* 10.5px：行首的小标签，不抢号的注意力 */
+  font-weight: 600;
+  line-height: 1.2;
   color: rgb(var(--n-500));
 }
 
-.sidebar-contact-line-val {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  font-variant-numeric: tabular-nums;
+.dark .sidebar-contact-label {
+  color: rgb(var(--n-500));
+}
+
+/* 号本身：等宽，复制时不会错位，也更像"一个 ID" */
+.sidebar-contact-value {
+  font-family: var(--font-numeric);
+  font-size: 0.75rem;      /* 12px */
   font-weight: 500;
-  color: rgb(var(--n-800));
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  color: rgb(var(--n-900));
+  overflow-wrap: anywhere;
 }
 
-.dark .sidebar-contact-line-key {
-  color: rgb(var(--n-500));
+.dark .sidebar-contact-value {
+  color: rgb(var(--n-100));
 }
 
-.dark .sidebar-contact-line-val {
-  color: rgb(var(--n-200));
+/* 尾部动作：常驻而不是 hover 才现——手机上根本没有 hover */
+.sidebar-contact-action {
+  flex-shrink: 0;
+  color: rgb(var(--n-400));
+  transition: color 120ms ease;
 }
+
+.sidebar-contact-row:hover .sidebar-contact-action {
+  color: rgb(var(--n-700));
+}
+
+.dark .sidebar-contact-row:hover .sidebar-contact-action {
+  color: rgb(var(--n-300));
+}
+
+.sidebar-contact-action--done {
+  color: rgb(var(--p-600));
+}
+
+.dark .sidebar-contact-action--done {
+  color: rgb(var(--p-400));
+}
+
+/* 折叠态：只剩一个入口，藏在卡片外形的圆角方块里 */
+.sidebar-contact-fab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-inline: auto;
+  border: 1px solid rgb(var(--line-light) / 0.12);
+  border-radius: var(--r-md);
+  color: #1ebafc;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.sidebar-contact-fab:hover {
+  background-color: rgb(var(--line-light) / 0.05);
+  border-color: rgb(var(--line-light) / 0.2);
+}
+
+.dark .sidebar-contact-fab {
+  border-color: rgb(var(--line) / var(--line-a));
+}
+
+.dark .sidebar-contact-fab:hover {
+  background-color: rgb(255 255 255 / 0.05);
+  border-color: rgb(var(--line) / 0.2);
+}
+
+.sidebar-contact-fab svg {
+  width: 1.1875rem;
+  height: 1.1875rem;
+}
+
+.sidebar-contact-card--collapsed {
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+

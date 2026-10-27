@@ -150,30 +150,69 @@
 
     <!-- Bottom Section -->
     <div class="mt-auto border-t border-gray-100 p-3 dark:border-dark-800">
-      <!-- 联系方式：卡片式收尾，折叠态换成可点的图标 -->
-      <a
-        v-if="!sidebarCollapsed && contactInfo"
-        class="sidebar-contact"
-        :href="contactLink || undefined"
-        :target="contactLink ? '_blank' : undefined"
-        rel="noopener noreferrer"
+      <!-- 联系方式：站点公开设置里的「QQ：xxx 微信：yyy」，渲染成一张卡片。
+           每行用各自的品牌图标，尾部给出该渠道真正能做的事：
+           QQ 有网页会话链接就跳转，微信没有可用链接就复制号。 -->
+      <div
+        v-if="contactChannels.length"
+        class="sidebar-contact-card"
+        :class="{ 'sidebar-contact-card--collapsed': sidebarCollapsed }"
       >
-        <span class="sidebar-contact-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm3.75 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm3.75 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 0 1-.825-.242m9.345-8.334a2.126 2.126 0 0 0-.476-.095 48.64 48.64 0 0 0-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0 0 11.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
+        <template v-if="!sidebarCollapsed">
+          <p class="sidebar-contact-head">{{ t('nav.contactUs') }}</p>
+          <component
+            :is="channel.href ? 'a' : 'button'"
+            v-for="channel in contactChannels"
+            :key="channel.key"
+            class="sidebar-contact-row"
+            :href="channel.href || undefined"
+            :target="channel.href ? '_blank' : undefined"
+            :rel="channel.href ? 'noopener noreferrer' : undefined"
+            :type="channel.href ? undefined : 'button'"
+            :aria-label="
+              channel.href
+                ? `${channel.label} ${channel.value}`
+                : `${t('common.copy')} ${channel.label} ${channel.value}`
+            "
+            @click="channel.href ? undefined : copyContact(channel.value)"
+          >
+            <span class="sidebar-contact-mark" :class="`sidebar-contact-mark--${channel.brand}`" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path :d="brandPaths[channel.brand]" /></svg>
+            </span>
+            <span class="sidebar-contact-meta">
+              <span class="sidebar-contact-label">{{ channel.label }}</span>
+              <span class="sidebar-contact-value">{{ channel.value }}</span>
+            </span>
+            <Icon
+              v-if="channel.href"
+              name="externalLink"
+              size="xs"
+              class="sidebar-contact-action"
+            />
+            <Icon
+              v-else
+              :name="copiedValue === channel.value ? 'check' : 'copy'"
+              size="xs"
+              class="sidebar-contact-action"
+              :class="{ 'sidebar-contact-action--done': copiedValue === channel.value }"
+            />
+          </component>
+        </template>
+
+        <!-- 折叠态：只留一个入口图标 -->
+        <a
+          v-else
+          class="sidebar-contact-fab"
+          :href="primaryChannel?.href || undefined"
+          :target="primaryChannel?.href ? '_blank' : undefined"
+          rel="noopener noreferrer"
+          :title="t('nav.contactUs')"
+          :aria-label="t('nav.contactUs')"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path :d="brandPaths[primaryChannel?.brand || 'qq']" />
           </svg>
-        </span>
-        <span class="sidebar-contact-body">
-          <span class="sidebar-contact-title">{{ t('nav.contactUs') }}</span>
-          <span class="sidebar-contact-sub">{{ t('nav.contactUsSub') }}</span>
-        </span>
-      </a>
-      <div v-if="!sidebarCollapsed && contactInfo" class="sidebar-contact-lines">
-        <span v-for="(line, i) in contactLines" :key="i" class="sidebar-contact-line">
-          <span class="sidebar-contact-line-key">{{ line.key }}</span>
-          <span class="sidebar-contact-line-val">{{ line.value }}</span>
-        </span>
+        </a>
       </div>
 
       <!-- Collapse Button -->
@@ -212,6 +251,7 @@ import { sanitizeUrl } from '@/utils/url'
 import { FeatureFlags, makeSidebarFlag } from '@/utils/featureFlags'
 import { resolveSiteBillingMode } from '@/utils/siteBillingMode'
 import { useBatchImageAccess } from '@/composables/useBatchImageAccess'
+import { useClipboard } from '@/composables/useClipboard'
 
 interface NavItem {
   path: string
@@ -276,27 +316,84 @@ const groupExpandOverrides = ref<Map<string, boolean>>(new Map())
 const siteName = computed(() => appStore.siteName)
 const siteLogo = computed(() => sanitizeUrl(appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true }))
 const siteVersion = computed(() => appStore.siteVersion)
-// 联系方式：来自站点的公开设置，与管理端保持一致，不在前端写死
+// 联系方式：来自站点的公开设置，与管理端保持一致，不在前端写死。
+// 站点配置里通常写成「QQ：911459930        微信：z611311z」，
+// 连续空格 / 换行 / 分号都可能拿来分隔多个渠道。
 const contactInfo = computed(() => (appStore.contactInfo || '').trim())
 
-// 站点配置里常用连续空格分隔多个联系方式（如「QQ：xxx      微信：yyy」）。
-// 拆成 { key, value } 两栏对齐显示，比一整段自由文本更好扫读。
-const contactLines = computed(() =>
+type ContactBrand = 'qq' | 'wechat' | 'other'
+
+interface ContactChannel {
+  key: string
+  brand: ContactBrand
+  label: string
+  value: string
+  /** 该渠道可直接打开的网页会话；没有就退化为复制 */
+  href: string
+}
+
+// 品牌图标路径取自 simple-icons（QQ / WeChat 官方标志）
+const brandPaths: Record<ContactBrand, string> = {
+  qq: 'M21.395 15.035a40 40 0 0 0-.803-2.264l-1.079-2.695c.001-.032.014-.562.014-.836C19.526 4.632 17.351 0 12 0S4.474 4.632 4.474 9.241c0 .274.013.804.014.836l-1.08 2.695a39 39 0 0 0-.802 2.264c-1.021 3.283-.69 4.643-.438 4.673.54.065 2.103-2.472 2.103-2.472 0 1.469.756 3.387 2.394 4.771-.612.188-1.363.479-1.845.835-.434.32-.379.646-.301.778.343.578 5.883.369 7.482.189 1.6.18 7.14.389 7.483-.189.078-.132.132-.458-.301-.778-.483-.356-1.233-.646-1.846-.836 1.637-1.384 2.393-3.302 2.393-4.771 0 0 1.563 2.537 2.103 2.472.251-.03.581-1.39-.438-4.673',
+  wechat: 'M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088V8.89c-.135-.01-.27-.027-.407-.03zm-2.53 3.274c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982z',
+  // 未识别的渠道：用一个通用对话气泡，避免张冠李戴戴错 logo
+  other: 'M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 0 1-.825-.242m9.345-8.334a2.126 2.126 0 0 0-.476-.095 48.64 48.64 0 0 0-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0 0 11.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155',
+}
+
+function detectBrand(label: string): ContactBrand {
+  const l = label.toLowerCase()
+  if (l.includes('qq')) return 'qq'
+  if (l.includes('微信') || l.includes('wechat') || l.includes('weixin')) return 'wechat'
+  return 'other'
+}
+
+const contactChannels = computed<ContactChannel[]>(() =>
   contactInfo.value
     .split(/\s{2,}|[\n;；]+/)
     .map((part) => part.trim())
     .filter(Boolean)
-    .map((part) => {
-      const m = part.match(/^(.{1,6}?)\s*[：:]\s*(.+)$/)
-      return m ? { key: m[1].trim(), value: m[2].trim() } : { key: '', value: part }
-    }),
+    .map((part, index) => {
+      const m = part.match(/^(.{1,8}?)\s*[：:]\s*(.+)$/)
+      // 没写成「标签：值」的整段，当作一个无标签渠道，值就是它本身
+      const label = m ? m[1].trim() : ''
+      const value = (m ? m[2] : part).trim()
+      const brand = detectBrand(label || value)
+      const digits = value.replace(/\D/g, '')
+      const href =
+        brand === 'qq' && digits
+          ? `https://wpa.qq.com/msgrd?v=3&uin=${digits}&site=qq&menu=yes`
+          : ''
+      return {
+        key: `${brand}-${index}`,
+        brand,
+        label: label || (brand === 'qq' ? 'QQ' : brand === 'wechat' ? t('nav.wechat') : t('nav.contactUs')),
+        value,
+        href,
+      }
+    })
 )
 
-// 有 QQ 号时可拼出加好友链接；微信没有可用的网页链接，保持纯文本
-const contactLink = computed(() => {
-  const qq = contactLines.value.find((l) => /qq/i.test(l.key))?.value?.replace(/\D/g, '')
-  return qq ? `https://wpa.qq.com/msgrd?v=3&uin=${qq}&site=qq&menu=yes` : ''
-})
+// 折叠态只能放一个入口：优先能给链接的那个渠道
+const primaryChannel = computed(
+  () => contactChannels.value.find((c) => c.href) || contactChannels.value[0],
+)
+
+const copiedValue = ref('')
+let copiedTimer: ReturnType<typeof setTimeout> | undefined
+
+const { copyToClipboard } = useClipboard()
+
+async function copyContact(value: string) {
+  const ok = await copyToClipboard(value)
+  if (!ok) return
+  copiedValue.value = value
+  clearTimeout(copiedTimer)
+  copiedTimer = setTimeout(() => {
+    copiedValue.value = ''
+  }, 1600)
+}
+
+onBeforeUnmount(() => clearTimeout(copiedTimer))
 
 const settingsLoaded = computed(() => appStore.publicSettingsLoaded)
 
