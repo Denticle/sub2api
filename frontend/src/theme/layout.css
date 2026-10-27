@@ -387,6 +387,41 @@ main > .table-page-layout.table-page-layout {
   color: rgb(var(--d-600));
 }
 
+/* 明暗模式：顶栏里的图标按钮，与语言切换同排。
+   之前挂在下导入底部，等于把「账户操作」和「导航」混在一列；
+   它是一个全局开关，位置应该在顶栏。 */
+.app-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: rgb(var(--n-600));
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.app-theme-toggle:hover {
+  background-color: rgb(var(--line-light) / 0.07);
+  color: rgb(var(--n-900));
+}
+
+.app-theme-toggle:focus-visible {
+  outline: 2px solid rgb(var(--p-500) / 0.55);
+  outline-offset: 2px;
+}
+
+.dark .app-theme-toggle { color: rgb(var(--n-400)); }
+
+.dark .app-theme-toggle:hover {
+  background-color: rgb(255 255 255 / 0.06);
+  color: rgb(var(--n-50));
+}
+
 .app-topbar-crumb {
   font-size: 0.8125rem;
   font-weight: 550;

@@ -56,6 +56,18 @@
         <!-- Language Switcher -->
         <LocaleSwitcher />
 
+        <!-- 明暗模式：与语言并排的图标按钮，不再占侧栏底部 -->
+        <button
+          type="button"
+          class="app-theme-toggle"
+          :aria-label="isDark ? t('nav.lightMode') : t('nav.darkMode')"
+          :title="isDark ? t('nav.lightMode') : t('nav.darkMode')"
+          :aria-pressed="isDark"
+          @click="toggleTheme"
+        >
+          <Icon :name="isDark ? 'sun' : 'moon'" size="sm" />
+        </button>
+
         <!-- Subscription Progress (for users with active subscriptions; not mounted at all when the feature is off) -->
         <SubscriptionProgressMini v-if="user && subscriptionFeatureEnabled" />
 
@@ -274,6 +286,8 @@ const authStore = useAuthStore()
 const onboardingStore = useOnboardingStore()
 
 const user = computed(() => authStore.user)
+// main.ts 在挂载前已经按 localStorage / 系统偏好设好 dark 类，这里只读结果。
+const isDark = ref(document.documentElement.classList.contains('dark'))
 const dropdownOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 const contactInfo = computed(() => appStore.contactInfo)
@@ -320,6 +334,12 @@ const { pageTitle } = usePageTitle()
 const siteName = computed(() => appStore.siteName)
 const siteLogo = computed(() => sanitizeUrl(appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true }))
 const homePath = computed(() => (authStore.isAdmin ? '/admin/dashboard' : '/dashboard'))
+
+function toggleTheme() {
+  isDark.value = !isDark.value
+  document.documentElement.classList.toggle('dark', isDark.value)
+  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+}
 
 function toggleMobileSidebar() {
   appStore.toggleMobileSidebar()
