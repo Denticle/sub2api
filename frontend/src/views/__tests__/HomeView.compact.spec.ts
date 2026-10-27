@@ -55,8 +55,20 @@ function mountHome(settings: Record<string, unknown> = {}) {
   })
 }
 
+// 紧凑页顶栏里除了 CTA 还有文档、模型广场等 RouterLink，
+// 这里要的是那个带实心按钮样式的 CTA，按目标路径找而不是取第一个。
 function compactDestination(wrapper: ReturnType<typeof mountHome>) {
-  return wrapper.get('[data-testid="compact-home"]').findComponent(RouterLinkStub).props('to')
+  const destinations = wrapper
+    .get('[data-testid="compact-home"]')
+    .findAllComponents(RouterLinkStub)
+    .map((link) => link.props('to'))
+    .filter((to): to is string => typeof to === 'string')
+
+  const cta = destinations.find((to) => to === '/login' || to === '/dashboard' || to === '/admin/dashboard')
+  if (!cta) {
+    throw new Error(`compact CTA not found; saw ${JSON.stringify(destinations)}`)
+  }
+  return cta
 }
 
 function modelPlazaDestination(wrapper: ReturnType<typeof mountHome>) {

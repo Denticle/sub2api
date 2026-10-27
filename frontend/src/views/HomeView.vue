@@ -30,8 +30,16 @@
         </div>
         <div class="flex max-w-full shrink-0 flex-wrap items-center justify-end gap-2">
           <LocaleSwitcher />
+          <router-link
+            v-if="docsLinkLocal"
+            to="/docs"
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-dark-400 dark:hover:bg-dark-800"
+            :title="t('home.viewDocs')"
+          >
+            <Icon name="book" size="md" />
+          </router-link>
           <a
-            v-if="docUrl"
+            v-else-if="docUrl"
             :href="docUrl"
             target="_blank"
             rel="noopener noreferrer"
@@ -101,7 +109,8 @@
         </router-link>
 
         <nav class="lp-nav-links">
-          <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('home.docs') }}</a>
+          <router-link v-if="docsLinkLocal" to="/docs">{{ t('home.docs') }}</router-link>
+          <a v-else-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('home.docs') }}</a>
           <router-link v-if="showModelPlazaEntry" to="/model-plaza">{{ t('nav.modelPlaza') }}</router-link>
         </nav>
 
@@ -313,7 +322,11 @@
                 </div>
               </li>
             </ol>
-            <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer" class="lp-link">
+            <router-link v-if="docsLinkLocal" to="/docs" class="lp-link">
+              {{ t('home.lp.quickDocs') }}
+              <Icon name="chevronRight" size="xs" />
+            </router-link>
+            <a v-else-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer" class="lp-link">
               {{ t('home.lp.quickDocs') }}
               <Icon name="chevronRight" size="xs" />
             </a>
@@ -353,7 +366,8 @@
           <span class="lp-footer-sub">{{ siteSubtitle }}</span>
         </div>
         <nav class="lp-footer-links">
-          <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('home.docs') }}</a>
+          <router-link v-if="docsLinkLocal" to="/docs">{{ t('home.docs') }}</router-link>
+          <a v-else-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('home.docs') }}</a>
           <router-link v-if="showModelPlazaEntry" to="/model-plaza">{{ t('nav.modelPlaza') }}</router-link>
           <router-link to="/key-usage">{{ t('home.footer.keyUsage') }}</router-link>
         </nav>
@@ -370,6 +384,7 @@ import { useAuthStore, useAppStore } from '@/stores'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { sanitizeUrl } from '@/utils/url'
+import { isLocalDocsLink, resolveDocsLink } from '@/utils/docsLink'
 import { FeatureFlags, isFeatureFlagEnabled } from '@/utils/featureFlags'
 import { platformLabel } from '@/utils/platformColors'
 
@@ -382,7 +397,10 @@ const appStore = useAppStore()
 const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'Sub2API')
 const siteLogo = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true }))
 const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || 'AI API Gateway Platform')
-const docUrl = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.doc_url || appStore.docUrl || ''))
+const docUrl = computed(() =>
+  resolveDocsLink(sanitizeUrl(appStore.cachedPublicSettings?.doc_url || appStore.docUrl || '')),
+)
+const docsLinkLocal = computed(() => isLocalDocsLink(docUrl.value))
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
 const hasHomeContent = computed(() => homeContent.value.trim().length > 0)
 const compactHomeEnabled = computed(() => appStore.cachedPublicSettings?.compact_home_enabled === true)

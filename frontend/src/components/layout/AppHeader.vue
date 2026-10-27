@@ -29,9 +29,17 @@
         <!-- Announcement Bell -->
         <AnnouncementBell v-if="user" />
 
-        <!-- Docs Link -->
+        <!-- Docs Link：站内 /docs 用路由，外部文档站才新开窗口 -->
+        <router-link
+          v-if="docsLinkLocal"
+          to="/docs"
+          class="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white sm:flex"
+        >
+          <Icon name="book" size="sm" />
+          <span class="hidden sm:inline">{{ t('nav.docs') }}</span>
+        </router-link>
         <a
-          v-if="docUrl"
+          v-else-if="docUrl"
           :href="docUrl"
           target="_blank"
           rel="noopener noreferrer"
@@ -276,6 +284,7 @@ import SubscriptionProgressMini from '@/components/common/SubscriptionProgressMi
 import AnnouncementBell from '@/components/common/AnnouncementBell.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { sanitizeUrl } from '@/utils/url'
+import { isLocalDocsLink, resolveDocsLink } from '@/utils/docsLink'
 import { FeatureFlags, isFeatureFlagEnabled } from '@/utils/featureFlags'
 import { usePageTitle } from '@/composables/usePageTitle'
 
@@ -291,7 +300,8 @@ const isDark = ref(document.documentElement.classList.contains('dark'))
 const dropdownOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 const contactInfo = computed(() => appStore.contactInfo)
-const docUrl = computed(() => sanitizeUrl(appStore.docUrl))
+const docUrl = computed(() => resolveDocsLink(sanitizeUrl(appStore.docUrl)))
+const docsLinkLocal = computed(() => isLocalDocsLink(docUrl.value))
 const modelPlazaEnabled = computed(() => isFeatureFlagEnabled(FeatureFlags.modelPlaza))
 const avatarUrl = computed(() => user.value?.avatar_url?.trim() || '')
 const availableBalance = computed(() => Number(user.value?.balance || 0))
