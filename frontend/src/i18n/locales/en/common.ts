@@ -189,6 +189,7 @@ export default {
     promoCodes: 'Promo Codes',
     settings: 'Settings',
     myAccount: 'My Account',
+    contactUs: 'Contact us',
     lightMode: 'Light Mode',
     darkMode: 'Dark Mode',
     collapse: 'Collapse',

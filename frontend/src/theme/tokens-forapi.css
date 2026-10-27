@@ -607,8 +607,6 @@ h1, h2, h3 {
    ========================================================================== */
 .input {
   height: 2.375rem;            /* 38px */
-  padding-left: 0.75rem;
-  padding-right: 0.75rem;
   border-radius: var(--r-md);
   border: 1px solid rgb(var(--line-light) / var(--line-a-light));
   background-color: #fff;
@@ -616,6 +614,16 @@ h1, h2, h3 {
   font-family: var(--font-ui);
   color: rgb(var(--n-900));
   box-shadow: none;
+}
+
+/* 左右内边距单独用 :where() 声明为 0 权重。
+   登录框、搜索框靠 pl-9 / pl-10 / pl-11 给左侧图标让位，但本文件在
+   style.css 之后加载，同权重会盖掉那些工具类，结果图标压在 placeholder
+   文字上；:where(.input) 权重为 0，任何 padding 工具类都能赢，
+   没写工具类的输入框仍然拿到这里的默认值。 */
+:where(.input) {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
 }
 
 .input:focus {
@@ -909,4 +917,79 @@ h1, h2, h3 {
 /* 操作列的按钮之间不要用 gap 撑开，靠自身内边距就够 */
 .table-wrapper td.sticky-col-right > div {
   gap: 0.125rem;
+}
+
+/* ==========================================================================
+   侧栏底部联系方式卡片
+   --------------------------------------------------------------------------
+   参考 apipod 的左栏收尾：一张浅底卡片承载「加入交流群」这类入口，
+   把栏目收住，而不是让菜单下面空着。这里放站点真实配置的联系方式
+   （settings.contact_info），折叠侧栏时隐藏。
+   ========================================================================== */
+.sidebar-contact {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.625rem 0.625rem 0.6875rem;
+  border-radius: var(--r-md);
+  background-color: rgb(var(--p-500) / 0.09);
+  border: 1px solid rgb(var(--p-500) / 0.16);
+}
+
+.dark .sidebar-contact {
+  background-color: rgb(var(--p-500) / 0.12);
+  border-color: rgb(var(--p-500) / 0.22);
+}
+
+.sidebar-contact-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  border-radius: 6px;
+  background-color: rgb(var(--p-500) / 0.16);
+  color: rgb(var(--p-700));
+}
+
+.dark .sidebar-contact-icon {
+  color: rgb(var(--p-300));
+}
+
+.sidebar-contact-icon svg {
+  width: 0.9375rem;
+  height: 0.9375rem;
+}
+
+.sidebar-contact-body {
+  min-width: 0;
+}
+
+.sidebar-contact-title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: rgb(var(--n-900));
+}
+
+.dark .sidebar-contact-title {
+  color: rgb(var(--n-50));
+}
+
+.sidebar-contact-value {
+  margin: 0.25rem 0 0;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  /* 逐条渲染后只在必要时断行，且优先在空格处断，
+     避免「微信」这类词被拆到两行 */
+  overflow-wrap: break-word;
+  color: rgb(var(--n-600));
+}
+
+.dark .sidebar-contact-value {
+  color: rgb(var(--n-400));
 }

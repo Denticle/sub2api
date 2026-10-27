@@ -24,12 +24,12 @@
    ========================================================================== */
 
 :root {
-  --shell-sidebar-w: 15rem;        /* 240px */
+  --shell-sidebar-w: 11.75rem;     /* 188px：英文最长标签 178px 仍留出余量 */
   --shell-sidebar-w-collapsed: 4.5rem; /* 72px，与上游折叠宽度一致 */
   --shell-header-h: 3.5rem;        /* 56px，OpenRouter --navbar-height */
   --shell-container-max: none;     /* 铺满，不做居中限宽 */
-  --shell-pad-x: 2rem;             /* 32px，md 以上 */
-  --shell-pad-x-sm: 1.5rem;        /* 24px，小屏 */
+  --shell-pad-x: 1.5rem;           /* 24px，md 以上；与顶栏内边距对齐 */
+  --shell-pad-x-sm: 1.25rem;       /* 20px，小屏 */
   --shell-pad-b: 3.5rem;           /* 56px 底部呼吸 */
 }
 
@@ -60,7 +60,14 @@
     padding-inline: var(--shell-pad-x);
   }
 
-  /* 侧栏：容器内的一列目录，sticky 在顶部导航下方 */
+  /* 侧栏：容器内的一列目录，sticky 在顶部导航下方。
+     宽度收窄到 188px：中文标签最长 6 字、英文最长 "My Subscriptions"
+     都放得下，240px 会在文字右侧留出一大段空白，把内容区推远。
+     折叠态（w-[72px]）不受影响。 */
+  .sidebar.sidebar.w-60 {
+    width: var(--shell-sidebar-w);
+  }
+
   .sidebar.sidebar {
     position: sticky;
     top: var(--shell-header-h);
@@ -82,9 +89,11 @@
     display: none;
   }
 
+  /* 侧栏右侧预留的空白只服务英文长标签；中文下这段空白纯属浪费，
+     所以按内容宽度收缩，把省下的空间让给主区域。 */
   .sidebar .sidebar-nav {
     padding-left: 0;
-    padding-right: 1rem;
+    padding-right: 0.25rem;
     padding-top: 0;
   }
 
@@ -123,7 +132,7 @@
 
 @media (min-width: 1024px) {
   .app-shell-body main.p-4 {
-    padding: 1.75rem 0 2.5rem 2rem;
+    padding: 1.75rem 0 2.5rem 0.5rem;
   }
 }
 
@@ -261,6 +270,26 @@ main:has(> .table-page-layout) {
   height: calc(100dvh - var(--shell-header-h));
   min-height: 0;
   overflow: hidden;
+  /* 操作按钮要绝对定位到标题行，锚点放在 main 上 */
+  position: relative;
+}
+
+/* 操作按钮与页面标题同一行
+   --------------------------------------------------------------------------
+   TablePageLayout 把 #actions 渲染成独立的一段（.layout-section-fixed），
+   于是「刷新 / 列设置 / 新建」单独占一行、靠右，左侧空出一大片，
+   看上去像一块浮在标题与筛选之间的孤岛。桌面端把它提到标题所在的
+   第一行右侧，标题给它留出宽度，两者共用同一条基线。 */
+main:has(> .table-page-layout) > .table-page-layout > .layout-section-fixed:has(> .flex.justify-end) {
+  position: absolute;
+  top: 1.75rem;               /* 与 main 的 padding-top 对齐，即标题顶边 */
+  right: var(--shell-pad-x);  /* 与内容右边界对齐 */
+  z-index: 5;
+}
+
+/* 标题行右侧给按钮让出位置，避免长标题压到按钮下面 */
+main:has(> .table-page-layout) > .app-page-title {
+  padding-right: 15rem;
 }
 
 main > .app-page-title {
