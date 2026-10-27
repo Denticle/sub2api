@@ -150,17 +150,30 @@
 
     <!-- Bottom Section -->
     <div class="mt-auto border-t border-gray-100 p-3 dark:border-dark-800">
-      <!-- 联系方式卡片：只在展开态出现，折叠时让位给图标按钮 -->
-      <div v-if="!sidebarCollapsed && contactInfo" class="sidebar-contact">
+      <!-- 联系方式：卡片式收尾，折叠态换成可点的图标 -->
+      <a
+        v-if="!sidebarCollapsed && contactInfo"
+        class="sidebar-contact"
+        :href="contactLink || undefined"
+        :target="contactLink ? '_blank' : undefined"
+        rel="noopener noreferrer"
+      >
         <span class="sidebar-contact-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm3.75 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm3.75 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 0 1-.825-.242m9.345-8.334a2.126 2.126 0 0 0-.476-.095 48.64 48.64 0 0 0-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0 0 11.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
           </svg>
         </span>
-        <div class="sidebar-contact-body">
-          <p class="sidebar-contact-title">{{ t('nav.contactUs') }}</p>
-          <p v-for="(line, i) in contactLines" :key="i" class="sidebar-contact-value">{{ line }}</p>
-        </div>
+        <span class="sidebar-contact-body">
+          <span class="sidebar-contact-title">{{ t('nav.contactUs') }}</span>
+          <span class="sidebar-contact-sub">{{ t('nav.contactUsSub') }}</span>
+        </span>
+      </a>
+      <div v-if="!sidebarCollapsed && contactInfo" class="sidebar-contact-lines">
+        <span v-for="(line, i) in contactLines" :key="i" class="sidebar-contact-line">
+          <span class="sidebar-contact-line-key">{{ line.key }}</span>
+          <span class="sidebar-contact-line-val">{{ line.value }}</span>
+        </span>
       </div>
 
       <!-- Theme Toggle -->
@@ -281,14 +294,24 @@ const siteVersion = computed(() => appStore.siteVersion)
 // 联系方式：来自站点的公开设置，与管理端保持一致，不在前端写死
 const contactInfo = computed(() => (appStore.contactInfo || '').trim())
 
-// 站点配置里常用连续空格分隔多个联系方式（如「QQ：xxx      微信：yyy」），
-// 直接整段渲染会在窄栏里把「微信」拆成两行。按分隔符拆成条目逐行显示。
+// 站点配置里常用连续空格分隔多个联系方式（如「QQ：xxx      微信：yyy」）。
+// 拆成 { key, value } 两栏对齐显示，比一整段自由文本更好扫读。
 const contactLines = computed(() =>
   contactInfo.value
     .split(/\s{2,}|[\n;；]+/)
     .map((part) => part.trim())
-    .filter(Boolean),
+    .filter(Boolean)
+    .map((part) => {
+      const m = part.match(/^(.{1,6}?)\s*[：:]\s*(.+)$/)
+      return m ? { key: m[1].trim(), value: m[2].trim() } : { key: '', value: part }
+    }),
 )
+
+// 有 QQ 号时可拼出加好友链接；微信没有可用的网页链接，保持纯文本
+const contactLink = computed(() => {
+  const qq = contactLines.value.find((l) => /qq/i.test(l.key))?.value?.replace(/\D/g, '')
+  return qq ? `https://wpa.qq.com/msgrd?v=3&uin=${qq}&site=qq&menu=yes` : ''
+})
 
 const settingsLoaded = computed(() => appStore.publicSettingsLoaded)
 

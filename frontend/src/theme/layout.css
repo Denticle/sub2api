@@ -274,25 +274,63 @@ main:has(> .table-page-layout) {
   position: relative;
 }
 
-/* 操作按钮与页面标题同一行
+/* 操作按钮与筛选条同一行
    --------------------------------------------------------------------------
-   TablePageLayout 把 #actions 渲染成独立的一段（.layout-section-fixed），
-   于是「刷新 / 列设置 / 新建」单独占一行、靠右，左侧空出一大片，
-   看上去像一块浮在标题与筛选之间的孤岛。桌面端把它提到标题所在的
-   第一行右侧，标题给它留出宽度，两者共用同一条基线。 */
+   TablePageLayout 把 #actions / #filters / 表格 / 分页各渲染成一段，默认是
+   纵向排列，于是「刷新 / 列设置 / 新建」独占一行，左边空出一大片。
+
+   这里改成显式网格：筛选占第一行左侧，操作区占第一行右侧，表格与分页各占
+   整行。用 grid 而不是 flex-wrap —— 换行取决于剩余空间，结果不稳定；
+   显式行列是确定的。
+
+   两组 .layout-section-fixed 只能靠相邻关系区分：
+     筛选 = 紧挨在表格滚动区之前的那一段
+     分页 = 紧跟在表格滚动区之后的那一段 */
+main:has(> .table-page-layout) > .table-page-layout.table-page-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-content: stretch;
+}
+
+/* 操作区：第一行右侧 */
 main:has(> .table-page-layout) > .table-page-layout > .layout-section-fixed:has(> .flex.justify-end) {
-  position: absolute;
-  top: 1.75rem;               /* 与 main 的 padding-top 对齐，即标题顶边 */
-  right: var(--shell-pad-x);  /* 与内容右边界对齐 */
-  z-index: 5;
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  justify-self: end;
+  padding-left: 1rem;
 }
 
-/* 标题行右侧给按钮让出位置，避免长标题压到按钮下面 */
+/* 筛选：第一行左侧 */
+main:has(> .table-page-layout) > .table-page-layout > .layout-section-fixed:has(+ .layout-section-scrollable) {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+  min-width: 0;
+}
+
+/* 表格：整行，吃掉剩余高度 */
+main:has(> .table-page-layout) > .table-page-layout > .layout-section-scrollable {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-height: 0;
+}
+
+/* 分页：整行 */
+main:has(> .table-page-layout) > .table-page-layout > .layout-section-scrollable + .layout-section-fixed {
+  grid-column: 1 / -1;
+  grid-row: 3;
+}
+
+/* 只有操作区、没有筛选的页面（多数列表页）：操作区仍然靠右占第一行，
+   但同行左侧空着没有意义，此时让它自己成一行靠右即可。 */
+main:has(> .table-page-layout) > .table-page-layout > .layout-section-fixed:has(> .flex.justify-end):first-child {
+  grid-column: 1 / -1;
+  justify-self: end;
+}
+
 main:has(> .table-page-layout) > .app-page-title {
-  padding-right: 15rem;
-}
-
-main > .app-page-title {
   flex-shrink: 0;
 }
 

@@ -142,20 +142,24 @@ body {
 
 /* 目录链接：OpenRouter 的左侧导航是紧凑纯文字，32px 高、无描边 */
 .sidebar-link {
-  min-height: 2rem;
+  /* 与主区域同一套排印：14px / 500 / 继承 --font-ui。
+     之前 13px + 更灰的颜色（n-600）双重削弱，看起来像另一种更细的字。
+     这里字号对齐，颜色改用主区域次要文字的 n-700 / n-300。 */
+  min-height: 2.25rem;
   border-radius: var(--r-md);
-  padding: 0.375rem 0.625rem;
+  padding: 0.4375rem 0.625rem;
   margin-bottom: 0.125rem;
-  font-size: 0.8125rem;     /* 13px */
+  font-family: var(--font-ui);
+  font-size: 0.875rem;      /* 14px */
   font-weight: 500;
-  letter-spacing: -0.002em;
-  color: rgb(var(--n-600));
+  letter-spacing: 0;
+  color: rgb(var(--n-700));
   transition: background-color 120ms ease, color 120ms ease;
 }
 
 .sidebar-link svg {
-  width: 1rem;
-  height: 1rem;
+  width: 1.0625rem;
+  height: 1.0625rem;
   opacity: 0.75;
 }
 
@@ -165,12 +169,12 @@ body {
 }
 
 .dark .sidebar-link {
-  color: rgb(var(--n-400));
+  color: rgb(var(--n-300));
 }
 
 .dark .sidebar-link:hover {
   background-color: rgb(var(--d-700) / 0.6);
-  color: rgb(var(--n-100));
+  color: rgb(var(--n-50));
 }
 
 /* 选中态：极淡的主色底 + 主色文字，不加描边（OpenRouter 的处理） */
@@ -922,40 +926,52 @@ h1, h2, h3 {
 /* ==========================================================================
    侧栏底部联系方式卡片
    --------------------------------------------------------------------------
-   参考 apipod 的左栏收尾：一张浅底卡片承载「加入交流群」这类入口，
-   把栏目收住，而不是让菜单下面空着。这里放站点真实配置的联系方式
-   （settings.contact_info），折叠侧栏时隐藏。
+   参考 apipod 左栏收尾的做法：用一块浅色卡片把菜单收住，而不是让走廊空着。
+   数据取 settings.contact_info 的真实值（QQ / 微信），折叠侧栏时隐藏。
+   分两段：可点的标题行 + 键值对齐的明细行，避免一整段自由文本。
    ========================================================================== */
 .sidebar-contact {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.75rem;
-  padding: 0.625rem 0.625rem 0.6875rem;
+  padding: 0.5rem 0.5rem 0.4375rem;
   border-radius: var(--r-md);
-  background-color: rgb(var(--p-500) / 0.09);
-  border: 1px solid rgb(var(--p-500) / 0.16);
+  text-decoration: none;
+  background-color: rgb(var(--p-500) / 0.1);
+  border: 1px solid rgb(var(--p-500) / 0.18);
+  transition: background-color 130ms ease, border-color 130ms ease;
+}
+
+a.sidebar-contact:hover {
+  background-color: rgb(var(--p-500) / 0.16);
+  border-color: rgb(var(--p-500) / 0.3);
 }
 
 .dark .sidebar-contact {
-  background-color: rgb(var(--p-500) / 0.12);
+  background-color: rgb(var(--p-500) / 0.13);
   border-color: rgb(var(--p-500) / 0.22);
+}
+
+.dark a.sidebar-contact:hover {
+  background-color: rgb(var(--p-500) / 0.19);
+  border-color: rgb(var(--p-500) / 0.34);
 }
 
 .sidebar-contact-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.625rem;
+  height: 1.625rem;
   flex-shrink: 0;
-  border-radius: 6px;
-  background-color: rgb(var(--p-500) / 0.16);
-  color: rgb(var(--p-700));
+  border-radius: 7px;
+  background-color: rgb(var(--p-600));
+  color: #fff;
 }
 
 .dark .sidebar-contact-icon {
-  color: rgb(var(--p-300));
+  background-color: rgb(var(--p-500));
+  color: rgb(var(--p-950));
 }
 
 .sidebar-contact-icon svg {
@@ -964,32 +980,67 @@ h1, h2, h3 {
 }
 
 .sidebar-contact-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.0625rem;
   min-width: 0;
 }
 
 .sidebar-contact-title {
-  margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: rgb(var(--n-900));
+  color: rgb(var(--p-800));
 }
 
 .dark .sidebar-contact-title {
-  color: rgb(var(--n-50));
+  color: rgb(var(--p-200));
 }
 
-.sidebar-contact-value {
-  margin: 0.25rem 0 0;
+.sidebar-contact-sub {
   font-size: 0.6875rem;
-  line-height: 1.45;
-  font-variant-numeric: tabular-nums;
-  /* 逐条渲染后只在必要时断行，且优先在空格处断，
-     避免「微信」这类词被拆到两行 */
-  overflow-wrap: break-word;
-  color: rgb(var(--n-600));
+  line-height: 1.3;
+  color: rgb(var(--p-700) / 0.8);
 }
 
-.dark .sidebar-contact-value {
-  color: rgb(var(--n-400));
+.dark .sidebar-contact-sub {
+  color: rgb(var(--p-300) / 0.75);
+}
+
+/* 明细：左键右值，等宽数字，扫读时对齐 */
+.sidebar-contact-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0.5625rem 0.5625rem;
+}
+
+.sidebar-contact-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.6875rem;
+  line-height: 1.4;
+}
+
+.sidebar-contact-line-key {
+  flex-shrink: 0;
+  width: 2.25rem;
+  color: rgb(var(--n-500));
+}
+
+.sidebar-contact-line-val {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: rgb(var(--n-800));
+}
+
+.dark .sidebar-contact-line-key {
+  color: rgb(var(--n-500));
+}
+
+.dark .sidebar-contact-line-val {
+  color: rgb(var(--n-200));
 }
