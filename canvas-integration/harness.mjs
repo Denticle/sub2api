@@ -39,6 +39,8 @@ const server = http.createServer(async (req, res) => {
   if (p === '/api/v1/keys') {
     const auth = req.headers.authorization || ''
     if (!auth.startsWith('Bearer ')) return json(res, 401, { code: 401, message: 'unauthorized' })
+    // 用于验证 token 过期分支
+    if (auth === 'Bearer expired-token') return json(res, 401, { code: 401, message: 'token expired' })
     console.log('[mock] /api/v1/keys ->', KEYS.length, 'keys')
     return json(res, 200, { data: { items: KEYS, total: KEYS.length } })
   }
