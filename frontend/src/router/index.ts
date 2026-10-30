@@ -226,6 +226,19 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/workbench',
+    name: 'Studio',
+    component: () => import('@/views/user/StudioView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Canvas Studio',
+      titleKey: 'nav.studio',
+      // 画布是全高工作区，不要主站的页面内边距和标题区
+      fullBleed: true
+    }
+  },
+  {
     path: '/batch-image',
     name: 'BatchImageGuide',
     alias: '/docs/batch-image',

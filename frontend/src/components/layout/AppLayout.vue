@@ -11,10 +11,10 @@
       <!-- Main Content Area -->
       <div class="relative min-w-0 flex-1">
         <!-- Main Content -->
-        <main class="p-4 md:p-6 lg:p-8">
+        <main :class="fullBleed ? 'app-main-bleed' : 'p-4 md:p-6 lg:p-8'">
           <!-- 页面主标题：视觉锚点。个别视图自带 h1.page-title，
                由样式表中的 :has() 规则自动隐藏这里的副本，避免重复。 -->
-          <div v-if="pageTitle" class="app-page-title">
+          <div v-if="pageTitle && !fullBleed" class="app-page-title">
             <h1>{{ pageTitle }}</h1>
             <p v-if="pageDescription">{{ pageDescription }}</p>
           </div>
@@ -29,6 +29,7 @@
 <script setup lang="ts">
 import '@/styles/onboarding.css'
 import { computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useOnboardingTour } from '@/composables/useOnboardingTour'
 import { useOnboardingStore } from '@/stores/onboarding'
@@ -40,6 +41,10 @@ const authStore = useAuthStore()
 const isAdmin = computed(() => authStore.user?.role === 'admin')
 
 const { pageTitle, pageDescription } = usePageTitle()
+
+// 全高工作区（画布等）不要页面内边距和标题区，自己铺满
+const route = useRoute()
+const fullBleed = computed(() => route.meta.fullBleed === true)
 
 const { replayTour } = useOnboardingTour({
   storageKey: isAdmin.value ? 'admin_guide' : 'user_guide',
