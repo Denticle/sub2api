@@ -51,6 +51,31 @@ const server = http.createServer(async (req, res) => {
     return json(res, 200, MODELS)
   }
 
+  // 模拟主站工作台：侧栏五项 + iframe，消息协议和 frontend/src/views/user/WorkbenchView.vue 一致
+  if (p === '/host') {
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
+    return res.end(`<!doctype html><meta charset="utf-8"><style>
+      body{margin:0;display:flex;height:100vh;font:13px system-ui;background:#141413;color:#eee}
+      nav{width:150px;padding:12px;display:flex;flex-direction:column;gap:4px}
+      nav button{all:unset;padding:8px 10px;border-radius:8px;cursor:pointer}
+      nav button.on{background:#22c55e22;color:#4ade80}
+      iframe{flex:1;border:0}</style>
+      <nav id="nav"></nav><iframe id="f" src="/studio/canvas"></iframe>
+      <script>
+        const TOOLS=['canvas','image','video','prompts','assets'];let cur='canvas',ready=false,childTool='';
+        window.__routes=[];
+        const nav=document.getElementById('nav'),f=document.getElementById('f');
+        const draw=()=>{nav.innerHTML='';TOOLS.forEach(t=>{const b=document.createElement('button');b.textContent=t;b.dataset.tool=t;if(t===cur)b.className='on';b.onclick=()=>go(t);nav.appendChild(b)})};
+        const send=t=>f.contentWindow.postMessage({type:'studio:navigate',path:'/'+t},location.origin);
+        function go(t){const same=t===cur;cur=t;draw();if(ready&&(same||t!==childTool))send(t)}
+        addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==f.contentWindow)return;const d=e.data;if(!d||d.type!=='studio:route')return;
+          window.__routes.push(d.path);const first=d.path.replace(/^\\/+/,'').split('/')[0];const t=TOOLS.includes(first)?first:'';
+          if(!ready){ready=true;childTool=t;if(t!==cur)send(cur);return}
+          childTool=t;if(t&&t!==cur){cur=t;draw()}});
+        draw();
+      </script>`)
+  }
+
   // mock：登录页（守卫跳回来时要有东西接）
   if (p === '/login') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })

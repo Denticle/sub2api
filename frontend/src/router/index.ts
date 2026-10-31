@@ -227,13 +227,18 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/workbench',
-    name: 'Studio',
-    component: () => import('@/views/user/StudioView.vue'),
+    redirect: '/workbench/canvas'
+  },
+  {
+    // 工作台的五个功能共用一个视图：同一个 iframe，按 :tool 切到画布里对应的页面
+    path: '/workbench/:tool(canvas|image|video|prompts|assets)',
+    name: 'Workbench',
+    component: () => import('@/views/user/WorkbenchView.vue'),
     meta: {
       requiresAuth: true,
       requiresAdmin: false,
-      title: 'Canvas Studio',
-      titleKey: 'nav.studio',
+      title: 'Workbench',
+      titleKey: 'nav.workbench',
       // 画布是全高工作区，不要主站的页面内边距和标题区
       fullBleed: true
     }

@@ -286,6 +286,7 @@
       empty.appendChild(document.createTextNode('还没有可用的密钥。先去 '))
       var a = el('a', '', 'API 密钥')
       a.href = '/keys'
+      a.target = '_top'
       empty.appendChild(a)
       empty.appendChild(document.createTextNode(' 创建一个，再回来。'))
       card.appendChild(empty)
@@ -363,12 +364,19 @@
     document.body.appendChild(gate)
   }
 
+  /** 去登录页。嵌在主站 iframe 里时跳顶层窗口，否则登录页会被套进 iframe 里 */
+  function toLogin(here) {
+    var target = window.top || window
+    var back = target === window ? here : target.location.pathname + target.location.search + target.location.hash
+    target.location.replace('/login?redirect=' + encodeURIComponent(back))
+  }
+
   // ---- 入口 ----
   function boot() {
     var token = getToken()
     if (!token) {
       var here = location.pathname + location.search + location.hash
-      location.replace('/login?redirect=' + encodeURIComponent(here))
+      toLogin(here)
       return
     }
 
@@ -388,7 +396,7 @@
         if (err && err.code === 401) {
           // token 过期：交给登录页续期
           var here = location.pathname + location.search + location.hash
-          location.replace('/login?redirect=' + encodeURIComponent(here))
+          toLogin(here)
           return
         }
         showError('读取密钥列表失败，请稍后重试。', token)
