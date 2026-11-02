@@ -49,11 +49,20 @@ const server = http.createServer(async (req, res) => {
   }
 
   // mock：生图，故意慢 4 秒，用来测「生成中切走页面，任务还在不在」
+  // 行为照抄后端的 JSON keepalive：先写 200 和若干空白心跳，最后才写 JSON；
+  // 提示词里带 FAIL 时，最后写的是 200 + { error }（心跳发出后上游失败只能这样返回）
   if (p === '/v1/images/generations' && req.method === 'POST') {
     const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
-    console.log('[mock] /v1/images/generations (4s)')
-    await new Promise((r) => setTimeout(r, 4000))
-    return json(res, 200, { created: Date.now(), data: [{ b64_json: PNG }] })
+    let body = ''
+    for await (const chunk of req) body += chunk
+    const fail = body.includes('FAIL')
+    console.log('[mock] /v1/images/generations (4s, keepalive)', fail ? 'FAIL' : 'ok')
+    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' })
+    for (let i = 0; i < 4; i++) {
+      await new Promise((r) => setTimeout(r, 1000))
+      res.write(' \n')
+    }
+    return res.end(JSON.stringify(fail ? { error: { type: 'upstream_error', message: '上游生成失败：内容审核未通过' } } : { created: Date.now(), data: [{ b64_json: PNG }] }))
   }
 
   // ---- 主站模式（MAIN_DIST）：托管真实主站构建，mock 它启动要用的几个接口 ----

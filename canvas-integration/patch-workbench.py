@@ -202,6 +202,24 @@ edit(
     [(re.compile(r'modalDescription: "[^"]*"'), 'modalDescription: "API key, default models, sync and local storage"')],
 )
 
+# 本站生图开了 JSON keepalive（防 Cloudflare 120 秒断开）：心跳一旦发出，状态码已经是 200，
+# 之后上游再失败只能在 200 里返回 { error: { message } }。上游代码只认 HTTP 错误码和 code/msg，
+# 碰到这种 200 会报一句「没有返回图片」，把真正的原因吞掉——这里先读 error 字段。
+edit(
+    "src/services/api/image.ts",
+    [
+        (
+            '    if (typeof payload.code === "number" && payload.code !== 0) {\n        throw new Error(payload.msg || apiText("requestFailed"));\n    }',
+            '    if (typeof payload.code === "number" && payload.code !== 0) {\n        throw new Error(payload.msg || apiText("requestFailed"));\n    }\n'
+            '    const bodyError = (payload as Record<string, unknown>).error;\n'
+            '    if (bodyError && !payload.data) {\n'
+            '        const message = typeof bodyError === "string" ? bodyError : (bodyError as { message?: unknown }).message;\n'
+            '        throw new Error(typeof message === "string" && message ? message : apiText("requestFailed"));\n'
+            '    }',
+        ),
+    ],
+)
+
 # 历史配置里开着的本地代理一律关掉——请求只走本站
 edit(
     "src/stores/use-config-store.ts",
