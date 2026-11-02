@@ -45,6 +45,14 @@ const server = http.createServer(async (req, res) => {
     return json(res, 200, { data: { items: KEYS, total: KEYS.length } })
   }
 
+  // mock：生图，故意慢 4 秒，用来测「生成中切走页面，任务还在不在」
+  if (p === '/v1/images/generations' && req.method === 'POST') {
+    const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+    console.log('[mock] /v1/images/generations (4s)')
+    await new Promise((r) => setTimeout(r, 4000))
+    return json(res, 200, { created: Date.now(), data: [{ b64_json: PNG }] })
+  }
+
   // mock：模型列表
   if (p === '/v1/models') {
     console.log('[mock] /v1/models ->', MODELS.data.length, 'models')
@@ -62,6 +70,8 @@ const server = http.createServer(async (req, res) => {
       iframe{flex:1;border:0}</style>
       <nav id="nav"></nav><iframe id="f" src="/studio/canvas"></iframe>
       <script>
+        // 「离开工作台」：iframe 隐藏但不销毁，和 WorkbenchHost.vue 的做法一致
+        window.leave=()=>{f.style.visibility='hidden';f.inert=true};window.back=()=>{f.style.visibility='';f.inert=false};
         const TOOLS=['canvas','image','video','prompts','assets'];let cur='canvas',ready=false,childTool='';
         window.__routes=[];
         const nav=document.getElementById('nav'),f=document.getElementById('f');

@@ -4,6 +4,7 @@ import { computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import Toast from '@/components/common/Toast.vue'
 import NavigationProgress from '@/components/common/NavigationProgress.vue'
 import AdminComplianceDialog from '@/components/admin/AdminComplianceDialog.vue'
+import WorkbenchHost from '@/components/layout/WorkbenchHost.vue'
 import { resolveRouteDocumentTitle } from '@/router/title'
 import AnnouncementPopup from '@/components/common/AnnouncementPopup.vue'
 import { useAppStore, useAuthStore, useSubscriptionStore, useAnnouncementStore, useAdminComplianceStore, useAdminSettingsStore } from '@/stores'
@@ -167,4 +168,6 @@ onMounted(async () => {
   <Toast />
   <AnnouncementPopup />
   <AdminComplianceDialog />
+  <!-- 工作台 iframe：整个会话只建一次，离开工作台时隐藏而不销毁，后台任务不中断 -->
+  <WorkbenchHost />
 </template>

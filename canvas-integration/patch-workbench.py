@@ -61,6 +61,61 @@ edit(
     ],
 )
 
+# ---- 1. 切换功能不卸载页面（任务在后台跑完）----
+# 路由加显式 id：KeepAliveOutlet 按 id 缓存，快捷键守卫按 id 判断自己是不是当前页
+ROUTE_IDS = [
+    ('{ path: "/", element: <Navigate to="/canvas" replace /> },', '{ id: "root-redirect", path: "/", element: <Navigate to="/canvas" replace /> },'),
+    ('{ path: "/image", element: <ImagePage /> },', '{ id: "image", path: "/image", element: <ImagePage /> },'),
+    ('{ path: "/video", element: <VideoPage /> },', '{ id: "video", path: "/video", element: <VideoPage /> },'),
+    ('{ path: "/assets", element: <AssetsPage /> },', '{ id: "assets", path: "/assets", element: <AssetsPage /> },'),
+    ('{ path: "/prompts", element: <PromptsPage /> },', '{ id: "prompts", path: "/prompts", element: <PromptsPage /> },'),
+    ('{ path: "/canvas", element: <CanvasPage /> },', '{ id: "canvas-list", path: "/canvas", element: <CanvasPage /> },'),
+    ('{ path: "/canvas/:id", element: <CanvasProjectPage /> },', '{ id: "canvas-project", path: "/canvas/:id", element: <CanvasProjectPage /> },'),
+    ('{ path: "/config", element: <ConfigPage /> },', '{ id: "config", path: "/config", element: <ConfigPage /> },'),
+]
+edit(
+    "src/router.tsx",
+    [
+        ('import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";', 'import { createBrowserRouter, Navigate } from "react-router-dom";'),
+        ('import UserLayout from "@/layouts/user-layout";', 'import { KeepAliveOutlet } from "@/components/layout/keep-alive-outlet";\nimport UserLayout from "@/layouts/user-layout";'),
+        ("<Outlet />", "<KeepAliveOutlet />"),
+        *ROUTE_IDS,
+    ],
+)
+
+# 画布项目页的全局快捷键挂在 window 上，页面隐藏了也还在监听。
+# 只在画布项目页是当前页时响应——否则在生图页按 Delete / ⌘Z 会改后台的画布。
+GUARD = 'if (!isRouteActive("canvas-project")) return;'
+IMPORT = 'import { isRouteActive } from "@/components/layout/keep-alive-outlet";\n'
+edit(
+    "src/pages/canvas/project.tsx",
+    [
+        ('import { useNavigate, useParams, useSearchParams } from "react-router-dom";\n', 'import { useNavigate, useParams, useSearchParams } from "react-router-dom";\n' + IMPORT),
+        (
+            "        const handleKeyDown = (event: KeyboardEvent) => {\n            const target = event.target instanceof Element ? event.target : null;\n            if (event.target instanceof HTMLInputElement",
+            "        const handleKeyDown = (event: KeyboardEvent) => {\n            " + GUARD + "\n            const target = event.target instanceof Element ? event.target : null;\n            if (event.target instanceof HTMLInputElement",
+        ),
+        (
+            '        const exit = (event: KeyboardEvent) => {\n            if (event.key !== "Escape") return;',
+            '        const exit = (event: KeyboardEvent) => {\n            ' + GUARD + '\n            if (event.key !== "Escape") return;',
+        ),
+    ],
+)
+edit(
+    "src/components/canvas/infinite-canvas.tsx",
+    [
+        ('import React, { useEffect, useRef, useState } from "react";\n', 'import React, { useEffect, useRef, useState } from "react";\n' + IMPORT),
+        (
+            '        const handleKeyDown = (event: KeyboardEvent) => {\n            if (event.key === "Control") setIsControlPressed(true);',
+            '        const handleKeyDown = (event: KeyboardEvent) => {\n            ' + GUARD + '\n            if (event.key === "Control") setIsControlPressed(true);',
+        ),
+        (
+            "        const handleKeyUp = (event: KeyboardEvent) => {\n            if (event.code === \"Space\") {",
+            "        const handleKeyUp = (event: KeyboardEvent) => {\n            " + GUARD + "\n            if (event.code === \"Space\") {",
+        ),
+    ],
+)
+
 # ---- 1. 与主站互通路由 ----
 EMBED = '''
 // 嵌在主站「工作台」里时：
