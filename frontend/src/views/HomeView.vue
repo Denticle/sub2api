@@ -112,6 +112,7 @@
           <router-link v-if="docsLinkLocal" to="/docs">{{ t('home.docs') }}</router-link>
           <a v-else-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('home.docs') }}</a>
           <router-link v-if="showModelPlazaEntry" to="/model-plaza">{{ t('nav.modelPlaza') }}</router-link>
+          <a v-if="showWorkbench" href="#lp-workbench">{{ t('nav.workbench') }}</a>
         </nav>
 
         <div class="lp-nav-actions">
@@ -226,6 +227,86 @@
             <div v-for="stat in stats" :key="stat.key">
               <dt>{{ stat.label }}</dt>
               <dd>{{ stat.value }}</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <!-- ── 工作台 ─────────────────────────────────────────────── -->
+      <section v-if="showWorkbench" class="lp-section" id="lp-workbench" data-testid="home-workbench">
+        <div class="lp-wrap">
+          <header class="lp-sec-head lp-sec-head-row">
+            <div>
+              <p class="lp-kicker">{{ t('home.lp.wbKicker') }}</p>
+              <h2>{{ t('home.lp.wbTitle') }}</h2>
+              <p>{{ t('home.lp.wbSub') }}</p>
+            </div>
+            <router-link :to="workbenchTarget" class="lp-btn lp-btn-primary">
+              {{ t('home.lp.wbCta') }}
+              <Icon name="arrowRight" size="sm" />
+            </router-link>
+          </header>
+
+          <!-- 画布示意：纯 CSS/SVG 的界面草图，不是截图。三个节点 + 两条连线，
+               表达「一句提示词 → 出图 → 拿图去做视频」这条链路 -->
+          <figure class="lp-wb-stage" aria-hidden="true">
+            <svg class="lp-wb-wires" viewBox="0 0 1000 420" preserveAspectRatio="none">
+              <path d="M300 140 C360 140, 360 190, 420 190" class="lp-wb-wire" />
+              <path d="M610 190 C690 190, 700 150, 770 150" class="lp-wb-wire" />
+              <circle r="3.5" class="lp-wb-packet">
+                <animateMotion dur="2.6s" repeatCount="indefinite" path="M300 140 C360 140, 360 190, 420 190" />
+              </circle>
+              <circle r="3.5" class="lp-wb-packet">
+                <animateMotion dur="2.6s" begin="1.3s" repeatCount="indefinite" path="M610 190 C690 190, 700 150, 770 150" />
+              </circle>
+            </svg>
+
+            <div class="lp-wb-node lp-wb-node-prompt">
+              <span class="lp-wb-node-tag">{{ t('home.lp.wbNodePrompt') }}</span>
+              <p class="lp-wb-prompt">{{ t('home.lp.wbMockPrompt') }}</p>
+              <span class="lp-wb-node-meta">gpt-image-2 · 1:1 · ×4</span>
+            </div>
+
+            <div class="lp-wb-node lp-wb-node-image">
+              <span class="lp-wb-node-tag">{{ t('home.lp.wbNodeImage') }}</span>
+              <div class="lp-wb-tiles">
+                <span v-for="n in 4" :key="n" class="lp-wb-tile" :class="`lp-wb-tile-${n}`"></span>
+              </div>
+            </div>
+
+            <div class="lp-wb-node lp-wb-node-video">
+              <span class="lp-wb-node-tag">{{ t('home.lp.wbNodeVideo') }}</span>
+              <div class="lp-wb-frame">
+                <span class="lp-wb-play"><Icon name="play" size="sm" /></span>
+                <span class="lp-wb-dur">0:06</span>
+              </div>
+              <span class="lp-wb-node-meta lp-wb-generating">{{ t('home.lp.wbMockGenerating') }}</span>
+            </div>
+
+            <!-- 底部浮动工具条：画布真实存在的那排工具的缩影 -->
+            <div class="lp-wb-toolbar">
+              <span v-for="tool in wbToolbar" :key="tool" class="lp-wb-tool"><Icon :name="tool" size="xs" /></span>
+            </div>
+          </figure>
+
+          <!-- 四件事：用编号，因为侧栏里就是这个顺序 -->
+          <ol class="lp-wb-features">
+            <li v-for="(f, i) in wbFeatures" :key="f.key">
+              <span class="lp-step-num">{{ String(i + 1).padStart(2, '0') }}</span>
+              <h3>{{ f.title }}</h3>
+              <p>{{ f.desc }}</p>
+              <router-link :to="f.to" class="lp-link">
+                {{ t('home.lp.wbOpen') }}
+                <Icon name="chevronRight" size="xs" />
+              </router-link>
+            </li>
+          </ol>
+
+          <!-- 和 API 是同一套账：这是工作台相对于其它在线工具的差别 -->
+          <dl class="lp-wb-facts">
+            <div v-for="fact in wbFacts" :key="fact.key">
+              <dt>{{ fact.label }}</dt>
+              <dd>{{ fact.desc }}</dd>
             </div>
           </dl>
         </div>
@@ -369,6 +450,7 @@
           <router-link v-if="docsLinkLocal" to="/docs">{{ t('home.docs') }}</router-link>
           <a v-else-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('home.docs') }}</a>
           <router-link v-if="showModelPlazaEntry" to="/model-plaza">{{ t('nav.modelPlaza') }}</router-link>
+          <router-link v-if="showWorkbench" :to="workbenchTarget">{{ t('nav.workbench') }}</router-link>
           <router-link to="/key-usage">{{ t('home.footer.keyUsage') }}</router-link>
         </nav>
         <p class="lp-footer-copy">&copy; {{ currentYear }} {{ siteName }}</p>
@@ -538,6 +620,27 @@ const capabilities = computed(() => [
   { key: 'bill', title: t('home.lp.capBillTitle'), desc: t('home.lp.capBillDesc') },
 ])
 
+// ── 工作台 ──────────────────────────────────────────────────────
+// 后端模式下普通用户进不了用户端，simple 模式侧栏也不显示工作台，这两种情况首页不宣传它。
+// 没登录也直接链到工作台：路由守卫会先带去登录，登录完再回来。
+const showWorkbench = computed(() => !appStore.backendModeEnabled && !authStore.isSimpleMode)
+const workbenchTarget = '/workbench/canvas'
+
+const wbFeatures = computed(() => [
+  { key: 'canvas', to: '/workbench/canvas', title: t('home.lp.wbCanvasTitle'), desc: t('home.lp.wbCanvasDesc') },
+  { key: 'image', to: '/workbench/image', title: t('home.lp.wbImageTitle'), desc: t('home.lp.wbImageDesc') },
+  { key: 'video', to: '/workbench/video', title: t('home.lp.wbVideoTitle'), desc: t('home.lp.wbVideoDesc') },
+  { key: 'library', to: '/workbench/prompts', title: t('home.lp.wbLibraryTitle'), desc: t('home.lp.wbLibraryDesc') },
+])
+
+const wbFacts = computed(() => [
+  { key: 'key', label: t('home.lp.wbFactKey'), desc: t('home.lp.wbFactKeyDesc') },
+  { key: 'balance', label: t('home.lp.wbFactBalance'), desc: t('home.lp.wbFactBalanceDesc') },
+  { key: 'local', label: t('home.lp.wbFactLocal'), desc: t('home.lp.wbFactLocalDesc') },
+])
+
+const wbToolbar = ['edit', 'upload', 'play', 'link', 'download'] as const
+
 const steps = computed(() => [
   { key: 'signup', title: t('home.lp.quickStep1'), desc: t('home.lp.quickStep1Desc') },
   { key: 'key', title: t('home.lp.quickStep2'), desc: t('home.lp.quickStep2Desc') },
@@ -627,7 +730,7 @@ onMounted(() => {
      · 用发丝线和留白分区，不用卡片。整页没有一处 `border-radius + 阴影`
        组合的容器——那种等距圆角方块正是后台模板的味道。
      · 唯一的高饱和面积是收尾区块，其余靠字重和字号建立层级。
-     · 动效只有一处（路由图里的数据包），且尊重 prefers-reduced-motion。
+     · 动效只有两处（路由图、工作台画布里沿连线走的数据包），都尊重 prefers-reduced-motion。
    ========================================================================== */
 
 .lp {
@@ -1648,8 +1751,305 @@ onMounted(() => {
 
 /* ── 动效：只有一处，且可关掉 ─────────────────────────────────────────── */
 
+/* ── 工作台 ─────────────────────────────────────────────────────────────
+   开屏是路由图，这里用同一种手法画画布：界面草图，不放截图。
+   节点是全页唯一带圆角面的东西——画布上的节点本来就是卡片，这是在描述产品，
+   不是拿卡片当版式。 */
+
+.lp-sec-head .lp-kicker {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-numeric);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgb(var(--p-600));
+}
+
+.dark .lp-sec-head .lp-kicker { color: rgb(var(--p-400)); }
+
+#lp-workbench .lp-sec-head-row > div { max-width: 40rem; }
+
+.lp-wb-stage {
+  position: relative;
+  margin: 0;
+  height: 26rem;
+  border: 1px solid rgb(var(--line-light) / var(--line-a-light));
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  /* 画布的点阵底 */
+  background-color: rgb(var(--n-100) / 0.6);
+  background-image: radial-gradient(rgb(var(--line-light) / 0.16) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.dark .lp-wb-stage {
+  border-color: rgb(var(--line) / var(--line-a));
+  background-color: rgb(var(--d-900) / 0.7);
+  background-image: radial-gradient(rgb(255 255 255 / 0.07) 1px, transparent 1px);
+}
+
+.lp-wb-wires {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.lp-wb-wire {
+  fill: none;
+  stroke: rgb(var(--p-500) / 0.55);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+  vector-effect: non-scaling-stroke;
+}
+
+.lp-wb-packet { fill: rgb(var(--p-500)); }
+
+.lp-wb-node {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.75rem;
+  border: 1px solid rgb(var(--line-light) / 0.12);
+  border-radius: var(--r-lg);
+  background-color: rgb(255 255 255 / 0.92);
+  box-shadow: 0 10px 30px -18px rgb(28 25 23 / 0.35);
+}
+
+.dark .lp-wb-node {
+  border-color: rgb(var(--line) / var(--line-a-hover));
+  background-color: rgb(var(--d-800) / 0.95);
+  box-shadow: 0 12px 32px -18px rgb(0 0 0 / 0.8);
+}
+
+.lp-wb-node-prompt { left: 4%; top: 18%; width: 26%; }
+.lp-wb-node-image { left: 42%; top: 10%; width: 19%; }
+.lp-wb-node-video { left: 77%; top: 18%; width: 19%; }
+
+.lp-wb-node-tag {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgb(var(--n-500));
+}
+
+.lp-wb-prompt {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: rgb(var(--n-800));
+}
+
+.dark .lp-wb-prompt { color: rgb(var(--n-200)); }
+
+.lp-wb-node-meta {
+  font-family: var(--font-numeric);
+  font-size: 0.6875rem;
+  color: rgb(var(--n-500));
+}
+
+.lp-wb-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.375rem;
+}
+
+/* 生成结果用抽象渐变表示，不冒充真图 */
+.lp-wb-tile {
+  aspect-ratio: 1;
+  border-radius: 6px;
+}
+
+.lp-wb-tile-1 { background: linear-gradient(135deg, #f3d9b1, #c98b4b); }
+.lp-wb-tile-2 { background: linear-gradient(160deg, #f7e3c4, #b97a3f); }
+.lp-wb-tile-3 { background: linear-gradient(120deg, #e9c99a, #8f5a2c); }
+.lp-wb-tile-4 { background: linear-gradient(150deg, #f1dcc0, #a96d35); }
+
+.lp-wb-frame {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #2a2a26, #141413);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.lp-wb-frame::after {
+  /* 进度条：视频还在生成 */
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 62%;
+  background-color: rgb(var(--p-500));
+}
+
+.lp-wb-play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background-color: rgb(255 255 255 / 0.14);
+  color: #fff;
+}
+
+.lp-wb-dur {
+  position: absolute;
+  right: 0.375rem;
+  bottom: 0.375rem;
+  font-family: var(--font-numeric);
+  font-size: 0.625rem;
+  color: rgb(255 255 255 / 0.7);
+}
+
+.lp-wb-generating { color: rgb(var(--p-600)); }
+.dark .lp-wb-generating { color: rgb(var(--p-400)); }
+
+.lp-wb-toolbar {
+  position: absolute;
+  left: 50%;
+  bottom: 1.25rem;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.375rem;
+  border: 1px solid rgb(var(--line-light) / 0.12);
+  border-radius: var(--r-lg);
+  background-color: rgb(255 255 255 / 0.92);
+}
+
+.dark .lp-wb-toolbar {
+  border-color: rgb(var(--line) / var(--line-a-hover));
+  background-color: rgb(var(--d-800) / 0.95);
+}
+
+.lp-wb-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 6px;
+  color: rgb(var(--n-600));
+}
+
+.lp-wb-tool:first-child {
+  background-color: rgb(var(--line-light) / 0.07);
+  color: rgb(var(--n-900));
+}
+
+.dark .lp-wb-tool { color: rgb(var(--n-400)); }
+.dark .lp-wb-tool:first-child {
+  background-color: rgb(255 255 255 / 0.07);
+  color: rgb(var(--n-50));
+}
+
+/* 窄屏：节点改成纵向堆叠，连线去掉 */
+@media (max-width: 767px) {
+  .lp-wb-stage {
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem 1rem 4.5rem;
+  }
+  .lp-wb-wires { display: none; }
+  .lp-wb-node { position: static; width: auto; }
+  .lp-wb-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .lp-wb-frame { aspect-ratio: 16 / 7; }
+}
+
+.lp-wb-features {
+  list-style: none;
+  margin: 2.5rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border-top: 1px solid rgb(var(--line-light) / var(--line-a-light));
+}
+
+.dark .lp-wb-features { border-top-color: rgb(var(--line) / var(--line-a)); }
+
+@media (min-width: 768px) {
+  .lp-wb-features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1100px) {
+  .lp-wb-features { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+.lp-wb-features li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.75rem 1.5rem 1.75rem 0;
+}
+
+@media (min-width: 1100px) {
+  .lp-wb-features li + li {
+    padding-left: 1.5rem;
+    border-left: 1px solid rgb(var(--line-light) / var(--line-a-light));
+  }
+  .dark .lp-wb-features li + li { border-left-color: rgb(var(--line) / var(--line-a)); }
+}
+
+.lp-wb-features h3 {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.lp-wb-features p {
+  margin: 0;
+  flex: 1;
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  color: rgb(var(--n-600));
+  text-wrap: pretty;
+}
+
+.dark .lp-wb-features p { color: rgb(var(--n-400)); }
+
+.lp-wb-facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  padding: 1.75rem 0 0;
+  border-top: 1px solid rgb(var(--line-light) / var(--line-a-light));
+}
+
+.dark .lp-wb-facts { border-top-color: rgb(var(--line) / var(--line-a)); }
+
+@media (min-width: 768px) {
+  .lp-wb-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2.5rem; }
+}
+
+.lp-wb-facts dt {
+  font-size: 0.8125rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.lp-wb-facts dd {
+  margin: 0.375rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  color: rgb(var(--n-600));
+}
+
+.dark .lp-wb-facts dd { color: rgb(var(--n-400)); }
+
 @media (prefers-reduced-motion: reduce) {
-  .lp-trace svg animateMotion {
+  .lp-trace svg animateMotion,
+  .lp-wb-wires animateMotion {
     display: none;
   }
   .lp * {

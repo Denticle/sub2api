@@ -200,7 +200,32 @@ export default {
       quickDocs: 'Read the docs',
       ctaTitle: 'Make it work, then decide.',
       ctaDesc: 'Sign up, create a key in the console, and send the first request.',
-      ctaButton: 'Get an API key'
+      ctaButton: 'Get an API key',
+
+      wbKicker: 'Workbench',
+      wbTitle: 'Use these models without writing code',
+      wbSub: 'Your account also comes with creative tools: chain prompts, images and video on a canvas, or generate images and videos on their own. It runs on a key you already created and bills the same balance.',
+      wbCta: 'Open the workbench',
+      wbOpen: 'Open',
+      wbNodePrompt: 'Prompt',
+      wbNodeImage: 'Image',
+      wbNodeVideo: 'Video',
+      wbMockPrompt: 'A pomeranian, soft studio light, shallow depth of field, warm tones',
+      wbMockGenerating: 'Generating…',
+      wbCanvasTitle: 'My canvases',
+      wbCanvasDesc: 'Place prompt, image and video nodes on an infinite canvas and connect them, so one step\'s result becomes the next step\'s reference.',
+      wbImageTitle: 'Image studio',
+      wbImageDesc: 'Text-to-image and reference-image editing, several results at once. Every run is kept in history; download results or save them to your assets.',
+      wbVideoTitle: 'Video studio',
+      wbVideoDesc: 'Generate video from text or images. Tasks run in the background and keep going when you switch pages.',
+      wbLibraryTitle: 'Prompts and assets',
+      wbLibraryDesc: 'Start from ready-made prompts in the library; generated images and videos go into My Assets for reuse.',
+      wbFactKey: 'Your existing keys',
+      wbFactKeyDesc: 'Pick one of the keys you already created and start. No separate sign-up, no endpoint to configure.',
+      wbFactBalance: 'One balance',
+      wbFactBalanceDesc: 'Workbench calls are billed exactly like API calls, at the same rates, and show up in your usage records.',
+      wbFactLocal: 'Your work stays local',
+      wbFactLocalDesc: 'Canvases, assets and history are stored in your browser. Connect your own WebDAV to sync across devices.'
     },
 
     footer: {

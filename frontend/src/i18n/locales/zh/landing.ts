@@ -200,7 +200,32 @@ export default {
       quickDocs: '阅读文档',
       ctaTitle: '先跑通，再决定。',
       ctaDesc: '注册后在控制台创建密钥，把第一行请求发出来。',
-      ctaButton: '获取 API Key'
+      ctaButton: '获取 API Key',
+
+      wbKicker: '工作台',
+      wbTitle: '不写代码，也能直接用上这些模型',
+      wbSub: '同一个账号里还有一套创作工具：在画布上把提示词、图片和视频串起来，或者单独生图、做视频。用你已经创建好的密钥，费用记在同一个余额里。',
+      wbCta: '打开工作台',
+      wbOpen: '打开',
+      wbNodePrompt: '提示词',
+      wbNodeImage: '图片',
+      wbNodeVideo: '视频',
+      wbMockPrompt: '一只博美犬，柔光棚拍，浅景深，暖色调',
+      wbMockGenerating: '生成中…',
+      wbCanvasTitle: '我的画布',
+      wbCanvasDesc: '无限画布上放提示词、图片、视频节点，用连线把上一步的结果当作下一步的参考，一条链路从头做到尾。',
+      wbImageTitle: '图片创作',
+      wbImageDesc: '文生图与参考图编辑，一次出多张。每次生成都留记录，结果能下载，也能收进素材库。',
+      wbVideoTitle: '视频创作',
+      wbVideoDesc: '用文字或图片生成视频。任务在后台跑，切到别的页面也不会中断。',
+      wbLibraryTitle: '提示词与素材',
+      wbLibraryDesc: '提示词库里有现成的写法可以直接套用；生成的图片和视频收进「我的资产」，下次接着用。',
+      wbFactKey: '用已有的密钥',
+      wbFactKeyDesc: '在工作台里选一个你创建好的密钥即可开始，不用另外注册，也不用填接口地址。',
+      wbFactBalance: '同一个余额',
+      wbFactBalanceDesc: '工作台的调用和 API 调用走同一套计费，费率一致，都能在使用记录里查到。',
+      wbFactLocal: '作品留在本地',
+      wbFactLocalDesc: '画布、素材和生成记录保存在你的浏览器里；需要多台设备同步时，可以接上自己的 WebDAV。'
     },
 
     footer: {
