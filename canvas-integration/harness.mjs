@@ -6,6 +6,9 @@ import path from 'node:path'
 
 const ROOT = process.env.STUDIO_DIST || '/tmp/studio-dist'
 const PORT = Number(process.env.PORT || 4180)
+// 设了 MAIN_DIST（主站 vite build 的产物目录）就同时托管真实主站，用来测主站侧栏 + WorkbenchHost
+const MAIN = process.env.MAIN_DIST || ''
+const MAIN_USER = { id: 1, username: 'denticle', email: 'user@forapi.cloud', role: 'user', balance: 10, concurrency: 5, status: 'active' }
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -53,6 +56,16 @@ const server = http.createServer(async (req, res) => {
     return json(res, 200, { created: Date.now(), data: [{ b64_json: PNG }] })
   }
 
+  // ---- 主站模式（MAIN_DIST）：托管真实主站构建，mock 它启动要用的几个接口 ----
+  if (MAIN) {
+    if (p === '/setup/status' || p === '/api/v1/setup/status') return json(res, 200, { code: 0, data: { needs_setup: false } })
+    if (p === '/api/v1/auth/me') return json(res, 200, { code: 0, data: { ...MAIN_USER, run_mode: 'standard' } })
+    if (p.startsWith('/api/v1/') && p !== '/api/v1/keys') {
+      if (req.method === 'GET' && /settings\/public$/.test(p)) return json(res, 200, { code: 0, data: { site_name: 'ForApi', api_base_url: '' } })
+      return json(res, 200, { code: 0, data: { items: [], total: 0 } })
+    }
+  }
+
   // mock：模型列表
   if (p === '/v1/models') {
     console.log('[mock] /v1/models ->', MODELS.data.length, 'models')
@@ -90,6 +103,20 @@ const server = http.createServer(async (req, res) => {
   if (p === '/login') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
     return res.end('<h1 id="login-stub">LOGIN PAGE</h1>')
+  }
+
+  // 主站模式：/studio/ 以外的路径都交给主站（SPA 回落到主站 index.html）
+  if (MAIN && !p.startsWith('/studio') && p !== '/host') {
+    const target = path.join(MAIN, p === '/' ? 'index.html' : p.slice(1))
+    try {
+      const buf = await readFile(target)
+      res.writeHead(200, { 'content-type': MIME[path.extname(target)] || 'application/octet-stream' })
+      return res.end(buf)
+    } catch {
+      const buf = await readFile(path.join(MAIN, 'index.html'))
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
+      return res.end(buf)
+    }
   }
 
   let file

@@ -74,14 +74,21 @@ node canvas-integration/harness.mjs
 ```
 
 - `http://127.0.0.1:4180/studio/`：直接打开画布
-- `http://127.0.0.1:4180/host`：模拟主站工作台（侧栏五项 + iframe，消息协议同 `WorkbenchView.vue`）
+- `http://127.0.0.1:4180/host`：模拟主站工作台（侧栏五项 + iframe，消息协议同 `WorkbenchHost.vue`）
+- `MAIN_DIST=/tmp/main-dist PORT=4181 node canvas-integration/harness.mjs`：同时托管真实主站构建（`vite build --outDir /tmp/main-dist`），用真实侧栏和 `WorkbenchHost` 测
 
-mock 了 `/api/v1/keys`、`/v1/models`、`/login`；`Bearer expired-token` 用来测 401 分支。
+mock 了 `/api/v1/keys`、`/v1/models`、`/v1/images/generations`（慢 4 秒，测切走页面时的进行中任务）、`/login`；`Bearer expired-token` 用来测 401 分支。
 
 ## 部署
 
-产物放到 `/var/www/certbot/studio/`（nginx 容器里唯一可写挂载的子目录），
-nginx 配置见服务器上的 `conf.d/studio-forapi.inc`，由 `forapi.cloud.conf` include。
+产物放到 `/var/www/certbot/studio/`（nginx 容器里唯一可写挂载的子目录）。
+nginx 配置是 [nginx/studio-forapi.inc](nginx/studio-forapi.inc)，部署到服务器的
+`conf.d/studio-forapi.inc`，由 `forapi.cloud.conf` include。
+
+缓存：`assets/` 下文件名都带内容哈希（`bootstrap.js` 也由 `patch-dist.py` 改名放进去），
+长缓存；`index.html`、`config.js` 等一律 `no-cache`。以前 `index.html` 不带
+`Cache-Control`，浏览器会按启发式缓存继续用旧页面、引用旧 bundle，部署了也不生效；
+不带哈希的 `bootstrap.js` 还被 Cloudflare 缓存了 4 小时。主站建 iframe 时另加 `?v=`。
 
 同源是刻意的：`localStorage` 按 origin 隔离，同源才能读到主站的登录态、主题和语言。
 

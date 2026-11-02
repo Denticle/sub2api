@@ -64,7 +64,9 @@ const initialSrc = ref('/studio/canvas')
 watch(
   started,
   (on) => {
-    if (on) initialSrc.value = `/studio/${routeTool.value}`
+    // ?v= 让浏览器每次建 iframe 都重新取 index.html：以前 /studio/ 没有 Cache-Control，
+    // 浏览器会拿启发式缓存的旧页面，部署了新画布也不生效
+    if (on) initialSrc.value = `/studio/${routeTool.value}?v=${Date.now()}`
   },
   { immediate: true, flush: 'sync' }
 )
