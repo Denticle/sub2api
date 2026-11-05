@@ -14,7 +14,7 @@ import (
 	"github.com/dgraph-io/ristretto"
 )
 
-const apiKeyAuthSnapshotVersion = 26 // v26: api key group_mode + ordered multi-group list
+const apiKeyAuthSnapshotVersion = 27 // v27: drop v26 snapshots built before GetByKeyForAuth loaded group_mode
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int

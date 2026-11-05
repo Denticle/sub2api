@@ -165,6 +165,8 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 			apikey.FieldID,
 			apikey.FieldUserID,
 			apikey.FieldGroupID,
+			// 自动模式（工作台密钥）靠 group_mode 在鉴权时选组；漏选会让它被当成单分组密钥。
+			apikey.FieldGroupMode,
 			apikey.FieldName,
 			apikey.FieldStatus,
 			apikey.FieldIPWhitelist,

@@ -77,3 +77,25 @@ func TestAPIKeyRepository_GetByKeyForAuth_PreservesMessagesDispatchModelConfig_S
 	require.NotNil(t, got.Group)
 	require.Equal(t, group.MessagesDispatchModelConfig, got.Group.MessagesDispatchModelConfig)
 }
+
+// 线上问题：鉴权查询的字段投影漏了 group_mode，工作台（自动模式）密钥在鉴权时被当成
+// 单分组密钥，不走选组，生图请求一直落到倍率最低、却没开生图的分组。
+func TestAPIKeyRepository_GetByKeyForAuth_LoadsGroupMode_SQLite(t *testing.T) {
+	repo, client := newAPIKeyRepoSQLite(t)
+	ctx := context.Background()
+	user := mustCreateAPIKeyRepoUser(t, ctx, client, "getbykey-auth-group-mode@test.com")
+	group, err := client.Group.Create().SetName("g-auth-group-mode").Save(ctx)
+	require.NoError(t, err)
+
+	key := &service.APIKey{
+		UserID: user.ID, Key: "sk-getbykey-auth-group-mode", Name: "Studio",
+		GroupID: &group.ID, GroupMode: service.APIKeyGroupModeAuto, Status: service.StatusActive,
+	}
+	require.NoError(t, repo.Create(ctx, key))
+
+	got, err := repo.GetByKeyForAuth(ctx, key.Key)
+	require.NoError(t, err)
+	require.Equal(t, service.APIKeyGroupModeAuto, got.GroupMode)
+	require.True(t, got.IsAutoGroupMode())
+	require.True(t, got.HasMultipleGroups(), "auto keys must go through request-time group selection")
+}
