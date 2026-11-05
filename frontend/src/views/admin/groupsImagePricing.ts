@@ -15,8 +15,9 @@ const imageGenerationDefaultPlatforms = new Set(["antigravity", "gemini", "grok"
 export const defaultAllowImageGenerationForPlatform = (platform: string): boolean =>
   imageGenerationDefaultPlatforms.has(platform);
 
+// 组合分组的视频请求会路由到 Grok 账号，计费读的也是分组上的视频价格与倍率。
 export const supportsVideoPricingPlatform = (platform: string): boolean =>
-  platform === "grok";
+  platform === "grok" || platform === "composite";
 
 export const imagePricingI18nKey = (_platform: string, key: string): string =>
   `admin.groups.imagePricing.${key}`;
@@ -58,6 +59,8 @@ const defaultVideoPricePlaceholders: Record<
     video_price_1080p: "0.25",
   },
 };
+// 组合分组的视频走 Grok 账号，留空时按 Grok 默认每秒价计费
+defaultVideoPricePlaceholders.composite = defaultVideoPricePlaceholders.grok;
 
 export const getImagePricePlaceholder = (
   platform: string,

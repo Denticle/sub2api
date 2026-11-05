@@ -19,9 +19,16 @@ describe("groups image pricing platform support", () => {
     expect(imagePricingPlatforms.has("grok")).toBe(true);
   });
 
-  it("enables video pricing controls for Grok only", () => {
+  it("enables video pricing controls for Grok and Composite groups", () => {
     expect(supportsVideoPricingPlatform("grok")).toBe(true);
+    expect(supportsVideoPricingPlatform("composite")).toBe(true);
     expect(supportsVideoPricingPlatform("openai")).toBe(false);
+    expect(supportsVideoPricingPlatform("anthropic")).toBe(false);
+  });
+
+  it("shows Grok per-second video defaults for Composite groups", () => {
+    expect(getVideoPricePlaceholder("composite", "video_price_480p")).toBe("0.05");
+    expect(getVideoPricePlaceholder("composite", "video_price_1080p")).toBe("0.25");
   });
 
   it("keeps non-media group platforms out of the image pricing controls", () => {
