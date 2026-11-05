@@ -427,3 +427,45 @@ func TestGroupRouter_CapacityFallbackSkipsMissingSubscription(t *testing.T) {
 	require.Equal(t, GroupRouteCapacityFallback, res.Outcome)
 	require.Equal(t, int64(2), res.Group.ID)
 }
+
+// 线上问题：工作台（自动模式）密钥选了倍率最低的分组，但该分组没开生图，生图请求被 403。
+// 生图请求必须只在开启了生图的分组里选。
+func TestGroupRouter_ImageRequestSkipsGroupsWithoutImageGeneration(t *testing.T) {
+	cheapNoImage := Group{ID: 44, Status: StatusActive, Platform: PlatformOpenAI, RateMultiplier: 0.08, AllowImageGeneration: false}
+	imageGroup := Group{ID: 43, Status: StatusActive, Platform: PlatformOpenAI, RateMultiplier: 1, AllowImageGeneration: true}
+	router := NewGroupRouter(GroupRouterDeps{Groups: &routerGroupSourceStub{groups: []Group{imageGroup, cheapNoImage}}})
+	key := &APIKey{ID: 350, UserID: 13, GroupMode: APIKeyGroupModeAuto, User: &User{ID: 13}}
+
+	// 普通请求仍按倍率选最便宜的
+	res, err := router.Select(context.Background(), key, []string{"gpt-5"}, "")
+	require.NoError(t, err)
+	require.Equal(t, int64(44), res.Group.ID)
+
+	// 生图请求（/v1/images/edits 的 multipart 里取不到模型时也一样）跳过没开生图的分组
+	imageCtx := WithImageGenerationRoute(context.Background())
+	for _, models := range [][]string{{"gpt-image-2"}, nil} {
+		res, err = router.Select(imageCtx, key, models, CompositeRouteEndpointImages)
+		require.NoError(t, err)
+		require.Equal(t, int64(43), res.Group.ID, "models=%v", models)
+	}
+
+	// 一个开了生图的分组都没有：不改变选择，由 handler 返回原有的 403
+	onlyNoImage := NewGroupRouter(GroupRouterDeps{Groups: &routerGroupSourceStub{groups: []Group{cheapNoImage}}})
+	res, err = onlyNoImage.Select(imageCtx, key, []string{"gpt-image-2"}, CompositeRouteEndpointImages)
+	require.NoError(t, err)
+	require.Equal(t, int64(44), res.Group.ID)
+}
+
+// 手动多分组密钥：主路由没开生图时，生图请求换到列表里第一个开了生图的分组。
+func TestGroupRouter_ImageRequestManualKeyUsesFirstImageGroup(t *testing.T) {
+	f := newRouterFixture()
+	f.openai.models[2]["gpt-image-1"] = true
+	noImage := activeGroup(3, PlatformOpenAI)
+	withImage := activeGroup(2, PlatformOpenAI)
+	withImage.AllowImageGeneration = true
+	key := multiGroupKey(noImage, withImage)
+
+	res, err := f.router.Select(WithImageGenerationRoute(context.Background()), key, nil, CompositeRouteEndpointImages)
+	require.NoError(t, err)
+	require.Equal(t, int64(2), res.Group.ID)
+}

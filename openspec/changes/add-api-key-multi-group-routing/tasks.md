@@ -54,4 +54,4 @@
 - [x] 8.1 `go build ./...`、`go vet`、相关包 `go test` 全通过；前端类型检查与测试全通过
 - [ ] 8.2 本地起服务，用一把多分组密钥分别调 Claude、GPT、图片模型，确认用量日志分组与倍率正确
 - [x] 8.3 独立 code review（另一个上下文）
-- [ ] 8.4 部署：备份生产库 → 迁移 → 切镜像 → 线上用工作台密钥验证跨平台调用；记录回滚标签
+- [x] 8.4 部署：备份生产库 → 迁移 → 切镜像；回滚记录在服务器 `/opt/sub2api-theme/backups/20261105-041013-pre-multi-group/ROLLBACK.md`（回滚镜像 `sub2api-theme:studio-bridge-4`）。待补：用工作台密钥实测跨平台调用

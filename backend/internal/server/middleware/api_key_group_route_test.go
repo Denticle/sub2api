@@ -289,3 +289,36 @@ func TestAPIKeyAuth_SeedanceTaskLookupUsesPrefixedTaskKey(t *testing.T) {
 		require.Equal(t, int64(2), seen.keyGroupID, "%s must return to the create-time group", method)
 	}
 }
+
+// 线上复现：工作台用 multipart 调 /v1/images/edits，请求体里没有 model 字段；
+// 选组必须避开没开生图的分组，而不是退回倍率最低的主路由。
+func TestAPIKeyAuth_ImageEditsAvoidsGroupWithoutImageGeneration(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	noImage := routeTestGroup(44, service.PlatformOpenAI)
+	withImage := routeTestGroup(43, service.PlatformOpenAI)
+	withImage.AllowImageGeneration = true
+	svc, _ := newGroupRouteTestService(t, noImage, withImage)
+	cfg := &config.Config{RunMode: config.RunModeStandard}
+
+	var seen groupRouteSeen
+	r := gin.New()
+	r.Use(gin.HandlerFunc(NewAPIKeyAuthMiddleware(svc, nil, cfg)))
+	r.POST("/v1/images/edits", groupRouteRecorder(&seen))
+	r.POST("/v1/chat/completions", groupRouteRecorder(&seen))
+
+	body := "--b\r\nContent-Disposition: form-data; name=\"prompt\"\r\n\r\ncat\r\n--b--\r\n"
+	req := httptest.NewRequest(http.MethodPost, "/v1/images/edits", strings.NewReader(body))
+	req.Header.Set("x-api-key", "multi-key")
+	req.Header.Set("Content-Type", "multipart/form-data; boundary=b")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	require.Equal(t, int64(43), seen.keyGroupID)
+	require.Equal(t, body, seen.body, "multipart body is restored for the handler")
+
+	// 非生图请求不受影响，仍走主路由
+	seen = groupRouteSeen{}
+	w = serveGroupRoute(r, http.MethodPost, "/v1/chat/completions", `{"messages":[]}`)
+	require.Equal(t, http.StatusOK, w.Code)
+	require.Equal(t, int64(44), seen.keyGroupID)
+}

@@ -38,16 +38,21 @@ func routeAPIKeyGroup(c *gin.Context, apiKeyService *service.APIKeyService, apiK
 	}
 
 	var models []string
+	var body []byte
 	if apiKeyGroupRouteNeedsModel(c) {
 		var done bool
-		models, done = apiKeyGroupRouteModels(c)
+		models, body, done = apiKeyGroupRouteModels(c)
 		if !done {
 			return nil, false
 		}
 	}
 
 	endpoint := service.CompositeRouteEndpointForPath(c.Request.URL.Path)
-	result, err := router.Select(c.Request.Context(), apiKey, models, endpoint)
+	ctx := c.Request.Context()
+	if apiKeyGroupRouteIsImageGeneration(c, models, body) {
+		ctx = service.WithImageGenerationRoute(ctx)
+	}
+	result, err := router.Select(ctx, apiKey, models, endpoint)
 	if err != nil {
 		if errors.Is(err, service.ErrNoGroupSupportsModel) {
 			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalModelConfiguration)
@@ -118,14 +123,16 @@ func apiKeyGroupRouteNeedsModel(c *gin.Context) bool {
 
 // apiKeyGroupRouteModels 按白名单中间件同一套规则取模型：路由参数 → 请求体 → 查询参数。
 // 返回 false 表示读请求体失败，已写出响应。
-func apiKeyGroupRouteModels(c *gin.Context) ([]string, bool) {
+func apiKeyGroupRouteModels(c *gin.Context) ([]string, []byte, bool) {
 	if model := groupModelAllowlistModelFromParams(c); model != "" {
-		return []string{model}, true
+		return []string{model}, nil, true
 	}
 	var models []string
+	var body []byte
 	switch c.Request.Method {
 	case http.MethodPost, http.MethodPut, http.MethodPatch:
-		body, err := httputil.ReadRequestBodyWithPrealloc(c.Request)
+		var err error
+		body, err = httputil.ReadRequestBodyWithPrealloc(c.Request)
 		if err != nil {
 			status := http.StatusBadRequest
 			message := "Failed to read request body"
@@ -136,7 +143,7 @@ func apiKeyGroupRouteModels(c *gin.Context) ([]string, bool) {
 			}
 			c.JSON(status, gin.H{"error": gin.H{"type": "invalid_request_error", "message": message}})
 			c.Abort()
-			return nil, false
+			return nil, nil, false
 		}
 		requestmodel.ResetRequestBody(c.Request, body)
 		models = requestmodel.FromBodyCandidates(c.FullPath(), c.GetHeader("Content-Type"), body)
@@ -146,7 +153,21 @@ func apiKeyGroupRouteModels(c *gin.Context) ([]string, bool) {
 			models = []string{model}
 		}
 	}
-	return models, true
+	return models, body, true
+}
+
+// apiKeyGroupRouteIsImageGeneration 判断请求会生成图片，规则与各 handler 的生图权限检查一致：
+// 生图端点、图片模型，或请求体里显式的 image_generation 工具（不含 Codex 的被动 namespace 声明）。
+func apiKeyGroupRouteIsImageGeneration(c *gin.Context, models []string, body []byte) bool {
+	path := c.Request.URL.Path
+	if strings.Contains(path, "/images/") {
+		return true
+	}
+	model := ""
+	if len(models) > 0 {
+		model = models[0]
+	}
+	return service.IsExplicitImageGenerationIntent(path, model, body)
 }
 
 func firstNonEmpty(values []string) string {

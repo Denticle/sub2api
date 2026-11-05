@@ -218,6 +218,20 @@ func sortAutoGroupCandidates(groups []*Group, rates map[int64]float64) {
 	})
 }
 
+type imageGenerationRouteCtxKey struct{}
+
+// WithImageGenerationRoute 标记本次请求会生成图片：选组时只考虑开启了生图的分组。
+// 生图权限是分组级开关（Group.AllowImageGeneration），不随模型配置变化，必须在选组时就排除，
+// 否则会选中一个能接模型、但在 handler 里被 403 拒绝的分组。
+func WithImageGenerationRoute(ctx context.Context) context.Context {
+	return context.WithValue(ctx, imageGenerationRouteCtxKey{}, true)
+}
+
+func isImageGenerationRoute(ctx context.Context) bool {
+	v, _ := ctx.Value(imageGenerationRouteCtxKey{}).(bool)
+	return v
+}
+
 type cachedGroupRoute struct {
 	groupID  int64
 	outcome  GroupRouteOutcome
@@ -233,8 +247,17 @@ func (r *GroupRouter) Select(ctx context.Context, apiKey *APIKey, models []strin
 		return GroupRouteResult{Outcome: GroupRoutePrimary}, nil
 	}
 	eligible := r.EligibleCandidates(ctx, apiKey)
+	imageRoute := isImageGenerationRoute(ctx)
+	if imageRoute && apiKey.HasMultipleGroups() {
+		// 生图请求只在开启了生图的分组里选；一个都没有时保留原候选，由 handler 返回原有的 403。
+		if allowed := filterImageGenerationGroups(eligible); len(allowed) > 0 {
+			eligible = allowed
+		}
+	}
 	primary := apiKey.Group
 	if apiKey.IsAutoGroupMode() && len(eligible) > 0 {
+		primary = eligible[0]
+	} else if imageRoute && apiKey.HasMultipleGroups() && !GroupAllowsImageGeneration(primary) && len(eligible) > 0 {
 		primary = eligible[0]
 	}
 	models = normalizeGroupRouteModels(models)
@@ -242,7 +265,11 @@ func (r *GroupRouter) Select(ctx context.Context, apiKey *APIKey, models []strin
 		return GroupRouteResult{Group: primary, Outcome: GroupRoutePrimary, Candidates: eligible}, nil
 	}
 
-	cacheKey := groupRouteCacheKey(apiKey.ID, endpoint, models)
+	routeEndpoint := endpoint
+	if imageRoute {
+		routeEndpoint += "|image"
+	}
+	cacheKey := groupRouteCacheKey(apiKey.ID, routeEndpoint, models)
 	if cached, ok := r.results.Get(cacheKey); ok {
 		if route, ok := cached.(cachedGroupRoute); ok {
 			if route.notFound {
@@ -309,6 +336,16 @@ func (r *GroupRouter) SelectForVideoLookup(ctx context.Context, apiKey *APIKey, 
 		}
 	}
 	return fallback
+}
+
+func filterImageGenerationGroups(groups []*Group) []*Group {
+	out := make([]*Group, 0, len(groups))
+	for _, g := range groups {
+		if GroupAllowsImageGeneration(g) {
+			out = append(out, g)
+		}
+	}
+	return out
 }
 
 func normalizeGroupRouteModels(models []string) []string {
