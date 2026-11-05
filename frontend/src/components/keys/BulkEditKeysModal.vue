@@ -156,8 +156,10 @@ import { useAppStore } from '@/stores/app'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Select from '@/components/common/Select.vue'
 import type { ApiKey, Group, UpdateApiKeyRequest } from '@/types'
+import { isAutoGroupKey, keyGroupIds, replacePrimaryGroup } from './keyGroups'
 
-type SelectedKey = Pick<ApiKey, 'id' | 'name'>
+// group fields are optional so callers that only list id/name keep working
+type SelectedKey = Pick<ApiKey, 'id' | 'name'> & Partial<Pick<ApiKey, 'group_id' | 'group_ids' | 'group_mode'>>
 type LimitField = 'quota' | 'rate_limit_5h' | 'rate_limit_1d' | 'rate_limit_7d'
 type IPField = 'ip_whitelist' | 'ip_blacklist'
 type EditableField = LimitField | IPField | 'group_id' | 'status' | 'expires_at'
@@ -235,7 +237,7 @@ const canSubmit = computed(() =>
 
 watch(() => props.show, (show) => {
   if (!show) return
-  pendingKeys.value = props.selectedKeys.map(({ id, name }) => ({ id, name }))
+  pendingKeys.value = props.selectedKeys.map(({ id, name, group_id, group_ids, group_mode }) => ({ id, name, group_id, group_ids, group_mode }))
   failures.value = []
   for (const field of Object.keys(enabled) as EditableField[]) enabled[field] = false
   for (const { key } of limitFields) limits[key] = ''
@@ -272,7 +274,24 @@ const submit = async () => {
 
   submitting.value = true
   try {
-    const result = await keysAPI.bulkUpdate(pendingKeys.value.map((key) => key.id), updates)
+    const keysById = new Map(pendingKeys.value.map((key) => [key.id, key]))
+    // Only a group change needs a per-key payload; everything else is identical for every key.
+    const payload = updates.group_id === undefined ? updates : (id: number): UpdateApiKeyRequest => {
+      const key = keysById.get(id)
+      if (!key) return updates
+      // Workbench (auto-mode) keys pick groups themselves: never change their group.
+      if (isAutoGroupKey(key)) {
+        const { group_id: _skip, ...rest } = updates
+        return rest
+      }
+      // Multi-group keys: replace only the primary route and keep the fallback routes.
+      const ids = keyGroupIds({ group_id: key.group_id ?? null, group_ids: key.group_ids })
+      if (updates.group_id != null && ids.length > 1) {
+        return { ...updates, group_ids: replacePrimaryGroup(ids, updates.group_id) }
+      }
+      return updates
+    }
+    const result = await keysAPI.bulkUpdate(pendingKeys.value.map((key) => key.id), payload)
     failures.value = result.failures.map(({ id, error }) => ({
       id,
       name: pendingKeys.value.find((key) => key.id === id)?.name ?? '',

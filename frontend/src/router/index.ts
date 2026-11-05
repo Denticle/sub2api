@@ -167,6 +167,17 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    // OAuth 授权确认页（视频工作台登录桥接）。需要登录：未登录先去登录再回来。
+    path: '/oauth/authorize',
+    name: 'OAuthAuthorize',
+    component: () => import('@/views/auth/OAuthAuthorizeView.vue'),
+    meta: {
+      requiresAuth: true,
+      title: 'Authorize',
+      titleKey: 'oauthProvider.pageTitle'
+    }
+  },
+  {
     path: '/docs',
     name: 'Docs',
     component: () => import('@/views/DocsView.vue'),
@@ -563,6 +574,18 @@ const routes: RouteRecordRaw[] = [
       title: 'Plugin Management',
       titleKey: 'admin.plugins.title',
       descriptionKey: 'admin.plugins.description'
+    }
+  },
+  {
+    path: '/admin/oauth-provider',
+    name: 'AdminOAuthProvider',
+    component: () => import('@/views/admin/OAuthProviderView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Video Studio',
+      titleKey: 'oauthProvider.adminTitle',
+      descriptionKey: 'oauthProvider.adminDescription'
     }
   },
   {

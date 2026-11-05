@@ -55,6 +55,7 @@ export async function getById(id: number): Promise<ApiKey> {
  * @param quota - Optional quota limit in USD (0 = unlimited)
  * @param expiresInDays - Optional days until expiry (undefined = never expires)
  * @param rateLimitData - Optional rate limit fields
+ * @param groupIds - Optional ordered group list; sent only when it binds more than one group
  * @returns Created API key
  */
 export async function create(
@@ -65,11 +66,16 @@ export async function create(
   ipBlacklist?: string[],
   quota?: number,
   expiresInDays?: number,
-  rateLimitData?: { rate_limit_5h?: number; rate_limit_1d?: number; rate_limit_7d?: number }
+  rateLimitData?: { rate_limit_5h?: number; rate_limit_1d?: number; rate_limit_7d?: number },
+  groupIds?: number[]
 ): Promise<ApiKey> {
   const payload: CreateApiKeyRequest = { name }
   if (groupId !== undefined) {
     payload.group_id = groupId
+  }
+  // Single-group keys keep the legacy request shape (group_id only).
+  if (groupIds && groupIds.length > 1) {
+    payload.group_ids = groupIds
   }
   if (customKey) {
     payload.custom_key = customKey
@@ -116,16 +122,20 @@ export interface BulkUpdateApiKeysResult {
   failures: Array<{ id: number; error: unknown }>
 }
 
-/** Reuse per-key validation and permissions, with at most five requests in flight. */
+/**
+ * Reuse per-key validation and permissions, with at most five requests in flight.
+ * `updates` may be a function to build a per-key payload (e.g. keeping a multi-group key's routes).
+ */
 export async function bulkUpdate(
   ids: number[],
-  updates: UpdateApiKeyRequest
+  updates: UpdateApiKeyRequest | ((id: number) => UpdateApiKeyRequest)
 ): Promise<BulkUpdateApiKeysResult> {
   const uniqueIds = [...new Set(ids)]
   const result: BulkUpdateApiKeysResult = { succeededIds: [], failures: [] }
+  const payloadFor = typeof updates === 'function' ? updates : () => updates
   for (let offset = 0; offset < uniqueIds.length; offset += 5) {
     const batch = uniqueIds.slice(offset, offset + 5)
-    const responses = await Promise.allSettled(batch.map((id) => update(id, updates)))
+    const responses = await Promise.allSettled(batch.map((id) => update(id, payloadFor(id))))
     responses.forEach((response, index) => {
       if (response.status === 'fulfilled') {
         result.succeededIds.push(batch[index])

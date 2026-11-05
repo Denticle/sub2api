@@ -382,7 +382,12 @@ func shouldBypassEmbeddedFrontend(path string) bool {
 		strings.HasPrefix(trimmed, "/v3/contents/generations/tasks/") ||
 		strings.HasPrefix(trimmed, "/images/") ||
 		trimmed == "/videos" ||
-		strings.HasPrefix(trimmed, "/videos/")
+		strings.HasPrefix(trimmed, "/videos/") ||
+		// OAuth 授权服务器的后端端点。/oauth/authorize 是前端授权确认页，不在此列。
+		trimmed == "/oauth/token" ||
+		trimmed == "/oauth/userinfo" ||
+		trimmed == "/oauth/studio-key" ||
+		trimmed == "/oauth/studio-models"
 }
 
 func serveIndexHTML(c *gin.Context, fsys fs.FS) {

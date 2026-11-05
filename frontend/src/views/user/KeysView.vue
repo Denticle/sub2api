@@ -151,33 +151,61 @@
                 class="text-blue-500"
                 :title="t('keys.ipRestrictionEnabled')"
               />
+              <span
+                v-if="studioKeyIds.has(row.id)"
+                class="rounded bg-primary-50 px-1.5 py-0.5 text-xs text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+              >{{ t('studio.keyBadge') }}</span>
             </div>
           </template>
 
           <template #cell-group="{ row }">
-            <div class="group/dropdown relative">
+            <!-- Auto-mode (studio) keys: groups follow the user's permissions, not editable here -->
+            <div v-if="isAutoGroupKey(row)" class="flex flex-wrap items-center gap-1.5" data-test="key-row-auto-groups">
+              <span
+                class="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600 dark:bg-dark-700 dark:text-gray-300"
+                :title="t('keys.groupList.autoHint')"
+              >{{ t('keys.groupList.autoBadge') }}</span>
+              <GroupBadge
+                v-if="row.group"
+                :name="row.group.name"
+                :platform="row.group.platform"
+                :subscription-type="row.group.subscription_type"
+                :rate-multiplier="row.group.rate_multiplier"
+                :user-rate-multiplier="userGroupRates[row.group.id]"
+              />
+            </div>
+            <div v-else class="group/dropdown relative">
               <button
                 :ref="(el) => setGroupButtonRef(row.id, el)"
                 @click="openGroupSelector(row)"
                 class="-mx-2 -my-1 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-dark-700"
-                :title="t('keys.clickToChangeGroup')"
+                :title="keyDisplayGroups(row).length > 1 ? t('keys.groupList.clickToChangePrimary') : t('keys.clickToChangeGroup')"
               >
-                <GroupBadge
-                  v-if="row.group"
-                  :name="row.group.name"
-                  :platform="row.group.platform"
-                  :subscription-type="row.group.subscription_type"
-                  :rate-multiplier="row.group.rate_multiplier"
-                  :user-rate-multiplier="userGroupRates[row.group.id]"
-                  :peak-rate-enabled="row.group.peak_rate_enabled"
-                  :peak-start="row.group.peak_start"
-                  :peak-end="row.group.peak_end"
-                  :peak-rate-multiplier="row.group.peak_rate_multiplier"
-                />
+                <span v-if="keyDisplayGroups(row).length > 0" class="flex flex-wrap items-center gap-1" data-test="key-row-groups">
+                  <GroupBadge
+                    v-for="group in keyDisplayGroups(row).slice(0, MAX_ROW_GROUP_BADGES)"
+                    :key="group.id"
+                    :name="group.name"
+                    :platform="group.platform"
+                    :subscription-type="group.subscription_type"
+                    :rate-multiplier="group.rate_multiplier"
+                    :user-rate-multiplier="userGroupRates[group.id]"
+                    :peak-rate-enabled="group.peak_rate_enabled"
+                    :peak-start="group.peak_start"
+                    :peak-end="group.peak_end"
+                    :peak-rate-multiplier="group.peak_rate_multiplier"
+                  />
+                  <span
+                    v-if="keyDisplayGroups(row).length > MAX_ROW_GROUP_BADGES"
+                    class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600 dark:bg-dark-700 dark:text-gray-300"
+                    :title="keyDisplayGroups(row).slice(MAX_ROW_GROUP_BADGES).map((group) => group.name).join(', ')"
+                    data-test="key-row-groups-more"
+                  >+{{ keyDisplayGroups(row).length - MAX_ROW_GROUP_BADGES }}</span>
+                </span>
                 <span v-else class="text-sm text-gray-400 dark:text-dark-500">{{
                   t('keys.noGroup')
                 }}</span>
-                <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('keys.selectGroup') }}</span>
+                <span v-if="keyDisplayGroups(row).length <= 1" class="text-xs text-gray-500 dark:text-gray-400">{{ t('keys.selectGroup') }}</span>
                 <svg
                   class="h-3.5 w-3.5 text-gray-400 opacity-60 transition-opacity group-hover/dropdown:opacity-100"
                   fill="none"
@@ -533,7 +561,25 @@
           </p>
         </fieldset>
 
-        <div>
+        <div v-if="editingAutoGroupKey" data-test="key-form-auto-groups">
+          <label class="input-label">{{ t('keys.groupLabel') }}</label>
+          <div class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 dark:border-dark-600 dark:bg-dark-800">
+            <div class="flex flex-wrap gap-1.5">
+              <GroupBadge
+                v-for="group in keyDisplayGroups(selectedKey!)"
+                :key="group.id"
+                :name="group.name"
+                :platform="group.platform"
+                :subscription-type="group.subscription_type"
+                :rate-multiplier="group.rate_multiplier"
+                :user-rate-multiplier="userGroupRates[group.id]"
+              />
+            </div>
+            <p class="mt-2 text-xs leading-5 text-gray-500 dark:text-gray-400">{{ t('keys.groupList.autoHint') }}</p>
+          </div>
+        </div>
+
+        <div v-else>
           <label class="input-label" for="key-form-group">{{ t('keys.groupLabel') }}</label>
           <Select
             :key="showEditModal ? 'edit' : createProvider"
@@ -578,6 +624,19 @@
               />
             </template>
           </Select>
+          <div class="mt-3">
+            <div class="mb-1.5 flex items-center justify-between">
+              <span class="text-xs font-medium text-gray-600 dark:text-gray-300">{{ t('keys.groupList.extraTitle') }}</span>
+              <span class="text-xs text-gray-400 dark:text-gray-500">{{ t('keys.groupList.optional') }}</span>
+            </div>
+            <KeyGroupListEditor
+              v-model="formData.extra_group_ids"
+              :options="groupOptions"
+              :primary-id="formData.group_id"
+              @promote="promoteExtraGroup"
+            />
+            <p class="mt-1.5 text-xs leading-5 text-gray-500 dark:text-gray-400">{{ t('keys.groupList.hint') }}</p>
+          </div>
         </div>
 
         <!-- Custom Key Section (only for create) -->
@@ -1160,6 +1219,7 @@
           <button
             v-for="option in filteredGroupOptions"
             :key="option.value ?? 'null'"
+            :data-test="`group-selector-option-${option.value}`"
             @click="changeGroup(selectedKeyForGroup!, option.value)"
             :class="[
               'flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors',
@@ -1211,6 +1271,8 @@ import { keysAPI, authAPI, usageAPI, userGroupsAPI } from '@/api'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import BulkEditKeysModal from '@/components/keys/BulkEditKeysModal.vue'
+import KeyGroupListEditor from '@/components/keys/KeyGroupListEditor.vue'
+import { isAutoGroupKey, keyDisplayGroups, keyGroupIds, replacePrimaryGroup } from '@/components/keys/keyGroups'
 	import DataTable from '@/components/common/DataTable.vue'
 	import Pagination from '@/components/common/Pagination.vue'
 	import BaseDialog from '@/components/common/BaseDialog.vue'
@@ -1227,6 +1289,7 @@ import BulkEditKeysModal from '@/components/keys/BulkEditKeysModal.vue'
 import type { Column } from '@/components/common/types'
 import type { BatchApiKeyUsageStats } from '@/api/usage'
 import { formatDateTime } from '@/utils/format'
+import { getStudioKeyIds } from '@/api/oauthProvider'
 import { maskApiKey } from '@/utils/maskApiKey'
 import PlatformIcon from '@/components/common/PlatformIcon.vue'
 import { platformBadgeLightClass } from '@/utils/platformColors'
@@ -1430,6 +1493,8 @@ const setGroupButtonRef = (keyId: number, el: Element | ComponentPublicInstance 
 }
 
 const formData = ref({
+  // Routes 2..N of a multi-group key; group_id stays the primary route.
+  extra_group_ids: [] as number[],
   name: '',
   group_id: null as number | null,
   status: 'active' as 'active' | 'inactive',
@@ -1539,10 +1604,35 @@ const formGroupOptions = computed(() => showEditModal.value
   : groupOptions.value.filter((group) => getKeyGroupProvider(group.platform) === createProvider.value)
 )
 
+// The group column shows the first few routes in order and folds the rest into "+N".
+const MAX_ROW_GROUP_BADGES = 3
+
+// Auto-mode (studio) keys derive their groups from the user's permissions; show them read-only.
+const editingAutoGroupKey = computed(() => showEditModal.value && isAutoGroupKey(selectedKey.value))
+
+// A group chosen as primary must not also appear in the later routes.
+watch(() => formData.value.group_id, (primary) => {
+  if (primary !== null && formData.value.extra_group_ids.includes(primary)) {
+    formData.value.extra_group_ids = formData.value.extra_group_ids.filter((id) => id !== primary)
+  }
+})
+
+// "Move up" on route 2: it becomes primary and the old primary takes its place.
+const promoteExtraGroup = (index: number) => {
+  const extras = [...formData.value.extra_group_ids]
+  const promoted = extras[index]
+  const oldPrimary = formData.value.group_id
+  if (promoted === undefined || oldPrimary === null) return
+  extras[index] = oldPrimary
+  formData.value.extra_group_ids = extras
+  formData.value.group_id = promoted
+}
+
 const selectCreateProvider = (provider: KeyGroupProvider) => {
   if (createProvider.value === provider) return
   createProvider.value = provider
   formData.value.group_id = null
+  formData.value.extra_group_ids = []
 }
 
 // Also handles groups arriving after the create dialog has already opened.
@@ -1698,6 +1788,7 @@ const editKey = (key: ApiKey) => {
   const hasIPRestriction = (key.ip_whitelist?.length > 0) || (key.ip_blacklist?.length > 0)
   const hasExpiration = !!key.expires_at
   formData.value = {
+    extra_group_ids: keyGroupIds(key).slice(1),
     name: key.name,
     group_id: key.group_id,
     status: key.status === 'quota_exhausted' || key.status === 'expired' ? 'inactive' : key.status,
@@ -1771,8 +1862,13 @@ const changeGroup = async (key: ApiKey, newGroupId: number | null) => {
   dropdownPosition.value = null
   if (key.group_id === newGroupId) return
 
+  // Changing the primary route of a multi-group key keeps its other routes.
+  const ids = keyGroupIds(key)
+  const updates: UpdateApiKeyRequest = newGroupId !== null && ids.length > 1
+    ? { group_id: newGroupId, group_ids: replacePrimaryGroup(ids, newGroupId) }
+    : { group_id: newGroupId }
   try {
-    await keysAPI.update(key.id, { group_id: newGroupId })
+    await keysAPI.update(key.id, updates)
     appStore.showSuccess(t('keys.groupChangedSuccess'))
     loadApiKeys()
   } catch (error) {
@@ -1798,8 +1894,9 @@ const confirmDelete = (key: ApiKey) => {
 }
 
 const handleSubmit = async () => {
-  // Validate group_id is required
-  if (formData.value.group_id === null) {
+  const autoGroups = editingAutoGroupKey.value
+  // Validate group_id is required (auto-mode keys have no editable group)
+  if (!autoGroups && formData.value.group_id === null) {
     appStore.showError(t('keys.groupRequired'))
     return
   }
@@ -1856,7 +1953,6 @@ const handleSubmit = async () => {
     if (showEditModal.value && selectedKey.value) {
       const updates: UpdateApiKeyRequest = {
         name: formData.value.name,
-        group_id: formData.value.group_id,
         ip_whitelist: ipWhitelist,
         ip_blacklist: ipBlacklist,
         quota: quota,
@@ -1867,6 +1963,18 @@ const handleSubmit = async () => {
       }
       if (shouldSubmitEditStatus(selectedKey.value, formData.value.status)) {
         updates.status = formData.value.status
+      }
+      if (!autoGroups) {
+        updates.group_id = formData.value.group_id
+        // Sending group_id alone keeps the stored extra routes, so a changed list
+        // must be sent in full. An unchanged list is left out: re-sending it would
+        // re-check every group and fail once access to any fallback was revoked.
+        const nextIds = [formData.value.group_id!, ...formData.value.extra_group_ids]
+        const currentIds = keyGroupIds(selectedKey.value)
+        const listChanged = nextIds.length !== currentIds.length || nextIds.some((id, i) => id !== currentIds[i])
+        if (listChanged && (nextIds.length > 1 || currentIds.length > 1)) {
+          updates.group_ids = nextIds
+        }
       }
       await keysAPI.update(selectedKey.value.id, updates)
       appStore.showSuccess(t('keys.keyUpdatedSuccess'))
@@ -1880,7 +1988,8 @@ const handleSubmit = async () => {
         ipBlacklist,
         quota,
         expiresInDays,
-        rateLimitData
+        rateLimitData,
+        [formData.value.group_id!, ...formData.value.extra_group_ids]
       )
       appStore.showSuccess(t('keys.keyCreatedSuccess'))
       // Only advance tour if active, on submit step, and creation succeeded
@@ -1924,6 +2033,7 @@ const closeModals = () => {
   showEditModal.value = false
   selectedKey.value = null
   formData.value = {
+    extra_group_ids: [],
     name: '',
     group_id: null,
     status: 'active',
@@ -2078,8 +2188,19 @@ function formatResetTime(resetAt: string | null): string {
   return `${mins}m`
 }
 
+// 视频工作台自动创建的专用密钥，在列表里标出来，免得用户当成陌生密钥删掉。
+const studioKeyIds = ref(new Set<number>())
+async function loadStudioKeyIds() {
+  try {
+    studioKeyIds.value = new Set(await getStudioKeyIds())
+  } catch {
+    // 标记只是提示，拿不到不影响列表
+  }
+}
+
 onMounted(() => {
   loadSavedColumns()
+  loadStudioKeyIds()
   loadApiKeys()
   loadGroups()
   loadUserGroupRates()

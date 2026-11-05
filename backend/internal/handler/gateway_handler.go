@@ -1146,6 +1146,9 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 // Returns models based on account configurations (model_mapping whitelist)
 // Falls back to default models if no whitelist is configured
 func (h *GatewayHandler) Models(c *gin.Context) {
+	if h.writeMultiGroupModels(c) {
+		return
+	}
 	apiKey, _ := middleware2.GetAPIKeyFromContext(c)
 
 	var groupID *int64
@@ -1555,15 +1558,28 @@ func mergeModelIDs(primary, secondary []string) []string {
 // 分组级模型白名单开启时按白名单过滤。
 func (h *GatewayHandler) AntigravityModels(c *gin.Context) {
 	models := antigravity.DefaultModels()
-	if apiKey, ok := middleware2.GetAPIKeyFromContext(c); ok && apiKey != nil && apiKey.Group != nil && apiKey.Group.ModelAllowlistEnabled() {
-		filtered := make([]antigravity.ClaudeModel, 0, len(models))
-		for _, model := range models {
-			if apiKey.Group.ModelAllowlist.Allows(model.ID) {
-				filtered = append(filtered, model)
+	// 多分组密钥：任一候选分组的白名单放行即列出。
+	groups := middleware2.APIKeyGroupCandidates(c)
+	if len(groups) == 0 {
+		if apiKey, ok := middleware2.GetAPIKeyFromContext(c); ok && apiKey != nil && apiKey.Group != nil {
+			groups = []*service.Group{apiKey.Group}
+		}
+	}
+	allowed := func(modelID string) bool {
+		for _, g := range groups {
+			if !g.ModelAllowlistEnabled() || g.ModelAllowlist.Allows(modelID) {
+				return true
 			}
 		}
-		models = filtered
+		return len(groups) == 0
 	}
+	filtered := make([]antigravity.ClaudeModel, 0, len(models))
+	for _, model := range models {
+		if allowed(model.ID) {
+			filtered = append(filtered, model)
+		}
+	}
+	models = filtered
 	c.JSON(http.StatusOK, gin.H{
 		"object": "list",
 		"data":   models,

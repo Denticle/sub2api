@@ -608,3 +608,85 @@ func (s *APIKeyRepoSuite) TestDeleteWithAudit_NotFound() {
 	err := s.repo.DeleteWithAudit(s.ctx, 999999)
 	s.Require().ErrorIs(err, service.ErrAPIKeyNotFound)
 }
+
+// --- 多分组（api_key_groups） ---
+
+func (s *APIKeyRepoSuite) mustCreateMultiGroupKey(userID int64, key string, groupIDs ...int64) *service.APIKey {
+	s.T().Helper()
+	primary := groupIDs[0]
+	k := &service.APIKey{UserID: userID, Key: key, Name: key, GroupID: &primary, GroupIDs: groupIDs, Status: service.StatusActive}
+	s.Require().NoError(s.repo.Create(s.ctx, k), "create multi-group api key")
+	return k
+}
+
+func (s *APIKeyRepoSuite) groupIDsOf(id int64) []int64 {
+	s.T().Helper()
+	got, err := s.repo.GetByID(s.ctx, id)
+	s.Require().NoError(err)
+	return got.OrderedGroupIDs()
+}
+
+func (s *APIKeyRepoSuite) TestMultiGroup_CreateUpdateAndRead() {
+	user := s.mustCreateUser("multi-crud@test.com")
+	g1, g2, g3 := s.mustCreateGroup("mg-1"), s.mustCreateGroup("mg-2"), s.mustCreateGroup("mg-3")
+	key := s.mustCreateMultiGroupKey(user.ID, "sk-multi-crud", g2.ID, g1.ID, g3.ID)
+
+	got, err := s.repo.GetByID(s.ctx, key.ID)
+	s.Require().NoError(err)
+	s.Require().Equal([]int64{g2.ID, g1.ID, g3.ID}, got.GroupIDs)
+	s.Require().Len(got.Groups, 3)
+	s.Require().Equal(g2.ID, *got.GroupID)
+
+	got.GroupIDs = []int64{g3.ID, g2.ID}
+	got.GroupID = &got.GroupIDs[0]
+	s.Require().NoError(s.repo.Update(s.ctx, got, service.APIKeyUpdateFields{GroupID: true}))
+	s.Require().Equal([]int64{g3.ID, g2.ID}, s.groupIDsOf(key.ID))
+
+	// 非主路由分组也能反查到密钥（认证缓存按分组失效依赖它）
+	keys, err := s.repo.ListKeysByGroupID(s.ctx, g2.ID)
+	s.Require().NoError(err)
+	s.Require().Contains(keys, "sk-multi-crud")
+}
+
+func (s *APIKeyRepoSuite) TestMultiGroup_DeleteGroupRenumbersAndPromotes() {
+	user := s.mustCreateUser("multi-delete@test.com")
+	g1, g2, g3 := s.mustCreateGroup("mgd-1"), s.mustCreateGroup("mgd-2"), s.mustCreateGroup("mgd-3")
+	a := s.mustCreateMultiGroupKey(user.ID, "sk-mgd-a", g1.ID, g2.ID, g3.ID) // 删掉的是主路由
+	b := s.mustCreateMultiGroupKey(user.ID, "sk-mgd-b", g2.ID, g1.ID)        // 删掉的是路由 2
+	c := s.mustCreateApiKey(user.ID, "sk-mgd-c", "single", &g1.ID)           // 单分组：沿用旧行为
+
+	groupRepo := newGroupRepositoryWithSQL(s.client, s.repo.sql)
+	_, err := groupRepo.DeleteCascade(s.ctx, g1.ID)
+	s.Require().NoError(err)
+
+	s.Require().Equal([]int64{g2.ID, g3.ID}, s.groupIDsOf(a.ID), "next route is promoted to primary")
+	s.Require().Equal([]int64{g2.ID}, s.groupIDsOf(b.ID))
+
+	var positions []int
+	rows, err := s.client.QueryContext(s.ctx, `SELECT position FROM api_key_groups WHERE api_key_id = $1 ORDER BY position`, a.ID)
+	s.Require().NoError(err)
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var p int
+		s.Require().NoError(rows.Scan(&p))
+		positions = append(positions, p)
+	}
+	s.Require().Equal([]int{0, 1}, positions, "positions are compacted")
+
+	single, err := s.repo.GetByID(s.ctx, c.ID)
+	s.Require().NoError(err)
+	s.Require().Equal(g1.ID, *single.GroupID, "single-group keys keep their group_id on delete, as before")
+}
+
+func (s *APIKeyRepoSuite) TestMultiGroup_ReplaceExclusiveGroup() {
+	user := s.mustCreateUser("multi-replace@test.com")
+	old, newG, other := s.mustCreateGroup("mgr-old"), s.mustCreateGroup("mgr-new"), s.mustCreateGroup("mgr-other")
+	a := s.mustCreateMultiGroupKey(user.ID, "sk-mgr-a", other.ID, old.ID)          // 旧分组在路由 2
+	b := s.mustCreateMultiGroupKey(user.ID, "sk-mgr-b", old.ID, newG.ID, other.ID) // 已含新分组
+
+	_, err := s.repo.UpdateGroupIDByUserAndGroup(s.ctx, user.ID, old.ID, newG.ID)
+	s.Require().NoError(err)
+
+	s.Require().Equal([]int64{other.ID, newG.ID}, s.groupIDsOf(a.ID), "replaced in place")
+	s.Require().Equal([]int64{newG.ID, other.ID}, s.groupIDsOf(b.ID), "old group dropped, no duplicate")
+}

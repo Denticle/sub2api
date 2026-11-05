@@ -1,6 +1,9 @@
 package middleware
 
 import (
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/service"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
 )
@@ -22,7 +25,16 @@ var ProviderSet = wire.NewSet(
 	NewJWTAuthMiddleware,
 	NewOptionalJWTAuthMiddleware,
 	NewAdminAuthMiddleware,
-	NewAPIKeyAuthMiddleware,
+	ProvideAPIKeyAuthMiddleware,
 	NewAuditLogMiddleware,
 	NewStepUpAuthMiddleware,
 )
+
+// ProvideAPIKeyAuthMiddleware 是 wire 用的构造函数。
+//
+// 依赖 *service.GroupRouter 是为了让 wire 在服务启动时构建选组服务：
+// ProvideGroupRouter 会把它挂到 apiKeyService 上，鉴权中间件（含 Google 变体）
+// 通过 apiKeyService.GroupRouter() 使用。没有消费者时 wire 会裁掉该 provider。
+func ProvideAPIKeyAuthMiddleware(apiKeyService *service.APIKeyService, subscriptionService *service.SubscriptionService, _ *service.GroupRouter, cfg *config.Config) APIKeyAuthMiddleware {
+	return NewAPIKeyAuthMiddleware(apiKeyService, subscriptionService, cfg)
+}

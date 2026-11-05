@@ -1,0 +1,110 @@
+# ForAPI 视频工作台（video.forapi.cloud）。镜像由 ../integration/build.sh 构建。
+# 只有 web 容器加入 enterprise-new-api-prod 网络，供主机上的 nginx 反代；
+# 数据库、Redis、后端都只在内部网络里，不对外暴露端口。
+name: video-studio
+
+services:
+  postgres:
+    container_name: video-studio-postgres
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: video_studio
+      POSTGRES_USER: video_studio
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?必须配置 PostgreSQL 密码}
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U video_studio -d video_studio"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    mem_limit: 2g
+    restart: unless-stopped
+    networks: [internal]
+
+  redis:
+    container_name: video-studio-redis
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec", "--maxmemory", "512mb", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - ./redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    mem_limit: 768m
+    restart: unless-stopped
+    networks: [internal]
+
+  migrate:
+    container_name: video-studio-migrate
+    image: forapi-video-studio-backend:${VIDEO_STUDIO_TAG:-latest}
+    entrypoint: ["migrate-schema"]
+    command: ["up"]
+    environment:
+      CANVAS_BACKEND_DATA_DIR: /data
+      CANVAS_DATABASE_DRIVER: postgres
+      DATABASE_URL: postgres://video_studio:${POSTGRES_PASSWORD}@postgres:5432/video_studio?sslmode=disable
+    volumes:
+      - ./data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [internal]
+
+  backend:
+    container_name: video-studio-backend
+    image: forapi-video-studio-backend:${VIDEO_STUDIO_TAG:-latest}
+    environment:
+      CANVAS_BACKEND_ADDR: ":8080"
+      CANVAS_BACKEND_DATA_DIR: /data
+      CANVAS_AUTO_MIGRATE: "false"
+      CANVAS_SHUTDOWN_TIMEOUT: 10m
+      CANVAS_DATABASE_DRIVER: postgres
+      DATABASE_URL: postgres://video_studio:${POSTGRES_PASSWORD}@postgres:5432/video_studio?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      CANVAS_WORKER_CONCURRENCY: ${CANVAS_WORKER_CONCURRENCY:-3}
+      CANVAS_CHANNEL_CONCURRENCY: ${CANVAS_CHANNEL_CONCURRENCY:-3}
+      # 新用户只能经 ForAPI 首次登录创建（本地注册已在补丁里关闭）
+      CANVAS_REGISTRATION_ENABLED: "true"
+      CANVAS_ALLOW_PRIVATE_UPSTREAMS: "false"
+      CANVAS_CORS_ORIGINS: https://video.forapi.cloud
+      CANVAS_PUBLIC_BASE_URL: https://video.forapi.cloud
+      # 不向上游作者的模型目录服务发请求
+      CANVAS_PROVIDER_CATALOG_DISABLED: "1"
+      CANVAS_LOG_LEVEL: info
+      CANVAS_LOG_FORMAT: text
+      GIN_MODE: release
+    volumes:
+      - ./data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    mem_limit: 6g
+    restart: unless-stopped
+    stop_grace_period: 10m
+    networks: [internal]
+
+  web:
+    container_name: video-studio-web
+    image: forapi-video-studio-web:${VIDEO_STUDIO_TAG:-latest}
+    depends_on:
+      backend:
+        condition: service_healthy
+    mem_limit: 512m
+    restart: unless-stopped
+    networks:
+      internal: {}
+      edge:
+        aliases: [video-studio-web]
+
+networks:
+  internal: {}
+  edge:
+    external: true
+    name: enterprise-new-api-prod

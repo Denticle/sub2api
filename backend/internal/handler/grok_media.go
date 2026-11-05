@@ -486,6 +486,18 @@ func (h *OpenAIGatewayHandler) handleGrokMedia(c *gin.Context, endpoint service.
 					zap.Error(err),
 				)
 			}
+			// 多分组密钥：记下创建时的分组，状态/内容查询回到同一分组找账号绑定。
+			if _, multiGroup := service.APIKeyGroupRouteFromContext(c.Request.Context()); multiGroup && apiKey.GroupID != nil {
+				if err := h.gatewayService.BindGrokMediaVideoRequestGroup(
+					requestCtx, result.ResponseID, subject.UserID, apiKey.ID, *apiKey.GroupID,
+				); err != nil {
+					reqLog.Warn("grok_media.bind_video_request_group_failed",
+						zap.Int64("group_id", *apiKey.GroupID),
+						zap.String("request_id", result.ResponseID),
+						zap.Error(err),
+					)
+				}
+			}
 			// Defer billing until status polling observes video.url. Persist create-time
 			// model/duration/resolution so status can still price if upstream omits them.
 			// Retry once: missing pending causes silent underpricing (status omits resolution).

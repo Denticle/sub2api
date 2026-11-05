@@ -761,6 +761,12 @@ export interface ApiKey {
   updated_at: string
   current_concurrency: number
   group?: Group
+  /** Ordered groups; [0] equals group_id. null when the key has no group. */
+  group_ids?: number[] | null
+  /** manual = user-ordered group_ids; auto = derived from the user's permissions (studio keys only). */
+  group_mode?: ApiKeyGroupMode
+  /** Same order as group_ids; only present when the key binds more than one group. */
+  groups?: Group[]
   rate_limit_5h: number
   rate_limit_1d: number
   rate_limit_7d: number
@@ -775,9 +781,13 @@ export interface ApiKey {
   reset_7d_at: string | null
 }
 
+export type ApiKeyGroupMode = 'manual' | 'auto'
+
 export interface CreateApiKeyRequest {
   name: string
   group_id?: number | null
+  /** Ordered group list; takes precedence over group_id when present. */
+  group_ids?: number[]
   custom_key?: string // Optional custom API Key
   ip_whitelist?: string[]
   ip_blacklist?: string[]
@@ -791,6 +801,8 @@ export interface CreateApiKeyRequest {
 export interface UpdateApiKeyRequest {
   name?: string
   group_id?: number | null
+  /** Replaces the whole ordered group list when present. */
+  group_ids?: number[]
   status?: 'active' | 'inactive'
   ip_whitelist?: string[]
   ip_blacklist?: string[]

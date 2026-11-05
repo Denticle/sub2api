@@ -39,6 +39,7 @@ func (h *GatewayHandler) GeminiV1BetaListModels(c *gin.Context) {
 		googleError(c, http.StatusUnauthorized, "Invalid API key")
 		return
 	}
+	apiKey = useGeminiCandidateGroup(c, apiKey)
 	// 检查平台：优先使用强制平台（/antigravity 路由），否则要求 gemini 分组（composite 分组允许路由到 antigravity）
 	forcePlatform, hasForcePlatform := middleware.GetForcePlatformFromContext(c)
 	effectivePlatform := effectiveAPIKeyPlatform(c, apiKey)
@@ -225,6 +226,7 @@ func (h *GatewayHandler) GeminiV1BetaGetModel(c *gin.Context) {
 		googleError(c, http.StatusUnauthorized, "Invalid API key")
 		return
 	}
+	apiKey = useGeminiCandidateGroup(c, apiKey)
 	// 检查平台：优先使用强制平台（/antigravity 路由），否则要求 gemini 分组（composite 分组允许路由到 antigravity）
 	forcePlatform, hasForcePlatform := middleware.GetForcePlatformFromContext(c)
 	effectivePlatform := effectiveAPIKeyPlatform(c, apiKey)
@@ -1086,4 +1088,24 @@ func isAntigravityGeminiModel(model string) bool {
 	}
 	detected, ok := service.DetectModelPlatform(trimmed)
 	return ok && detected == service.PlatformGemini
+}
+
+// useGeminiCandidateGroup 多分组密钥的 Gemini 模型列表/详情按第一个 Gemini 分组处理。
+//
+// 这两个接口透传某个上游账号的模型目录，无法跨分组合并；主路由不是 Gemini 时
+// 按优先级取第一个 Gemini 分组，没有则保持主路由（返回原有的平台错误）。
+func useGeminiCandidateGroup(c *gin.Context, apiKey *service.APIKey) *service.APIKey {
+	if apiKey == nil || (apiKey.Group != nil && apiKey.Group.Platform == service.PlatformGemini) {
+		return apiKey
+	}
+	if _, forced := middleware.GetForcePlatformFromContext(c); forced {
+		return apiKey
+	}
+	group := middleware.FirstAPIKeyGroupCandidate(c, func(g *service.Group) bool {
+		return g.Platform == service.PlatformGemini
+	})
+	if group == nil {
+		return apiKey
+	}
+	return middleware.UseAPIKeyGroup(c, group)
 }

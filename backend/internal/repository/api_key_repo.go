@@ -37,18 +37,48 @@ func newAPIKeyRepositoryWithSQL(client *dbent.Client, sqlq sqlExecutor) *apiKeyR
 	return &apiKeyRepository{client: client, sql: sqlq}
 }
 
+// withGroups 给单把密钥补上有序分组列表。
+func (r *apiKeyRepository) withGroups(ctx context.Context, key *service.APIKey) (*service.APIKey, error) {
+	if err := r.attachAPIKeyGroups(ctx, []*service.APIKey{key}); err != nil {
+		return nil, err
+	}
+	return key, nil
+}
+
+func normalizeAPIKeyGroupMode(mode string) string {
+	if mode == service.APIKeyGroupModeAuto {
+		return service.APIKeyGroupModeAuto
+	}
+	return service.APIKeyGroupModeManual
+}
+
 func (r *apiKeyRepository) activeQuery() *dbent.APIKeyQuery {
 	// 默认过滤已软删除记录，避免删除后仍被查询到。
 	return r.client.APIKey.Query().Where(apikey.DeletedAtIsNil())
 }
 
 func (r *apiKeyRepository) Create(ctx context.Context, key *service.APIKey) error {
-	builder := r.client.APIKey.Create().
+	groupIDs := key.OrderedGroupIDs()
+	if len(groupIDs) <= 1 || !r.supportsAPIKeyGroups() {
+		return r.create(ctx, clientFromContext(ctx, r.client), key)
+	}
+	// 多分组：密钥行与 api_key_groups 同一事务写入。
+	return r.withTx(ctx, func(txCtx context.Context, client *dbent.Client) error {
+		if err := r.create(txCtx, client, key); err != nil {
+			return err
+		}
+		return writeAPIKeyGroups(txCtx, client, key.ID, groupIDs)
+	})
+}
+
+func (r *apiKeyRepository) create(ctx context.Context, client *dbent.Client, key *service.APIKey) error {
+	builder := client.APIKey.Create().
 		SetUserID(key.UserID).
 		SetKey(key.Key).
 		SetName(key.Name).
 		SetStatus(key.Status).
 		SetNillableGroupID(key.GroupID).
+		SetGroupMode(normalizeAPIKeyGroupMode(key.GroupMode)).
 		SetNillableLastUsedAt(key.LastUsedAt).
 		SetQuota(key.Quota).
 		SetQuotaUsed(key.QuotaUsed).
@@ -67,6 +97,7 @@ func (r *apiKeyRepository) Create(ctx context.Context, key *service.APIKey) erro
 	created, err := builder.Save(ctx)
 	if err == nil {
 		key.ID = created.ID
+		key.GroupMode = created.GroupMode
 		key.LastUsedAt = created.LastUsedAt
 		key.CreatedAt = created.CreatedAt
 		key.UpdatedAt = created.UpdatedAt
@@ -86,7 +117,7 @@ func (r *apiKeyRepository) GetByID(ctx context.Context, id int64) (*service.APIK
 		}
 		return nil, err
 	}
-	return apiKeyEntityToService(m), nil
+	return r.withGroups(ctx, apiKeyEntityToService(m))
 }
 
 // GetKeyAndOwnerID 根据 API Key ID 获取其 key 与所有者（用户）ID。
@@ -124,7 +155,7 @@ func (r *apiKeyRepository) GetByKey(ctx context.Context, key string) (*service.A
 		}
 		return nil, err
 	}
-	return apiKeyEntityToService(m), nil
+	return r.withGroups(ctx, apiKeyEntityToService(m))
 }
 
 func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*service.APIKey, error) {
@@ -240,7 +271,7 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 		}
 		return nil, err
 	}
-	return apiKeyEntityToService(m), nil
+	return r.withGroups(ctx, apiKeyEntityToService(m))
 }
 
 func (r *apiKeyRepository) Update(ctx context.Context, key *service.APIKey, fields service.APIKeyUpdateFields) error {
@@ -254,7 +285,19 @@ func (r *apiKeyRepository) Update(ctx context.Context, key *service.APIKey, fiel
 	// 则会更新已删除的记录。
 	// 这里选择 Update().Where()，确保只有未软删除记录能被更新。
 	// 同时显式设置 updated_at，避免二次查询带来的并发可见性问题。
-	client := clientFromContext(ctx, r.client)
+	if fields.GroupID && r.supportsAPIKeyGroups() {
+		// 分组列表与 group_id 必须同时生效，放进同一事务。
+		return r.withTx(ctx, func(txCtx context.Context, client *dbent.Client) error {
+			if err := r.update(txCtx, client, key, fields); err != nil {
+				return err
+			}
+			return writeAPIKeyGroups(txCtx, client, key.ID, key.OrderedGroupIDs())
+		})
+	}
+	return r.update(ctx, clientFromContext(ctx, r.client), key, fields)
+}
+
+func (r *apiKeyRepository) update(ctx context.Context, client *dbent.Client, key *service.APIKey, fields service.APIKeyUpdateFields) error {
 	now := time.Now()
 	builder := client.APIKey.Update().
 		Where(apikey.IDEQ(key.ID), apikey.DeletedAtIsNil()).
@@ -306,6 +349,7 @@ func (r *apiKeyRepository) Update(ctx context.Context, key *service.APIKey, fiel
 		} else {
 			builder.ClearGroupID()
 		}
+		builder.SetGroupMode(normalizeAPIKeyGroupMode(key.GroupMode))
 	}
 
 	// Expiration time
@@ -484,6 +528,9 @@ func (r *apiKeyRepository) ListByUserID(ctx context.Context, userID int64, param
 	if err := r.attachLastUsedIPs(ctx, outKeys); err != nil {
 		return nil, nil, err
 	}
+	if err := r.attachAPIKeyGroupsToSlice(ctx, outKeys); err != nil {
+		return nil, nil, err
+	}
 
 	return outKeys, paginationResultFromTotal(int64(total), params), nil
 }
@@ -502,6 +549,9 @@ func (r *apiKeyRepository) ListAllByUserID(ctx context.Context, userID int64, fi
 		outKeys = append(outKeys, *apiKeyEntityToService(keys[i]))
 	}
 	if err := r.attachLastUsedIPs(ctx, outKeys); err != nil {
+		return nil, err
+	}
+	if err := r.attachAPIKeyGroupsToSlice(ctx, outKeys); err != nil {
 		return nil, err
 	}
 	return outKeys, nil
@@ -730,12 +780,23 @@ func (r *apiKeyRepository) ClearGroupIDByGroupID(ctx context.Context, groupID in
 
 // UpdateGroupIDByUserAndGroup 将用户下绑定 oldGroupID 的所有 Key 迁移到 newGroupID
 func (r *apiKeyRepository) UpdateGroupIDByUserAndGroup(ctx context.Context, userID, oldGroupID, newGroupID int64) (int64, error) {
-	client := clientFromContext(ctx, r.client)
-	n, err := client.APIKey.Update().
-		Where(apikey.UserIDEQ(userID), apikey.GroupIDEQ(oldGroupID), apikey.DeletedAtIsNil()).
-		SetGroupID(newGroupID).
-		Save(ctx)
-	return int64(n), err
+	var migrated int64
+	err := r.withTx(ctx, func(txCtx context.Context, client *dbent.Client) error {
+		n, err := client.APIKey.Update().
+			Where(apikey.UserIDEQ(userID), apikey.GroupIDEQ(oldGroupID), apikey.DeletedAtIsNil()).
+			SetGroupID(newGroupID).
+			Save(txCtx)
+		if err != nil {
+			return err
+		}
+		migrated = int64(n)
+		// 非主路由位置上的旧分组也要换掉，否则密钥会继续路由到已收回权限的分组。
+		if !r.supportsAPIKeyGroups() {
+			return nil
+		}
+		return replaceGroupInAPIKeys(txCtx, client, userID, oldGroupID, newGroupID)
+	})
+	return migrated, err
 }
 
 // CountByGroupID 获取分组的 API Key 数量
@@ -755,15 +816,31 @@ func (r *apiKeyRepository) ListKeysByUserID(ctx context.Context, userID int64) (
 	return keys, nil
 }
 
+// 同时覆盖主路由（api_keys.group_id）与 api_key_groups 中非首位的绑定，
+// 供认证缓存按分组失效使用。
 func (r *apiKeyRepository) ListKeysByGroupID(ctx context.Context, groupID int64) ([]string, error) {
-	keys, err := r.activeQuery().
-		Where(apikey.GroupIDEQ(groupID)).
-		Select(apikey.FieldKey).
-		Strings(ctx)
+	if !r.supportsAPIKeyGroups() {
+		return r.activeQuery().Where(apikey.GroupIDEQ(groupID)).Select(apikey.FieldKey).Strings(ctx)
+	}
+	rows, err := clientFromContext(ctx, r.client).QueryContext(ctx, `
+		SELECT k.key FROM api_keys k
+		WHERE k.deleted_at IS NULL AND (
+			k.group_id = $1
+			OR EXISTS (SELECT 1 FROM api_key_groups g WHERE g.api_key_id = k.id AND g.group_id = $1)
+		)`, groupID)
 	if err != nil {
 		return nil, err
 	}
-	return keys, nil
+	defer func() { _ = rows.Close() }()
+	var keys []string
+	for rows.Next() {
+		var key string
+		if err := rows.Scan(&key); err != nil {
+			return nil, err
+		}
+		keys = append(keys, key)
+	}
+	return keys, rows.Err()
 }
 
 // IncrementQuotaUsed 使用 Ent 原子递增 quota_used 字段并返回新值
@@ -896,6 +973,7 @@ func apiKeyEntityToService(m *dbent.APIKey) *service.APIKey {
 		CreatedAt:     m.CreatedAt,
 		UpdatedAt:     m.UpdatedAt,
 		GroupID:       m.GroupID,
+		GroupMode:     m.GroupMode,
 		Quota:         m.Quota,
 		QuotaUsed:     m.QuotaUsed,
 		ExpiresAt:     m.ExpiresAt,

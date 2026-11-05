@@ -64,9 +64,10 @@ const (
 // 若编辑 Key 时无条件整行回写，并发累计的配额与限流计数就会被旧快照覆盖。
 // 因此调用方必须显式声明要改的列。
 type APIKeyUpdateFields struct {
-	Name      bool
-	Status    bool
-	Quota     bool
+	Name   bool
+	Status bool
+	Quota  bool
+	// GroupID 覆盖 group_id、group_mode 与 api_key_groups（按 APIKey.OrderedGroupIDs 重写）。
 	GroupID   bool
 	ExpiresAt bool
 	// QuotaUsed 仅供"重置配额用量"路径声明；常规计费走 IncrementQuotaUsed。
@@ -216,6 +217,8 @@ type APIKeyAuthCacheInvalidator interface {
 type CreateAPIKeyRequest struct {
 	Name        string   `json:"name"`
 	GroupID     *int64   `json:"group_id"`
+	GroupIDs    []int64  `json:"group_ids"` // 有序分组列表；非空时优先于 GroupID
+	GroupMode   string   `json:"group_mode"`
 	CustomKey   *string  `json:"custom_key"`   // 可选的自定义key
 	IPWhitelist []string `json:"ip_whitelist"` // IP 白名单
 	IPBlacklist []string `json:"ip_blacklist"` // IP 黑名单
@@ -234,6 +237,8 @@ type CreateAPIKeyRequest struct {
 type UpdateAPIKeyRequest struct {
 	Name        *string   `json:"name"`
 	GroupID     *int64    `json:"group_id"`
+	GroupIDs    []int64   `json:"group_ids"` // 有序分组列表；非 nil 时整体替换
+	GroupMode   *string   `json:"group_mode"`
 	Status      *string   `json:"status"`
 	IPWhitelist *[]string `json:"ip_whitelist"` // IP 白名单（nil 不修改，空数组清空）
 	IPBlacklist *[]string `json:"ip_blacklist"` // IP 黑名单（nil 不修改，空数组清空）
@@ -314,6 +319,7 @@ type APIKeyService struct {
 	authInvalidationFailures  atomic.Uint64
 	lastUsedTouchL1           sync.Map // keyID -> nextAllowedAt(time.Time)
 	lastUsedTouchSF           singleflight.Group
+	groupRouter               *GroupRouter
 }
 
 type APIKeyAuthLookupMetrics struct {
@@ -372,6 +378,19 @@ func (s *APIKeyService) SetRateLimitCacheInvalidator(inv RateLimitCacheInvalidat
 
 func (s *APIKeyService) SetConcurrencyService(concurrencyService *ConcurrencyService) {
 	s.concurrencyService = concurrencyService
+}
+
+// SetGroupRouter 挂上多分组密钥的选组服务（由 wire 在构建后注入，避免循环依赖）。
+func (s *APIKeyService) SetGroupRouter(router *GroupRouter) {
+	s.groupRouter = router
+}
+
+// GroupRouter 返回选组服务；未注入时为 nil，多分组密钥退回主路由。
+func (s *APIKeyService) GroupRouter() *GroupRouter {
+	if s == nil {
+		return nil
+	}
+	return s.groupRouter
 }
 
 func (s *APIKeyService) compileAPIKeyIPRules(apiKey *APIKey) {
@@ -515,17 +534,27 @@ func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIK
 		}
 	}
 
-	// 验证分组权限（如果指定了分组）
-	if req.GroupID != nil {
-		group, err := s.groupRepo.GetByID(ctx, *req.GroupID)
-		if err != nil {
-			return nil, fmt.Errorf("get group: %w", err)
+	// 验证分组模式与分组权限（如果指定了分组）
+	groupMode, err := normalizeGroupMode(req.GroupMode)
+	if err != nil {
+		return nil, err
+	}
+	if groupMode == APIKeyGroupModeAuto && req.GroupIDs != nil {
+		return nil, ErrAPIKeyAutoModeGroups
+	}
+	var groupIDs []int64
+	var groups []*Group
+	if groupMode == APIKeyGroupModeAuto {
+		// 自动模式不存 api_key_groups；group_id 写当前排序的第一组，供展示与只认 group_id 的旧代码使用。
+		groupIDs, groups, err = s.autoModePrimaryGroup(ctx, userID)
+	} else {
+		groupIDs, err = requestedGroupIDs(req.GroupID, req.GroupIDs)
+		if err == nil {
+			groups, err = s.loadBindableGroups(ctx, user, groupIDs)
 		}
-
-		// 检查用户是否可以绑定该分组
-		if !s.canUserBindGroup(ctx, user, group) {
-			return nil, ErrGroupNotAllowed
-		}
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	var key string
@@ -572,7 +601,7 @@ func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIK
 		UserID:      userID,
 		Key:         key,
 		Name:        html.EscapeString(req.Name),
-		GroupID:     req.GroupID,
+		GroupMode:   groupMode,
 		Status:      StatusActive,
 		IPWhitelist: req.IPWhitelist,
 		IPBlacklist: req.IPBlacklist,
@@ -582,6 +611,7 @@ func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIK
 		RateLimit1d: req.RateLimit1d,
 		RateLimit7d: req.RateLimit7d,
 	}
+	applyGroups(apiKey, groupIDs, groups)
 
 	// Set expiration time if specified
 	if req.ExpiresInDays != nil && *req.ExpiresInDays > 0 {
@@ -834,24 +864,8 @@ func (s *APIKeyService) Update(ctx context.Context, id int64, userID int64, req 
 		fields.Name = true
 	}
 
-	if req.GroupID != nil {
-		// 验证分组权限
-		user, err := s.userRepo.GetByID(ctx, userID)
-		if err != nil {
-			return nil, fmt.Errorf("get user: %w", err)
-		}
-
-		group, err := s.groupRepo.GetByID(ctx, *req.GroupID)
-		if err != nil {
-			return nil, fmt.Errorf("get group: %w", err)
-		}
-
-		if !s.canUserBindGroup(ctx, user, group) {
-			return nil, ErrGroupNotAllowed
-		}
-
-		apiKey.GroupID = req.GroupID
-		fields.GroupID = true
+	if err := s.applyGroupUpdate(ctx, userID, apiKey, req, &fields); err != nil {
+		return nil, err
 	}
 
 	if req.Status != nil {

@@ -15,6 +15,12 @@ type APIKeyAuthSnapshot struct {
 	User        APIKeyAuthUserSnapshot   `json:"user"`
 	Group       *APIKeyAuthGroupSnapshot `json:"group,omitempty"`
 
+	// 多分组：GroupMode 为空等价于 manual；GroupIDs 为有序分组（[0] = GroupID），
+	// Groups 只在绑定多个分组时填写，顺序与 GroupIDs 一致（已删除的分组不在其中）。
+	GroupMode string                    `json:"group_mode,omitempty"`
+	GroupIDs  []int64                   `json:"group_ids,omitempty"`
+	Groups    []APIKeyAuthGroupSnapshot `json:"groups,omitempty"`
+
 	// Quota fields for API Key independent quota feature
 	Quota     float64 `json:"quota"`      // Quota limit in USD (0 = unlimited)
 	QuotaUsed float64 `json:"quota_used"` // Used quota amount

@@ -113,6 +113,7 @@
           <a v-else-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('home.docs') }}</a>
           <router-link v-if="showModelPlazaEntry" to="/model-plaza">{{ t('nav.modelPlaza') }}</router-link>
           <a v-if="showWorkbench" href="#lp-workbench">{{ t('nav.workbench') }}</a>
+          <a v-if="studioUrl" :href="studioUrl" target="_blank" rel="noopener">{{ t('studio.nav') }}</a>
         </nav>
 
         <div class="lp-nav-actions">
@@ -469,6 +470,7 @@ import { sanitizeUrl } from '@/utils/url'
 import { isLocalDocsLink, resolveDocsLink } from '@/utils/docsLink'
 import { FeatureFlags, isFeatureFlagEnabled } from '@/utils/featureFlags'
 import { platformLabel } from '@/utils/platformColors'
+import { useStudioEntry } from '@/composables/useStudioEntry'
 
 const { t } = useI18n()
 
@@ -496,6 +498,7 @@ const isHomeContentUrl = computed(() => {
 const isDark = ref(document.documentElement.classList.contains('dark'))
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
+const { studioUrl } = useStudioEntry()
 const modelPlazaRequiresAuth = computed(
   () => appStore.cachedPublicSettings?.model_plaza_require_auth === true,
 )

@@ -59,6 +59,8 @@ type APIKey struct {
 	Key         string     `json:"key"`
 	Name        string     `json:"name"`
 	GroupID     *int64     `json:"group_id"`
+	GroupIDs    []int64    `json:"group_ids"`  // 有序分组（[0] = group_id）；未绑定时为 null
+	GroupMode   string     `json:"group_mode"` // manual / auto
 	Status      string     `json:"status"`
 	IPWhitelist []string   `json:"ip_whitelist"`
 	IPBlacklist []string   `json:"ip_blacklist"`
@@ -88,6 +90,8 @@ type APIKey struct {
 
 	User  *User  `json:"user,omitempty"`
 	Group *Group `json:"group,omitempty"`
+	// Groups 与 GroupIDs 同序，仅绑定多个分组时返回。
+	Groups []*Group `json:"groups,omitempty"`
 }
 
 type Group struct {

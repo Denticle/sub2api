@@ -78,6 +78,11 @@ vi.mock('@/api', () => ({
   },
 }))
 
+// KeysView marks studio-managed keys; keep that lookup off the network in tests.
+vi.mock('@/api/oauthProvider', () => ({
+  getStudioKeyIds: vi.fn().mockResolvedValue([]),
+}))
+
 vi.mock('@/stores/app', () => ({
   useAppStore: () => ({
     showError,
@@ -173,6 +178,7 @@ const DataTableStub = {
           <slot name="cell-id" :value="row.id" :row="row" />
         </div>
         <slot name="cell-name" :value="row.name" :row="row" />
+        <div data-test="cell-group"><slot name="cell-group" :value="row.group" :row="row" /></div>
         <slot name="cell-actions" :row="row" />
         <div data-test="current-concurrency">
           <slot name="cell-current_concurrency" :value="row.current_concurrency" :row="row" />
@@ -652,6 +658,182 @@ describe('user KeysView column settings', () => {
       await getButtonByText(wrapper, 'common.edit').trigger('click')
       expect(wrapper.find('[data-tour="key-form-provider"]').exists()).toBe(false)
       expect(optionIds(wrapper)).toHaveLength(12)
+    })
+  })
+
+  describe('multi-group keys', () => {
+    const mkGroup = (id: number, platform = 'anthropic') => ({
+      id, name: `Group ${id}`, platform, rate_multiplier: 1, subscription_type: 'standard',
+    })
+    const groups = [mkGroup(1), mkGroup(2, 'openai'), mkGroup(3), mkGroup(4)]
+    const editor = (wrapper: VueWrapper) => wrapper.findComponent({ name: 'KeyGroupListEditor' })
+    const primarySelect = (wrapper: VueWrapper) => wrapper.findComponent('[data-tour="key-form-group"]')
+    const multiKey = (overrides: Partial<ApiKey> = {}): ApiKey => ({
+      ...createApiKey(),
+      group_id: 1,
+      group_ids: [1, 2, 3],
+      group: groups[0] as ApiKey['group'],
+      groups: groups.slice(0, 3) as ApiKey['groups'],
+      ...overrides,
+    })
+
+    beforeEach(() => {
+      getAvailableGroups.mockResolvedValue(groups)
+    })
+
+    it('creates a key with the primary group followed by the extra routes', async () => {
+      const wrapper = await mountView()
+      await wrapper.get('[data-tour="keys-create-btn"]').trigger('click')
+      await wrapper.get('[data-tour="key-form-name"]').setValue('Multi')
+      await primarySelect(wrapper).vm.$emit('update:modelValue', 1)
+      await editor(wrapper).vm.$emit('update:modelValue', [3, 4])
+      vi.mocked(keysAPI.create).mockResolvedValue(multiKey())
+      await wrapper.get('#key-form').trigger('submit')
+      await flushPromises()
+
+      const args = vi.mocked(keysAPI.create).mock.calls[0]
+      expect(args.slice(0, 2)).toEqual(['Multi', 1])
+      expect(args[8]).toEqual([1, 3, 4])
+      wrapper.unmount()
+    })
+
+    it('offers every available group for extra routes, not only the chosen provider', async () => {
+      const wrapper = await mountView()
+      await wrapper.get('[data-tour="keys-create-btn"]').trigger('click')
+      expect(editor(wrapper).props('options').map((o: { value: number }) => o.value)).toEqual([1, 2, 3, 4])
+      wrapper.unmount()
+    })
+
+    it('removes a group from the extra routes when it becomes primary', async () => {
+      const wrapper = await mountView()
+      await wrapper.get('[data-tour="keys-create-btn"]').trigger('click')
+      await primarySelect(wrapper).vm.$emit('update:modelValue', 1)
+      await editor(wrapper).vm.$emit('update:modelValue', [3, 4])
+      await primarySelect(wrapper).vm.$emit('update:modelValue', 3)
+      expect(editor(wrapper).props('modelValue')).toEqual([4])
+      wrapper.unmount()
+    })
+
+    it('swaps route 2 with the primary when promoted', async () => {
+      listKeys.mockResolvedValueOnce({ items: [multiKey()], total: 1, page: 1, page_size: 20, pages: 1 })
+      const wrapper = await mountView()
+      await getButtonByText(wrapper, 'common.edit').trigger('click')
+      expect(primarySelect(wrapper).props('modelValue')).toBe(1)
+      expect(editor(wrapper).props('modelValue')).toEqual([2, 3])
+
+      await editor(wrapper).vm.$emit('promote', 0)
+      expect(primarySelect(wrapper).props('modelValue')).toBe(2)
+      expect(editor(wrapper).props('modelValue')).toEqual([1, 3])
+      wrapper.unmount()
+    })
+
+    it('sends the whole ordered list when editing a multi-group key', async () => {
+      const key = multiKey()
+      listKeys.mockResolvedValueOnce({ items: [key], total: 1, page: 1, page_size: 20, pages: 1 })
+      updateKey.mockResolvedValue(key)
+      const wrapper = await mountView()
+      await getButtonByText(wrapper, 'common.edit').trigger('click')
+      await editor(wrapper).vm.$emit('update:modelValue', [3])
+      await wrapper.get('#key-form').trigger('submit')
+      await flushPromises()
+
+      expect(updateKey).toHaveBeenCalledWith(key.id, expect.objectContaining({ group_id: 1, group_ids: [1, 3] }))
+      wrapper.unmount()
+    })
+
+    it('does not resend an unchanged group list, so a revoked fallback cannot block other edits', async () => {
+      const key = multiKey()
+      listKeys.mockResolvedValueOnce({ items: [key], total: 1, page: 1, page_size: 20, pages: 1 })
+      updateKey.mockResolvedValue(key)
+      const wrapper = await mountView()
+      await getButtonByText(wrapper, 'common.edit').trigger('click')
+      await wrapper.get('[data-tour="key-form-name"]').setValue('Renamed')
+      await wrapper.get('#key-form').trigger('submit')
+      await flushPromises()
+
+      const updates = updateKey.mock.calls[0][1]
+      expect(updates).toMatchObject({ name: 'Renamed', group_id: 1 })
+      expect(updates).not.toHaveProperty('group_ids')
+      wrapper.unmount()
+    })
+
+    it('collapses to one group when every extra route is removed', async () => {
+      const key = multiKey()
+      listKeys.mockResolvedValueOnce({ items: [key], total: 1, page: 1, page_size: 20, pages: 1 })
+      updateKey.mockResolvedValue(key)
+      const wrapper = await mountView()
+      await getButtonByText(wrapper, 'common.edit').trigger('click')
+      await editor(wrapper).vm.$emit('update:modelValue', [])
+      await wrapper.get('#key-form').trigger('submit')
+      await flushPromises()
+
+      expect(updateKey).toHaveBeenCalledWith(key.id, expect.objectContaining({ group_id: 1, group_ids: [1] }))
+      wrapper.unmount()
+    })
+
+    it('keeps the legacy payload for single-group keys', async () => {
+      const key: ApiKey = { ...createApiKey(), group_id: 2, group_ids: [2] }
+      listKeys.mockResolvedValueOnce({ items: [key], total: 1, page: 1, page_size: 20, pages: 1 })
+      updateKey.mockResolvedValue(key)
+      const wrapper = await mountView()
+      await getButtonByText(wrapper, 'common.edit').trigger('click')
+      await wrapper.get('#key-form').trigger('submit')
+      await flushPromises()
+
+      const updates = updateKey.mock.calls[0][1]
+      expect(updates.group_id).toBe(2)
+      expect(updates).not.toHaveProperty('group_ids')
+      wrapper.unmount()
+    })
+
+    it('shows the first routes as badges and folds the rest', async () => {
+      const all = [1, 2, 3, 4].map((id) => mkGroup(id))
+      listKeys.mockResolvedValueOnce({
+        items: [multiKey({ group_ids: [1, 2, 3, 4], groups: all as ApiKey['groups'] })],
+        total: 1, page: 1, page_size: 20, pages: 1,
+      })
+      const wrapper = await mountView()
+      const cell = wrapper.get('[data-test="cell-group"]')
+      expect(cell.findAllComponents({ name: 'GroupBadge' })).toHaveLength(3)
+      expect(cell.get('[data-test="key-row-groups-more"]').text()).toBe('+1')
+      expect(cell.get('[data-test="key-row-groups-more"]').attributes('title')).toBe('Group 4')
+      wrapper.unmount()
+    })
+
+    it('keeps the extra routes when the primary group is changed from the list', async () => {
+      const key = multiKey()
+      listKeys.mockResolvedValue({ items: [key], total: 1, page: 1, page_size: 20, pages: 1 })
+      updateKey.mockResolvedValue(key)
+      const wrapper = await mountView()
+      await wrapper.get('[data-test="cell-group"] button').trigger('click')
+      await wrapper.get('[data-test="group-selector-option-3"]').trigger('click')
+      await flushPromises()
+
+      expect(updateKey).toHaveBeenCalledWith(key.id, { group_id: 3, group_ids: [3, 2] })
+      wrapper.unmount()
+    })
+
+    it('shows auto-mode keys read-only and never sends their groups', async () => {
+      const key = multiKey({ group_mode: 'auto' })
+      listKeys.mockResolvedValueOnce({ items: [key], total: 1, page: 1, page_size: 20, pages: 1 })
+      updateKey.mockResolvedValue(key)
+      const wrapper = await mountView()
+      expect(wrapper.find('[data-test="key-row-auto-groups"]').exists()).toBe(true)
+      expect(wrapper.find('[data-test="cell-group"] button').exists()).toBe(false)
+
+      await getButtonByText(wrapper, 'common.edit').trigger('click')
+      expect(wrapper.find('[data-test="key-form-auto-groups"]').exists()).toBe(true)
+      expect(primarySelect(wrapper).exists()).toBe(false)
+      expect(editor(wrapper).exists()).toBe(false)
+
+      await wrapper.get('[data-tour="key-form-name"]').setValue('Renamed')
+      await wrapper.get('#key-form').trigger('submit')
+      await flushPromises()
+      const updates = updateKey.mock.calls[0][1]
+      expect(updates.name).toBe('Renamed')
+      expect(updates).not.toHaveProperty('group_id')
+      expect(updates).not.toHaveProperty('group_ids')
+      wrapper.unmount()
     })
   })
 })

@@ -113,6 +113,11 @@ func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subs
 			abortWithGoogleError(c, 401, "User account is not active")
 			return
 		}
+		// 多分组密钥：按请求模型选组（与主中间件一致）。
+		apiKey, routed := routeAPIKeyGroup(c, apiKeyService, apiKey, abortWithGoogleError)
+		if !routed {
+			return
+		}
 		if code, message, ok := validateAPIKeyGroupAvailable(apiKey); !ok {
 			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonAPIKeyGroupUnavailable)
 			if code == "GROUP_DELETED" {

@@ -7,6 +7,7 @@ import batchImage from './batchImage'
 import admin from './admin'
 import misc from './misc'
 import docs from './docs'
+import oauthProvider from './oauthProvider'
 
 export default {
   adminAccessKeys,
@@ -18,4 +19,5 @@ export default {
   admin,
   ...misc,
   ...docs,
+  ...oauthProvider,
 }

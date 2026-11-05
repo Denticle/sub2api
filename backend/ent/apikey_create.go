@@ -99,6 +99,20 @@ func (_c *APIKeyCreate) SetNillableGroupID(v *int64) *APIKeyCreate {
 	return _c
 }
 
+// SetGroupMode sets the "group_mode" field.
+func (_c *APIKeyCreate) SetGroupMode(v string) *APIKeyCreate {
+	_c.mutation.SetGroupMode(v)
+	return _c
+}
+
+// SetNillableGroupMode sets the "group_mode" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableGroupMode(v *string) *APIKeyCreate {
+	if v != nil {
+		_c.SetGroupMode(*v)
+	}
+	return _c
+}
+
 // SetStatus sets the "status" field.
 func (_c *APIKeyCreate) SetStatus(v string) *APIKeyCreate {
 	_c.mutation.SetStatus(v)
@@ -383,6 +397,10 @@ func (_c *APIKeyCreate) defaults() error {
 		v := apikey.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.GroupMode(); !ok {
+		v := apikey.DefaultGroupMode
+		_c.mutation.SetGroupMode(v)
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := apikey.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -447,6 +465,14 @@ func (_c *APIKeyCreate) check() error {
 	if v, ok := _c.mutation.Name(); ok {
 		if err := apikey.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "APIKey.name": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.GroupMode(); !ok {
+		return &ValidationError{Name: "group_mode", err: errors.New(`ent: missing required field "APIKey.group_mode"`)}
+	}
+	if v, ok := _c.mutation.GroupMode(); ok {
+		if err := apikey.GroupModeValidator(v); err != nil {
+			return &ValidationError{Name: "group_mode", err: fmt.Errorf(`ent: validator failed for field "APIKey.group_mode": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.Status(); !ok {
@@ -530,6 +556,10 @@ func (_c *APIKeyCreate) createSpec() (*APIKey, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(apikey.FieldName, field.TypeString, value)
 		_node.Name = value
+	}
+	if value, ok := _c.mutation.GroupMode(); ok {
+		_spec.SetField(apikey.FieldGroupMode, field.TypeString, value)
+		_node.GroupMode = value
 	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(apikey.FieldStatus, field.TypeString, value)
@@ -778,6 +808,18 @@ func (u *APIKeyUpsert) UpdateGroupID() *APIKeyUpsert {
 // ClearGroupID clears the value of the "group_id" field.
 func (u *APIKeyUpsert) ClearGroupID() *APIKeyUpsert {
 	u.SetNull(apikey.FieldGroupID)
+	return u
+}
+
+// SetGroupMode sets the "group_mode" field.
+func (u *APIKeyUpsert) SetGroupMode(v string) *APIKeyUpsert {
+	u.Set(apikey.FieldGroupMode, v)
+	return u
+}
+
+// UpdateGroupMode sets the "group_mode" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateGroupMode() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldGroupMode)
 	return u
 }
 
@@ -1203,6 +1245,20 @@ func (u *APIKeyUpsertOne) UpdateGroupID() *APIKeyUpsertOne {
 func (u *APIKeyUpsertOne) ClearGroupID() *APIKeyUpsertOne {
 	return u.Update(func(s *APIKeyUpsert) {
 		s.ClearGroupID()
+	})
+}
+
+// SetGroupMode sets the "group_mode" field.
+func (u *APIKeyUpsertOne) SetGroupMode(v string) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetGroupMode(v)
+	})
+}
+
+// UpdateGroupMode sets the "group_mode" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateGroupMode() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateGroupMode()
 	})
 }
 
@@ -1841,6 +1897,20 @@ func (u *APIKeyUpsertBulk) UpdateGroupID() *APIKeyUpsertBulk {
 func (u *APIKeyUpsertBulk) ClearGroupID() *APIKeyUpsertBulk {
 	return u.Update(func(s *APIKeyUpsert) {
 		s.ClearGroupID()
+	})
+}
+
+// SetGroupMode sets the "group_mode" field.
+func (u *APIKeyUpsertBulk) SetGroupMode(v string) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetGroupMode(v)
+	})
+}
+
+// UpdateGroupMode sets the "group_mode" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateGroupMode() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateGroupMode()
 	})
 }
 

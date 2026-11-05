@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import BulkEditKeysModal from '../BulkEditKeysModal.vue'
-import type { Group } from '@/types'
+import type { ApiKey, Group } from '@/types'
 
 const { bulkUpdate, showSuccess, showError } = vi.hoisted(() => ({
   bulkUpdate: vi.fn(), showSuccess: vi.fn(), showError: vi.fn()
@@ -12,10 +12,11 @@ vi.mock('vue-i18n', () => ({
   useI18n: () => ({ t: (key: string, params?: Record<string, unknown>) => `${key} ${JSON.stringify(params ?? {})}` })
 }))
 
-const mountModal = () => mount(BulkEditKeysModal, {
+type ModalKeys = Array<Pick<ApiKey, 'id' | 'name'> & Partial<Pick<ApiKey, 'group_id' | 'group_ids' | 'group_mode'>>>
+const mountModal = (selectedKeys: ModalKeys = [{ id: 1, name: 'First' }, { id: 2, name: 'Second' }]) => mount(BulkEditKeysModal, {
   props: {
     show: true,
-    selectedKeys: [{ id: 1, name: 'First' }, { id: 2, name: 'Second' }],
+    selectedKeys,
     groups: [{ id: 7, name: 'Available group' }] as Group[]
   },
   global: {
@@ -84,7 +85,31 @@ describe('BulkEditKeysModal', () => {
     expect(bulkUpdate).not.toHaveBeenCalled()
     await wrapper.get('[data-test="group-input"]').setValue('7')
     await wrapper.get('form').trigger('submit')
-    expect(bulkUpdate).toHaveBeenCalledWith([1, 2], { group_id: 7 })
+    expect(bulkUpdate).toHaveBeenCalledOnce()
+    const [ids, payload] = bulkUpdate.mock.calls[0]
+    expect(ids).toEqual([1, 2])
+    expect(ids.map((id: number) => payload(id))).toEqual([{ group_id: 7 }, { group_id: 7 }])
+  })
+
+  it('keeps fallback routes of multi-group keys and never changes auto-mode keys', async () => {
+    const wrapper = mountModal([
+      { id: 1, name: 'Single', group_id: 3, group_ids: [3] },
+      { id: 2, name: 'Multi', group_id: 3, group_ids: [3, 7, 9] },
+      { id: 3, name: 'Studio', group_id: 3, group_ids: null, group_mode: 'auto' }
+    ])
+    await wrapper.get('[data-test="enable-group"]').setValue(true)
+    await wrapper.get('[data-test="enable-status"]').setValue(true)
+    await wrapper.get('[data-test="status-input"]').setValue('inactive')
+    await wrapper.get('[data-test="group-input"]').setValue('7')
+    await wrapper.get('form').trigger('submit')
+
+    const [ids, payload] = bulkUpdate.mock.calls[0]
+    expect(ids).toEqual([1, 2, 3])
+    expect(payload(1)).toEqual({ group_id: 7, status: 'inactive' })
+    // 7 was route 2: it becomes primary and the old primary is not kept twice
+    expect(payload(2)).toEqual({ group_id: 7, group_ids: [7, 9], status: 'inactive' })
+    // workbench key: other fields still apply, the group is left alone
+    expect(payload(3)).toEqual({ status: 'inactive' })
   })
 
   it('clears only an explicitly selected IP list and expiration', async () => {

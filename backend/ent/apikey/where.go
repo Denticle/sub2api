@@ -90,6 +90,11 @@ func GroupID(v int64) predicate.APIKey {
 	return predicate.APIKey(sql.FieldEQ(FieldGroupID, v))
 }
 
+// GroupMode applies equality check predicate on the "group_mode" field. It's identical to GroupModeEQ.
+func GroupMode(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldGroupMode, v))
+}
+
 // Status applies equality check predicate on the "status" field. It's identical to StatusEQ.
 func Status(v string) predicate.APIKey {
 	return predicate.APIKey(sql.FieldEQ(FieldStatus, v))
@@ -468,6 +473,71 @@ func GroupIDIsNil() predicate.APIKey {
 // GroupIDNotNil applies the NotNil predicate on the "group_id" field.
 func GroupIDNotNil() predicate.APIKey {
 	return predicate.APIKey(sql.FieldNotNull(FieldGroupID))
+}
+
+// GroupModeEQ applies the EQ predicate on the "group_mode" field.
+func GroupModeEQ(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldGroupMode, v))
+}
+
+// GroupModeNEQ applies the NEQ predicate on the "group_mode" field.
+func GroupModeNEQ(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldGroupMode, v))
+}
+
+// GroupModeIn applies the In predicate on the "group_mode" field.
+func GroupModeIn(vs ...string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldIn(FieldGroupMode, vs...))
+}
+
+// GroupModeNotIn applies the NotIn predicate on the "group_mode" field.
+func GroupModeNotIn(vs ...string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotIn(FieldGroupMode, vs...))
+}
+
+// GroupModeGT applies the GT predicate on the "group_mode" field.
+func GroupModeGT(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGT(FieldGroupMode, v))
+}
+
+// GroupModeGTE applies the GTE predicate on the "group_mode" field.
+func GroupModeGTE(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGTE(FieldGroupMode, v))
+}
+
+// GroupModeLT applies the LT predicate on the "group_mode" field.
+func GroupModeLT(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLT(FieldGroupMode, v))
+}
+
+// GroupModeLTE applies the LTE predicate on the "group_mode" field.
+func GroupModeLTE(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLTE(FieldGroupMode, v))
+}
+
+// GroupModeContains applies the Contains predicate on the "group_mode" field.
+func GroupModeContains(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldContains(FieldGroupMode, v))
+}
+
+// GroupModeHasPrefix applies the HasPrefix predicate on the "group_mode" field.
+func GroupModeHasPrefix(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldHasPrefix(FieldGroupMode, v))
+}
+
+// GroupModeHasSuffix applies the HasSuffix predicate on the "group_mode" field.
+func GroupModeHasSuffix(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldHasSuffix(FieldGroupMode, v))
+}
+
+// GroupModeEqualFold applies the EqualFold predicate on the "group_mode" field.
+func GroupModeEqualFold(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEqualFold(FieldGroupMode, v))
+}
+
+// GroupModeContainsFold applies the ContainsFold predicate on the "group_mode" field.
+func GroupModeContainsFold(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldContainsFold(FieldGroupMode, v))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.

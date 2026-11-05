@@ -960,6 +960,12 @@ func (r *groupRepository) deleteCascade(ctx context.Context, id int64, requireEm
 		return nil, err
 	}
 
+	// 3b. Drop this group from multi-group API keys and promote the next group
+	// to primary route where needed.
+	if err := removeGroupFromAPIKeys(ctx, exec, id); err != nil {
+		return nil, err
+	}
+
 	// 4. Soft-delete composite model routes owned by this group.
 	if _, err := exec.ExecContext(ctx, "UPDATE composite_model_routes SET deleted_at = NOW() WHERE group_id = $1 AND deleted_at IS NULL", id); err != nil {
 		return nil, err

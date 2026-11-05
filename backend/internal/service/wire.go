@@ -855,6 +855,30 @@ func ProvideAPIKeyService(
 	return svc
 }
 
+// ProvideGroupRouter 构建多分组密钥的选组服务，并挂到 APIKeyService 上供鉴权中间件使用。
+func ProvideGroupRouter(
+	apiKeyService *APIKeyService,
+	compositeResolver *CompositeRouteResolver,
+	gatewayService *GatewayService,
+	openAIGatewayService *OpenAIGatewayService,
+	subscriptionService *SubscriptionService,
+	schedulerSnapshotService *SchedulerSnapshotService,
+	userGroupRateRepo UserGroupRateRepository,
+) *GroupRouter {
+	router := NewGroupRouter(GroupRouterDeps{
+		Groups:        apiKeyService,
+		Composite:     compositeResolver,
+		Anthropic:     gatewayService,
+		OpenAI:        openAIGatewayService,
+		Subscriptions: subscriptionService,
+		Scheduler:     schedulerSnapshotService,
+		Rates:         newUserGroupRateResolver(userGroupRateRepo, nil, 0, nil, "service.group_router"),
+		VideoGroups:   openAIGatewayService,
+	})
+	apiKeyService.SetGroupRouter(router)
+	return router
+}
+
 // ProviderSet is the Wire provider set for all services
 var ProviderSet = wire.NewSet(
 	// Core services
@@ -862,6 +886,7 @@ var ProviderSet = wire.NewSet(
 	NewPasskeyService,
 	NewUserService,
 	ProvideAPIKeyService,
+	ProvideGroupRouter,
 	ProvideAPIKeyAuthCacheInvalidator,
 	ProvideAuthCacheInvalidationWorker,
 	NewGroupService,

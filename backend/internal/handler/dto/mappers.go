@@ -77,6 +77,13 @@ func UserFromServiceAdmin(u *service.User) *AdminUser {
 	}
 }
 
+func apiKeyGroupMode(mode string) string {
+	if mode == "" {
+		return service.APIKeyGroupModeManual
+	}
+	return mode
+}
+
 func APIKeyFromService(k *service.APIKey) *APIKey {
 	if k == nil {
 		return nil
@@ -87,6 +94,8 @@ func APIKeyFromService(k *service.APIKey) *APIKey {
 		Key:                k.Key,
 		Name:               k.Name,
 		GroupID:            k.GroupID,
+		GroupIDs:           k.OrderedGroupIDs(),
+		GroupMode:          apiKeyGroupMode(k.GroupMode),
 		Status:             k.Status,
 		IPWhitelist:        k.IPWhitelist,
 		IPBlacklist:        k.IPBlacklist,
@@ -109,6 +118,12 @@ func APIKeyFromService(k *service.APIKey) *APIKey {
 		Window7dStart:      k.Window7dStart,
 		User:               UserFromServiceShallow(k.User),
 		Group:              GroupFromServiceShallow(k.Group),
+	}
+	if len(k.Groups) > 1 {
+		out.Groups = make([]*Group, 0, len(k.Groups))
+		for _, g := range k.Groups {
+			out.Groups = append(out.Groups, GroupFromServiceShallow(g))
+		}
 	}
 	if k.Window5hStart != nil && !service.IsWindowExpired(k.Window5hStart, service.RateLimitWindow5h) {
 		t := k.Window5hStart.Add(service.RateLimitWindow5h)

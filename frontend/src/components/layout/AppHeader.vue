@@ -49,6 +49,20 @@
           <span class="hidden sm:inline">{{ t('nav.docs') }}</span>
         </a>
 
+        <!-- 视频工作台：独立站点，新窗口打开并自动用本站账号登录 -->
+        <a
+          v-if="user && studioUrl && !authStore.isSimpleMode"
+          :href="studioUrl"
+          target="_blank"
+          rel="noopener"
+          :title="t('studio.nav')"
+          :aria-label="t('studio.nav')"
+          class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white"
+        >
+          <Icon name="play" size="sm" />
+          <span class="hidden sm:inline">{{ t('studio.nav') }}</span>
+        </a>
+
         <!-- Model Plaza Entry (icon only below sm) -->
         <router-link
           v-if="user && modelPlazaEnabled"
@@ -287,6 +301,7 @@ import { sanitizeUrl } from '@/utils/url'
 import { isLocalDocsLink, resolveDocsLink } from '@/utils/docsLink'
 import { FeatureFlags, isFeatureFlagEnabled } from '@/utils/featureFlags'
 import { usePageTitle } from '@/composables/usePageTitle'
+import { useStudioEntry } from '@/composables/useStudioEntry'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -295,6 +310,7 @@ const authStore = useAuthStore()
 const onboardingStore = useOnboardingStore()
 
 const user = computed(() => authStore.user)
+const { studioUrl } = useStudioEntry()
 // main.ts 在挂载前已经按 localStorage / 系统偏好设好 dark 类，这里只读结果。
 const isDark = ref(document.documentElement.classList.contains('dark'))
 const dropdownOpen = ref(false)

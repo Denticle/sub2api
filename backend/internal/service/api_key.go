@@ -27,12 +27,28 @@ func IsWindowExpired(windowStart *time.Time, duration time.Duration) bool {
 	return windowStart == nil || time.Since(*windowStart) >= duration
 }
 
+// API Key 分组模式
+const (
+	// APIKeyGroupModeManual 按 api_key_groups 的顺序选组（单分组密钥也是 manual）。
+	APIKeyGroupModeManual = "manual"
+	// APIKeyGroupModeAuto 按用户当前权限实时计算候选顺序，仅工作台密钥使用。
+	APIKeyGroupModeAuto = "auto"
+	// MaxAPIKeyGroups 手动模式最多绑定的分组数。
+	MaxAPIKeyGroups = 20
+)
+
 type APIKey struct {
-	ID          int64
-	UserID      int64
-	Key         string
-	Name        string
-	GroupID     *int64
+	ID      int64
+	UserID  int64
+	Key     string
+	Name    string
+	GroupID *int64
+	// GroupMode 为空等价于 manual。
+	GroupMode string
+	// GroupIDs 手动模式的有序分组（[0] 恒等于 GroupID）；只绑一个分组时可为空。
+	GroupIDs []int64
+	// Groups 与 GroupIDs 一一对应的分组对象（认证路径与列表展示用）。
+	Groups      []*Group
 	Status      string
 	IPWhitelist []string
 	IPBlacklist []string
@@ -62,6 +78,33 @@ type APIKey struct {
 	Window5hStart *time.Time // Start of current 5h window
 	Window1dStart *time.Time // Start of current 1d window
 	Window7dStart *time.Time // Start of current 7d window
+}
+
+// IsAutoGroupMode 报告密钥是否按用户权限自动选组。
+func (k *APIKey) IsAutoGroupMode() bool {
+	return k != nil && k.GroupMode == APIKeyGroupModeAuto
+}
+
+// HasMultipleGroups 报告密钥是否需要在请求时选组（自动模式或手动多分组）。
+func (k *APIKey) HasMultipleGroups() bool {
+	if k == nil {
+		return false
+	}
+	return k.IsAutoGroupMode() || len(k.GroupIDs) > 1
+}
+
+// OrderedGroupIDs 返回应写入 api_key_groups 的有序分组。
+//
+// 以 GroupID 为准：GroupIDs 首位与 GroupID 一致时用 GroupIDs，否则视为只绑 GroupID
+// （只改了 GroupID 的旧调用方不会留下过期的列表）。GroupID 为空返回 nil。
+func (k *APIKey) OrderedGroupIDs() []int64 {
+	if k == nil || k.GroupID == nil {
+		return nil
+	}
+	if len(k.GroupIDs) > 0 && k.GroupIDs[0] == *k.GroupID {
+		return k.GroupIDs
+	}
+	return []int64{*k.GroupID}
 }
 
 func (k *APIKey) IsActive() bool {

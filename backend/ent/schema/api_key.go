@@ -44,6 +44,10 @@ func (APIKey) Fields() []ent.Field {
 		field.Int64("group_id").
 			Optional().
 			Nillable(),
+		field.String("group_mode").
+			MaxLen(16).
+			Default("manual").
+			Comment("manual = api_key_groups order; auto = derived from user permissions at request time"),
 		field.String("status").
 			MaxLen(20).
 			Default(domain.StatusActive),

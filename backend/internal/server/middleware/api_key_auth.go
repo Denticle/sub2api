@@ -157,6 +157,13 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 			AbortWithError(c, 401, "USER_INACTIVE", "User account is not active")
 			return
 		}
+		// 多分组密钥：按请求模型选组，之后的校验与下游都使用选中的分组。
+		apiKey, ok := routeAPIKeyGroup(c, apiKeyService, apiKey, func(c *gin.Context, status int, message string) {
+			groupModelAllowlistErrorWriter(c)(c, status, message)
+		})
+		if !ok {
+			return
+		}
 		if abortIfAPIKeyGroupUnavailable(c, apiKey) {
 			return
 		}

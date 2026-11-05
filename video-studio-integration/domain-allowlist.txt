@@ -1,0 +1,45 @@
+# build.sh 扫描 web/src 里出现的外部域名，不在这里的会让构建失败。
+# 新增条目前确认用途：第三方追踪、CDN 资源、推广链接应该去掉而不是加进来。
+
+# 示例/占位（输入框 placeholder、文档示例），运行时不会请求
+example.com
+api.example.com
+canvas.example.com
+media.example.com
+s3.example.com
+pay.example
+www.w3.org
+wzyp.cn
+connect.linux.do
+
+# 模型/存储/支付供应商的预设地址：只有管理员在后台配置对应渠道时才会用到
+api.openai.com
+api.minimaxi.com
+api.novita.ai
+generativelanguage.googleapis.com
+ark.cn-beijing.volces.com
+visual.volcengineapi.com
+www.runninghub.ai
+www.runninghub.cn
+oss-cn-hangzhou.aliyuncs.com
+cos.ap-guangzhou.myqcloud.com
+up-z0.qiniup.com
+s3.us-east-1.amazonaws.com
+s3.us-west-004.backblazeb2.com
+api.xunhupay.com
+api.dpweixin.com
+beian.miit.gov.cn
+
+# 正常创作功能（保留）：TapNow / Eagle 素材导入，Live2D 文档链接
+app.tapnow.media
+api.eagle.cool
+eagle.cool
+www.live2d.com
+docs.live2d.com
+
+# 由功能开关关闭：灵感库来源（inspirationSourcesVisible=false）、欢迎页（welcomeEnabled=false）
+www.haohaoxue.com
+github.com
+
+# 只作旧数据比对的常量，不会发起请求（previs-mannequin.ts 的 LEGACY_DEFAULT_ACTOR_URL）
+cdn.jsdelivr.net

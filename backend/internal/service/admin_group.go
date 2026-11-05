@@ -1398,8 +1398,11 @@ func (s *adminServiceImpl) AdminUpdateAPIKeyGroupID(ctx context.Context, keyID i
 		}
 
 		gid := *groupID
+		// 多分组密钥只换主路由，保留用户配置的备用分组（新分组若已在列表里则移到首位）。
+		apiKey.GroupIDs = replacePrimaryGroupID(apiKey.OrderedGroupIDs(), gid)
 		apiKey.GroupID = &gid
 		apiKey.Group = group
+		apiKey.Groups = nil
 
 		// 专属标准分组：使用事务保证「添加分组权限」与「更新 API Key」的原子性
 		if group.IsExclusive && !group.IsSubscriptionType() {

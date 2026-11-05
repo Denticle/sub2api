@@ -1,0 +1,48 @@
+export default {
+  oauthProvider: {
+    pageTitle: '授权登录',
+    checking: '正在确认授权…',
+    redirecting: '正在跳转…',
+    approveTitle: '授权「{app}」使用你的账号',
+    approveIntro: '{app} 是 {site} 的视频创作工作台。授权后，你可以直接用当前账号登录，不需要另外注册。',
+    permissionsTitle: '它将获得',
+    permProfile: '读取你的用户名、邮箱和头像',
+    permKey: '为它创建一把专用 API 密钥，生成时的费用从你的余额扣除',
+    permKeyHint: '这把密钥会出现在「API 密钥」页，你可以随时停用或重置。',
+    signedInAs: '当前账号',
+    approve: '同意并继续',
+    cancel: '取消',
+    failedTitle: '无法完成授权',
+    backHome: '返回首页',
+    // 管理后台
+    adminTitle: '视频工作台接入',
+    adminDescription: '让视频工作台用本站账号登录，并用每个用户自己的专用密钥调用模型。',
+    enabled: '启用',
+    enabledHint: '关闭后顶部菜单不显示入口，所有授权请求都会被拒绝。',
+    appName: '应用名称',
+    appNameHint: '显示在授权确认页和顶部菜单。',
+    appUrl: '工作台地址',
+    appUrlHint: '例如 https://video.forapi.cloud',
+    clientId: 'Client ID',
+    clientSecret: 'Client Secret',
+    clientSecretKeep: '已设置，留空表示不修改',
+    clientSecretHint: '至少 32 个字符；与工作台后台「Linux.do 登录」里填写的保持一致。',
+    generate: '生成',
+    redirectUri: '回调地址',
+    redirectUriHint: '必须与工作台填写的回调地址完全一致，例如 https://video.forapi.cloud/api/auth/linuxdo/callback',
+    keyGroupsAuto: '专用密钥使用用户有权限的全部分组，每个请求自动选组：订阅分组优先，其次倍率最低的分组。不需要在这里指定分组。',
+    keyQuota: '专用密钥额度（USD）',
+    keyQuotaHint: '0 表示不限，按用户余额扣费。',
+    endpointsTitle: '工作台后台需要填写的地址',
+    authorizationUrl: '授权地址',
+    tokenUrl: 'Token 地址',
+    userInfoUrl: '用户信息地址',
+    fieldMapping: '字段映射：用户 ID = sub，用户名 = username，显示名 = name，邮箱 = email，头像 = picture；客户端鉴权方式选 client_secret_basic。',
+    save: '保存',
+    saved: '已保存'
+  },
+  studio: {
+    nav: '视频工作台',
+    keyBadge: '工作台专用'
+  }
+}

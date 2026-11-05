@@ -726,6 +726,15 @@ func TestEmbeddedFrontendBypassesBareAPIAliases(t *testing.T) {
 	}
 }
 
+func TestEmbeddedFrontendOAuthProviderRoutes(t *testing.T) {
+	// 授权服务器的后端端点交给 Gin 路由
+	for _, path := range []string{"/oauth/token", "/oauth/userinfo", "/oauth/studio-key", "/oauth/studio-models"} {
+		require.True(t, shouldBypassEmbeddedFrontend(path), "path=%s", path)
+	}
+	// 授权确认页是前端路由，要走 SPA
+	require.False(t, shouldBypassEmbeddedFrontend("/oauth/authorize"))
+}
+
 func TestNewFrontendServer(t *testing.T) {
 	t.Run("creates_server_successfully", func(t *testing.T) {
 		provider := &mockSettingsProvider{

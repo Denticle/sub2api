@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
@@ -34,6 +35,8 @@ func NewAPIKeyHandler(apiKeyService *service.APIKeyService) *APIKeyHandler {
 type CreateAPIKeyRequest struct {
 	Name          string   `json:"name" binding:"required"`
 	GroupID       *int64   `json:"group_id"`        // nullable
+	GroupIDs      []int64  `json:"group_ids"`       // 有序分组列表，非空时优先于 group_id
+	GroupMode     string   `json:"group_mode"`      // 仅接受 manual；auto 只给工作台密钥
 	CustomKey     *string  `json:"custom_key"`      // 可选的自定义key
 	IPWhitelist   []string `json:"ip_whitelist"`    // IP 白名单
 	IPBlacklist   []string `json:"ip_blacklist"`    // IP 黑名单
@@ -50,6 +53,8 @@ type CreateAPIKeyRequest struct {
 type UpdateAPIKeyRequest struct {
 	Name        string    `json:"name"`
 	GroupID     *int64    `json:"group_id"`
+	GroupIDs    []int64   `json:"group_ids"`  // 有序分组列表（nil 不修改，传入时整体替换）
+	GroupMode   *string   `json:"group_mode"` // 仅接受 manual
 	Status      string    `json:"status" binding:"omitempty,oneof=active inactive"`
 	IPWhitelist *[]string `json:"ip_whitelist"` // IP 白名单（nil 不修改，空数组清空）
 	IPBlacklist *[]string `json:"ip_blacklist"` // IP 黑名单（nil 不修改，空数组清空）
@@ -81,6 +86,16 @@ func validateAPIKeyCreateRequest(req CreateAPIKeyRequest) error {
 	}
 	if req.ExpiresInDays != nil && *req.ExpiresInDays <= 0 {
 		return errors.New("invalid expires_in_days")
+	}
+	return nil
+}
+
+// 用户端只能建手动模式的密钥；自动模式由工作台托管，避免分组在用户不知情时变化。
+var errUserAutoGroupMode = infraerrors.BadRequest("API_KEY_GROUP_MODE_NOT_ALLOWED", "group_mode auto is not available for user api keys")
+
+func validateUserGroupMode(mode string) error {
+	if mode == service.APIKeyGroupModeAuto {
+		return errUserAutoGroupMode
 	}
 	return nil
 }
@@ -196,9 +211,16 @@ func (h *APIKeyHandler) Create(c *gin.Context) {
 		return
 	}
 
+	if err := validateUserGroupMode(req.GroupMode); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
 	svcReq := service.CreateAPIKeyRequest{
 		Name:          req.Name,
 		GroupID:       req.GroupID,
+		GroupIDs:      req.GroupIDs,
+		GroupMode:     req.GroupMode,
 		CustomKey:     req.CustomKey,
 		IPWhitelist:   req.IPWhitelist,
 		IPBlacklist:   req.IPBlacklist,
@@ -264,7 +286,15 @@ func (h *APIKeyHandler) Update(c *gin.Context) {
 	if req.Name != "" {
 		svcReq.Name = &req.Name
 	}
+	if req.GroupMode != nil {
+		if err := validateUserGroupMode(*req.GroupMode); err != nil {
+			response.ErrorFrom(c, err)
+			return
+		}
+	}
 	svcReq.GroupID = req.GroupID
+	svcReq.GroupIDs = req.GroupIDs
+	svcReq.GroupMode = req.GroupMode
 	if req.Status != "" {
 		svcReq.Status = &req.Status
 	}

@@ -565,3 +565,16 @@ func TestAdminService_AdminUpdateAPIKeyGroupID_Unbind_NoAllowedGroupUpdate(t *te
 	require.False(t, userRepo.addGroupCalled)
 	require.False(t, got.AutoGrantedGroupAccess)
 }
+
+// 管理员给多分组密钥换分组：只换主路由，保留用户配置的备用分组（审查发现的问题）。
+func TestAdminService_AdminUpdateAPIKeyGroupID_MultiGroupKeepsFallbacks(t *testing.T) {
+	existing := &APIKey{ID: 1, Key: "sk-multi", GroupID: int64Ptr(1), GroupIDs: []int64{1, 10, 3}}
+	apiKeyRepo := &apiKeyRepoStubForGroupUpdate{key: existing}
+	groupRepo := &groupRepoStubForGroupUpdate{group: &Group{ID: 10, Name: "Pro", Status: StatusActive}}
+	svc := &adminServiceImpl{apiKeyRepo: apiKeyRepo, groupRepo: groupRepo, authCacheInvalidator: &authCacheInvalidatorStub{}}
+
+	_, err := svc.AdminUpdateAPIKeyGroupID(context.Background(), 1, int64Ptr(10))
+	require.NoError(t, err)
+	require.Equal(t, int64(10), *apiKeyRepo.updated.GroupID)
+	require.Equal(t, []int64{10, 3}, apiKeyRepo.updated.OrderedGroupIDs(), "10 moved to primary, 3 kept, no duplicate")
+}

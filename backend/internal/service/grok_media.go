@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -1536,4 +1537,51 @@ func grokMediaContentProxyURL(c *gin.Context, requestID string) string {
 		pathPrefix = "/v1"
 	}
 	return pathPrefix + "/videos/" + url.PathEscape(strings.Trim(requestID, "/")) + "/content"
+}
+
+// 多分组密钥的视频任务分组绑定（add-api-key-multi-group-routing design D4）。
+//
+// 视频创建按模型选组，但状态/内容查询不带模型；而账号绑定（上面的
+// BindGrokMediaVideoRequestAccount）按分组存放，查询必须回到创建时的分组。
+// 复用粘性会话缓存存放 requestID → groupID，分组维度固定为 0，key 与账号绑定区分开。
+func grokVideoRequestGroupCacheKey(requestID string, userID, apiKeyID int64) string {
+	requestID = strings.TrimSpace(requestID)
+	if requestID == "" || userID <= 0 || apiKeyID <= 0 {
+		return ""
+	}
+	return "openai:grok-video-group:" + DeriveSessionHashFromSeed(fmt.Sprintf("%d:%d:%s", userID, apiKeyID, requestID))
+}
+
+// BindGrokMediaVideoRequestGroup 记录视频任务创建时使用的分组。
+func (s *OpenAIGatewayService) BindGrokMediaVideoRequestGroup(ctx context.Context, requestID string, userID, apiKeyID, groupID int64) error {
+	if s == nil || s.cache == nil {
+		return fmt.Errorf("grok video request binding cache is unavailable")
+	}
+	key := grokVideoRequestGroupCacheKey(requestID, userID, apiKeyID)
+	if key == "" || groupID <= 0 {
+		return fmt.Errorf("grok video request group binding is invalid")
+	}
+	ttl := grokVideoPendingBillingTTL(s.cfg)
+	if s.cfg != nil && s.cfg.Gateway.OpenAIWS.StickySessionTTLSeconds > 0 {
+		if sticky := time.Duration(s.cfg.Gateway.OpenAIWS.StickySessionTTLSeconds) * time.Second; sticky > ttl {
+			ttl = sticky
+		}
+	}
+	return s.cache.SetSessionAccountID(ctx, 0, key, groupID, ttl)
+}
+
+// ResolveVideoRequestGroup 返回视频任务创建时的分组；没有记录返回 0。
+func (s *OpenAIGatewayService) ResolveVideoRequestGroup(ctx context.Context, requestID string, userID, apiKeyID int64) (int64, error) {
+	if s == nil || s.cache == nil {
+		return 0, nil
+	}
+	key := grokVideoRequestGroupCacheKey(requestID, userID, apiKeyID)
+	if key == "" {
+		return 0, nil
+	}
+	groupID, err := s.cache.GetSessionAccountID(ctx, 0, key)
+	if errors.Is(err, ErrStickySessionNotFound) {
+		return 0, nil
+	}
+	return groupID, err
 }

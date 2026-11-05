@@ -692,3 +692,68 @@ func TestAPIKeyService_GetByKey_SingleflightCollapses(t *testing.T) {
 	}
 	require.Equal(t, int32(1), atomic.LoadInt32(&calls))
 }
+
+// v25 之前的快照没有多分组字段：读到要视为未命中重新回源，否则多分组密钥会被当成单分组（tasks 2.3）。
+func TestAPIKeyService_RejectsAuthSnapshotBeforeMultiGroup(t *testing.T) {
+	groupID := int64(1)
+	svc := &APIKeyService{}
+
+	apiKey, ok, err := svc.applyAuthCacheEntry("k-pre-multi-group", &APIKeyAuthCacheEntry{
+		Snapshot: &APIKeyAuthSnapshot{
+			Version:  25,
+			APIKeyID: 1,
+			UserID:   2,
+			GroupID:  &groupID,
+			Status:   StatusActive,
+			User:     APIKeyAuthUserSnapshot{ID: 2, Status: StatusActive, Role: RoleUser},
+			Group:    &APIKeyAuthGroupSnapshot{ID: groupID, Status: StatusActive, Platform: PlatformAnthropic},
+		},
+	})
+	require.NoError(t, err)
+	require.False(t, ok, "a snapshot without group_mode/group_ids must not be served")
+	require.Nil(t, apiKey)
+	require.Greater(t, apiKeyAuthSnapshotVersion, 25)
+}
+
+// 停用某个只作为非主路由的分组：按分组失效必须覆盖把它放在路由 2..N 的密钥（tasks 2.3）。
+// 仓储层 ListKeysByGroupID 同时查 api_keys.group_id 与 api_key_groups；这里锁住服务层
+// 把仓储返回的每一把密钥都从 L1 与 L2 删掉，下一次鉴权会重新回源。
+func TestAPIKeyService_InvalidateByNonPrimaryGroupDropsMultiGroupKeys(t *testing.T) {
+	const multiKey = "sk-multi"
+	primary, secondary := int64(1), int64(2)
+	cache := &authCacheStub{}
+	var lookups atomic.Int32
+	repo := &authRepoStub{
+		getByKeyForAuth: func(context.Context, string) (*APIKey, error) {
+			lookups.Add(1)
+			return &APIKey{
+				ID: 9, UserID: 7, Key: multiKey, Status: StatusActive,
+				GroupID: &primary, GroupIDs: []int64{primary, secondary},
+				Group:  &Group{ID: primary, Status: StatusActive, Platform: PlatformAnthropic, Hydrated: true},
+				Groups: []*Group{{ID: primary, Status: StatusActive}, {ID: secondary, Status: StatusActive}},
+				User:   &User{ID: 7, Status: StatusActive, Role: RoleUser},
+			}, nil
+		},
+		listKeysByGroupID: func(_ context.Context, groupID int64) ([]string, error) {
+			require.Equal(t, secondary, groupID)
+			return []string{multiKey}, nil
+		},
+	}
+	cfg := &config.Config{APIKeyAuth: config.APIKeyAuthCacheConfig{L1Size: 100, L1TTLSeconds: 60, L2TTLSeconds: 60}}
+	svc := NewAPIKeyService(repo, nil, nil, nil, nil, cache, cfg)
+	require.NotNil(t, svc.authCacheL1)
+
+	_, err := svc.GetByKey(context.Background(), multiKey)
+	require.NoError(t, err)
+	svc.authCacheL1.Wait() // ristretto 异步写入
+	_, err = svc.GetByKey(context.Background(), multiKey)
+	require.NoError(t, err)
+	require.Equal(t, int32(1), lookups.Load(), "second lookup is served from L1")
+
+	svc.InvalidateAuthCacheByGroupID(context.Background(), secondary)
+	require.Equal(t, []string{svc.authCacheKey(multiKey)}, cache.deleteAuthKeys)
+
+	_, err = svc.GetByKey(context.Background(), multiKey)
+	require.NoError(t, err)
+	require.Equal(t, int32(2), lookups.Load(), "after invalidation the key is reloaded from the repository")
+}

@@ -525,6 +525,16 @@ func RegisterGatewayRoutes(
 }
 
 func dispatchCodexModelsGateway(c *gin.Context, openAIHandler, generatedHandler gin.HandlerFunc) {
+	// 多分组密钥：Codex manifest 按单个分组生成，取第一个 OpenAI/Composite 候选
+	// （OpenAI 网关 CodexModels 只接受这两类分组）；没有时保持主路由。
+	if apiKey, ok := middleware.GetAPIKeyFromContext(c); ok && apiKey != nil && apiKey.Group != nil &&
+		apiKey.Group.Platform != service.PlatformOpenAI && apiKey.Group.Platform != service.PlatformComposite {
+		if group := middleware.FirstAPIKeyGroupCandidate(c, func(g *service.Group) bool {
+			return g.Platform == service.PlatformOpenAI || g.Platform == service.PlatformComposite
+		}); group != nil {
+			middleware.UseAPIKeyGroup(c, group)
+		}
+	}
 	if getGroupPlatform(c) == service.PlatformOpenAI {
 		openAIHandler(c)
 		return
@@ -671,25 +681,5 @@ func compositeGeminiModelFromParams(c *gin.Context) string {
 }
 
 func compositeRouteEndpointForPath(path string) string {
-	switch {
-	case strings.Contains(path, "/messages/count_tokens"):
-		return service.CompositeRouteEndpointCountTokens
-	case strings.Contains(path, "/messages"):
-		return service.CompositeRouteEndpointMessages
-	case strings.Contains(path, "/responses"),
-		strings.Contains(path, "/alpha/search"),
-		strings.Contains(path, "/realtime/calls"),
-		strings.HasSuffix(strings.TrimRight(path, "/"), "/live"):
-		return service.CompositeRouteEndpointResponses
-	case strings.Contains(path, "/chat/completions"):
-		return service.CompositeRouteEndpointChatCompletions
-	case strings.Contains(path, "/embeddings"):
-		return service.CompositeRouteEndpointEmbeddings
-	case strings.Contains(path, "/images/"):
-		return service.CompositeRouteEndpointImages
-	case strings.Contains(path, "/v1beta/"):
-		return service.CompositeRouteEndpointGemini
-	default:
-		return service.CompositeRouteEndpointAny
-	}
+	return service.CompositeRouteEndpointForPath(path)
 }
