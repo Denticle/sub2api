@@ -112,7 +112,6 @@
           <router-link v-if="docsLinkLocal" to="/docs">{{ t('home.docs') }}</router-link>
           <a v-else-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('home.docs') }}</a>
           <router-link v-if="showModelPlazaEntry" to="/model-plaza">{{ t('nav.modelPlaza') }}</router-link>
-          <a v-if="showWorkbench" href="#lp-workbench">{{ t('nav.workbench') }}</a>
           <a v-if="studioUrl" :href="studioUrl" target="_blank" rel="noopener">{{ t('studio.nav') }}</a>
         </nav>
 
