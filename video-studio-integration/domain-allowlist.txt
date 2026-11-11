@@ -43,3 +43,11 @@ github.com
 
 # 只作旧数据比对的常量，不会发起请求（previs-mannequin.ts 的 LEGACY_DEFAULT_ACTOR_URL）
 cdn.jsdelivr.net
+
+# v1.8.x 新增的素材域名（姿势库图库 / 火山引擎方舟与 TOS 素材存储）：
+# 都是管理员/用户可改的配置项默认值，不配置则不用
+ai-pose-gallery.anhao.app
+ark.ap-southeast.bytepluses.com
+tos-s3-cn-beijing.volces.com
+# 仅出现在注释里的官方文档链接，不会发起请求
+docs.volcengine.com

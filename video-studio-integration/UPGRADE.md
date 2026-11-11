@@ -53,6 +53,24 @@ git -C ../build/upstream.git fetch origin && git -C ../build/upstream.git log --
    ```
    上游自带测试里有一批会因本集成的行为改变而失败（普通用户密码登录/注册被拒、OAuth 回调多了取密钥一步），
    这是预期的；判断标准是「打补丁前后的失败列表之差」只包含这类用例。
+
+   前端同理，用「干净上游」做基线再对比失败集合：
+   ```bash
+   rm -rf /tmp/webbase && mkdir -p /tmp/webbase
+   git -C /opt/video-studio/build/upstream.git archive "$UPSTREAM_COMMIT" | tar -x -C /tmp/webbase
+   for t in base patched; do
+     S=/tmp/webbase; [ "$t" = patched ] && S=/opt/video-studio/build/src
+     docker run --rm -v "$S":/app -w /app/web oven/bun:1.3.13 sh -c \
+       "bun install --frozen-lockfile --cache-dir=/root/.bun/install/cache >/dev/null 2>&1; bun test" \
+       > "/tmp/web-$t.txt" 2>&1
+     grep -E '^\(fail\)' "/tmp/web-$t.txt" | sed -E 's/ \[[0-9.]+ms\]$//' | sort -u > "/tmp/web-$t-set.txt"
+   done
+   comm -13 /tmp/web-base-set.txt /tmp/web-patched-set.txt   # 新增失败，应为空
+   ```
+
+   注意 `test/channel-model-templates.interaction.test.ts` 里的「完整模型编辑器」用例是**上游自带的抖动测试**：
+   全量并发跑时偶尔会因为 5 秒超时而失败，单独跑一定通过，干净上游同样会抖。
+   遇到这组失败要重跑确认，不要当成回归。
 4. `./build.sh` 构建，记下输出的镜像标签；`/opt/video-studio/.env` 里 `VIDEO_STUDIO_TAG` 改成新标签，
    `cd /opt/video-studio && docker compose up -d`（migrate 容器会先跑数据库迁移）。
 5. 回滚：`.env` 改回上一个标签再 `docker compose up -d`。数据库迁移不可逆，升级前先
