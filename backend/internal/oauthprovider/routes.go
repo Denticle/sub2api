@@ -37,6 +37,7 @@ func RegisterRoutes(
 	oauth.GET("/studio-models", limiter.LimitWithOptions("oauth-studio-models", 30, time.Minute, failClose), h.StudioModels)
 
 	v1.GET("/oauth/public", h.Public)
+	v1.GET("/public/inspirations", limiter.LimitWithOptions("public-inspirations", 60, time.Minute, middleware.RateLimitOptions{}), h.Inspirations)
 
 	user := v1.Group("/oauth")
 	user.Use(gin.HandlerFunc(jwtAuth))

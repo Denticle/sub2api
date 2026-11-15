@@ -28,3 +28,14 @@ func RegisterModelPlazaRoutes(
 		plaza.GET("", h.ModelPlaza.Get)
 	}
 }
+
+// RegisterPublicAnnouncementRoutes 注册首页公告条用的公开公告接口：只返回面向全部用户的公告。
+func RegisterPublicAnnouncementRoutes(
+	v1 *gin.RouterGroup,
+	h *handler.Handlers,
+	panelRateLimiter *middleware.PanelRateLimiter,
+) {
+	pub := v1.Group("/public")
+	pub.Use(panelRateLimiter.PublicIP())
+	pub.GET("/announcements", h.Announcement.ListPublic)
+}

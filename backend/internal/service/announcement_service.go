@@ -413,3 +413,27 @@ func isValidAnnouncementNotifyMode(mode string) bool {
 		return false
 	}
 }
+
+// ListPublic 返回可以给未登录访客看的公告：处于生效期、且没有任何投放规则
+// （面向全部用户）的公告，按创建时间倒序。带余额或订阅条件的公告只对登录用户
+// 判定，这里一律不返回，避免把定向公告露给访客。
+func (s *AnnouncementService) ListPublic(ctx context.Context, limit int) ([]Announcement, error) {
+	now := time.Now()
+	anns, err := s.announcementRepo.ListActive(ctx, now)
+	if err != nil {
+		return nil, fmt.Errorf("list active announcements: %w", err)
+	}
+	out := make([]Announcement, 0, len(anns))
+	for i := range anns {
+		a := anns[i]
+		if !a.IsActiveAt(now) || len(a.Targeting.AnyOf) > 0 {
+			continue
+		}
+		out = append(out, a)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].ID > out[j].ID })
+	if limit > 0 && len(out) > limit {
+		out = out[:limit]
+	}
+	return out, nil
+}

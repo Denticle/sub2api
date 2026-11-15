@@ -1,0 +1,929 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ForAPI 首页重构 · A 版（作品优先）· 真实数据版</title>
+<style>
+
+:root{
+  --p-50:240 253 244; --p-100:220 252 231; --p-200:187 247 208;
+  --p-300:134 239 172; --p-400:74 222 128; --p-500:34 197 94;
+  --p-600:22 163 74; --p-700:21 128 61;
+  --n-50:248 248 246; --n-100:240 240 237; --n-200:230 230 226;
+  --n-300:212 212 208; --n-400:161 161 156; --n-500:113 113 122;
+  --n-600:82 82 91; --n-700:63 63 66; --n-800:42 42 44;
+  --n-900:31 31 32; --n-950:20 20 19;
+  --d-950:20 20 19; --d-900:26 26 25; --d-800:31 31 30;
+  --line:138 138 130; --line-a:.11; --line-a-hover:.19;
+  --radius:12px; --radius-sm:8px;
+  --font-ui:'Inter Variable','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+  --font-num:'JetBrains Mono Variable','JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --gutter:2rem; --max:78rem;
+}
+html.dark{
+  --n-50:26 26 25; --n-100:31 31 30; --n-200:39 39 38; --n-300:58 58 56;
+  --n-400:113 113 122; --n-500:161 161 156; --n-600:190 190 184;
+  --n-700:212 212 208; --n-800:230 230 226; --n-900:248 248 246;
+  --p-500:34 197 94; --p-600:74 222 128;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-ui);background:#f8f8f6;color:#1f1f20;-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.6;letter-spacing:-.004em}
+html.dark body{background:#141413;color:#f8f8f6}
+.mono{font-family:var(--font-num);font-variant-numeric:tabular-nums}
+
+.doc{max-width:1180px;margin:0 auto;padding:0 24px 100px}
+.doc-head{padding:64px 0 32px;border-bottom:1px solid rgb(var(--line)/var(--line-a));margin-bottom:48px}
+.doc-eyebrow{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#16a34a;margin-bottom:14px}
+.doc-h1{font-size:34px;font-weight:700;letter-spacing:-.02em;margin-bottom:12px}
+.doc-lede{font-size:15.5px;color:#52525b;max-width:66ch;line-height:1.7}
+html.dark .doc-lede{color:#a1a19c}
+.doc-meta{display:flex;gap:20px;flex-wrap:wrap;margin-top:22px;font-size:12.5px;color:#71717a}
+html.dark .doc-meta{color:#a1a19c}
+.doc-meta b{color:#1f1f20;font-weight:600}
+html.dark .doc-meta b{color:#f8f8f6}
+
+.notes{margin:44px 0 0;display:grid;gap:14px}
+.note{border:1px solid rgb(var(--line)/var(--line-a));border-radius:var(--radius-sm);padding:16px 18px;background:rgb(var(--n-100))}
+.note h4{font-size:13px;font-weight:650;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.note h4 .tag{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:20px;background:rgb(var(--p-500)/.12);color:#16a34a;letter-spacing:.02em}
+.note p{font-size:13px;color:#52525b;line-height:1.68}
+html.dark .note p{color:#a1a19c}
+.note .tag.keep{background:rgb(var(--p-500)/.12);color:#16a34a}
+.note .tag.cut{background:rgb(239 68 68/.12);color:#dc2626}
+html.dark .note .tag.cut{background:rgb(239 68 68/.14);color:#f87171}
+.note .tag.new{background:rgb(99 102 241/.12);color:#4f46e5}
+html.dark .note .tag.new{background:rgb(99 102 241/.16);color:#818cf8}
+
+.site{margin-top:56px;border:1px solid rgb(var(--line)/var(--line-a));border-radius:var(--radius);overflow:clip;background:#f8f8f6}
+html.dark .site{background:#141413}
+.site-bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgb(var(--n-100));border-bottom:1px solid rgb(var(--line)/var(--line-a));font-size:11.5px;color:#71717a}
+html.dark .site-bar{background:#1a1a19}
+.site-bar .dot{width:9px;height:9px;border-radius:50%;background:#d4d4d4}
+.site-bar .url{margin-left:6px;font-family:var(--font-num)}
+.site-bar .sp{margin-left:auto;display:flex;gap:6px}
+.site-bar .chip{padding:2px 8px;border-radius:5px;border:1px solid rgb(var(--line)/var(--line-a));font-size:10.5px}
+.site-bar .chip.on{background:rgb(var(--p-500)/.14);color:#16a34a;border-color:transparent}
+html.dark .site-bar .chip.on{color:#4ade80}
+
+.lp{min-height:100%;display:flex;flex-direction:column}
+.lp-wrap{width:100%;max-width:var(--max);margin-inline:auto;padding-inline:var(--gutter)}
+.lp-nav{border-bottom:1px solid rgb(var(--line)/var(--line-a));background:rgb(var(--n-50)/.8)}
+html.dark .lp-nav{background:rgb(var(--d-950)/.8)}
+.lp-nav-inner{display:flex;align-items:center;gap:20px;height:58px}
+.lp-brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:inherit;flex-shrink:0}
+.lp-brand-mark{width:26px;height:26px;border-radius:7px;background:#16a34a;display:grid;place-items:center;color:#fff;font-weight:700;font-size:12px}
+.lp-brand-name{font-weight:650;font-size:14.5px;letter-spacing:-.01em}
+.lp-nav-links{display:flex;gap:22px;margin-left:14px}
+.lp-nav-links a{color:#52525b;text-decoration:none;font-size:13.5px;transition:color .15s}
+.lp-nav-links a:hover{color:#1f1f20}
+html.dark .lp-nav-links a{color:#a1a19c}
+html.dark .lp-nav-links a:hover{color:#f8f8f6}
+.lp-nav-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+.lp-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 17px;border-radius:9px;font-size:13.5px;font-weight:550;text-decoration:none;border:1px solid transparent;cursor:pointer;font-family:inherit}
+.lp-btn-primary{background:#16a34a;color:#fff}
+html.dark .lp-btn-primary{background:#22c55e;color:#0d1a10}
+.lp-btn-quiet{color:#52525b;border-color:rgb(var(--line)/var(--line-a))}
+html.dark .lp-btn-quiet{color:#a1a19c}
+.lp-btn-sm{padding:6px 13px;font-size:12.5px}
+
+/* 公告条 */
+.lp-announce{background:#1f1f20;color:#e6e6e3;font-size:12.5px}
+html.dark .lp-announce{background:#0d0d0c}
+.lp-announce-inner{display:flex;align-items:center;gap:10px;padding:8px 0}
+.lp-announce-tag{padding:1px 7px;border-radius:4px;background:rgb(34 197 94/.2);color:#4ade80;font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.lp-announce-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lp-announce-link{margin-left:auto;color:#a1a19c;text-decoration:none;white-space:nowrap;font-size:12px}
+
+.lp-hero{padding:76px 0 0}
+.lp-hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.06fr);gap:56px;align-items:start}
+.lp-status{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:#52525b;padding:4px 11px 4px 8px;border:1px solid rgb(var(--line)/var(--line-a));border-radius:20px;margin-bottom:26px}
+html.dark .lp-status{color:#a1a19c}
+.lp-status-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgb(34 197 94/.16)}
+.lp-h1{font-size:46px;line-height:1.1;font-weight:700;letter-spacing:-.03em}
+.lp-h1 span{display:block}
+.lp-h1 .accent{color:#16a34a}
+html.dark .lp-h1 .accent{color:#4ade80}
+.lp-lede{margin-top:20px;font-size:16px;line-height:1.68;color:#52525b;max-width:46ch}
+html.dark .lp-lede{color:#b3b3ae}
+.lp-lede .hl{color:#1f1f20;font-weight:550}
+html.dark .lp-lede .hl{color:#f8f8f6}
+.lp-cta-row{display:flex;gap:11px;margin-top:30px;flex-wrap:wrap}
+.lp-note{margin-top:16px;font-size:12.5px;color:#71717a}
+html.dark .lp-note{color:#a1a19c}
+
+.lp-gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.lp-shot{position:relative;border-radius:var(--radius);overflow:hidden;border:1px solid rgb(var(--line)/var(--line-a));background:rgb(var(--n-100));aspect-ratio:4/5}
+.lp-shot-art{position:absolute;inset:0}
+.lp-shot-art img{width:100%;height:100%;object-fit:cover;display:block}
+.lp-shot-badge{position:absolute;left:10px;top:10px;width:26px;height:26px;border-radius:50%;background:rgb(20 20 19/.7);color:#fff;display:grid;place-items:center;font-size:10px;backdrop-filter:blur(4px)}
+.lp-shot-cap{position:absolute;left:0;right:0;bottom:0;padding:34px 13px 11px;background:linear-gradient(to top,rgb(20 20 19/.82),transparent);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.lp-shot-cap .m{font-family:var(--font-num);font-size:10.5px;color:#e6e6e3}
+.lp-shot-cap .t{font-size:10.5px;color:#a1a19c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* 画布示意图 */
+.cv-canvas{position:relative;height:378px;background-image:radial-gradient(circle,rgb(var(--line)/.5) 1px,transparent 1px);background-size:22px 22px}
+.cv-wire{stroke:#cbd5e1;stroke-width:1.4;fill:none}
+html.dark .cv-wire{stroke:#4a4a48}
+.cv-packet{fill:#16a34a}
+.cv-node{
+  position:absolute;border-radius:9px;border:1px solid rgb(var(--line)/var(--line-a-hover));
+  background:#fff;box-shadow:0 1px 3px rgb(20 20 19/.06);overflow:hidden;
+}
+html.dark .cv-node{background:#1f1f1e;box-shadow:none}
+.cv-node .lbl{padding:6px 9px;font-size:10.5px;color:#52525b;border-top:1px solid rgb(var(--line)/var(--line-a))}
+html.dark .cv-node .lbl{color:#b3b3ae}
+.cv-node .thumb{height:56px}
+.cv-node.prompt{width:118px}
+.cv-node.prompt .body{padding:8px 9px;font-size:10.5px;color:#52525b;line-height:1.5}
+html.dark .cv-node.prompt .body{color:#b3b3ae}
+.cv-node .body em{font-style:normal;color:#1f1f20;font-weight:550}
+html.dark .cv-node .body em{color:#f8f8f6}
+.cv-node.img{width:104px}
+.cv-node.vid{width:104px}
+.cv-node.out{width:112px;border-color:rgb(var(--p-500)/.5)}
+.cv-node.out .lbl{color:#16a34a;font-weight:600}
+html.dark .cv-node.out .lbl{color:#4ade80}
+.th-a{background:linear-gradient(140deg,#1e3a5f,#7fb3c8)}
+.th-b{background:linear-gradient(150deg,#3d2b56,#d59ec9)}
+.th-c{background:linear-gradient(135deg,#123c3a,#63c7b8)}
+.th-d{background:linear-gradient(145deg,#4a3a1e,#e0b87a)}
+.cv-badge{
+  position:absolute;right:11px;bottom:11px;background:rgb(20 20 19/.82);color:#e6e6e3;
+  font-size:10px;padding:4px 9px;border-radius:6px;font-family:var(--font-num);
+}
+
+/* 大型画布示意图 */
+.cv-canvas-large{position:relative;height:560px;background-image:radial-gradient(circle,rgb(var(--line)/.5) 1px,transparent 1px);background-size:22px 22px;margin:0 -2rem;padding:0 2rem}
+.cv-node-lg{width:140px}
+.cv-node-lg.prompt{width:160px}
+.cv-node-lg .thumb{height:72px}
+.cv-badge-lg{position:absolute;right:18px;bottom:18px;background:rgb(20 20 19/.85);color:#e6e6e3;font-size:11px;padding:6px 13px;border-radius:7px;font-family:var(--font-num)}
+
+/* 技能库网格 */
+.skill-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.skill-card{background:#fff;border:1px solid rgb(var(--line)/var(--line-a));border-radius:var(--radius-sm);padding:16px 14px;transition:all .2s;position:relative;overflow:hidden}
+html.dark .skill-card{background:#1f1f1e}
+.skill-card:hover{border-color:rgb(var(--p-500)/.4);transform:translateY(-2px)}
+.skill-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--skill-color-1,#16a34a),var(--skill-color-2,#22c55e))}
+.skill-icon{width:36px;height:36px;border-radius:8px;background:var(--skill-bg);display:flex;align-items:center;justify-content:center;margin-bottom:12px;position:relative}
+.skill-icon svg{width:18px;height:18px;stroke:var(--skill-icon-color,#16a34a);stroke-width:2;fill:none}
+.skill-name{font-size:13px;font-weight:550;color:#1f1f20;margin-bottom:6px}
+html.dark .skill-name{color:#f8f8f6}
+.skill-count{font-family:var(--font-num);font-size:20px;font-weight:600;color:#52525b}
+html.dark .skill-count{color:#a1a19c}
+
+@media (max-width:1000px){
+  .skill-grid{grid-template-columns:repeat(3,1fr)}
+  .cv-canvas-large{height:420px;margin:0 -1rem;padding:0 1rem}
+}
+
+.lp-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:64px 0 0;border-top:1px solid rgb(var(--line)/var(--line-a))}
+.lp-stats>div{padding:22px 24px 24px 0;border-right:1px solid rgb(var(--line)/var(--line-a))}
+.lp-stats>div:last-child{border-right:0}
+.lp-stats dt{font-size:12px;color:#71717a;margin-bottom:5px}
+html.dark .lp-stats dt{color:#a1a19c}
+.lp-stats dd{font-family:var(--font-num);font-size:25px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.lp-stats dd small{font-size:12.5px;font-weight:400;color:#71717a;margin-left:5px;font-family:var(--font-ui)}
+html.dark .lp-stats dd small{color:#a1a19c}
+
+.lp-section{padding:92px 0}
+.lp-band{border-top:1px solid rgb(var(--line)/var(--line-a));border-bottom:1px solid rgb(var(--line)/var(--line-a))}
+.lp-sec-head{margin-bottom:40px;max-width:62ch}
+.lp-sec-head h2{font-size:30px;font-weight:680;letter-spacing:-.02em;margin-bottom:11px}
+.lp-sec-head p{font-size:14.5px;color:#52525b;line-height:1.68}
+html.dark .lp-sec-head p{color:#a1a19c}
+.lp-kicker{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#16a34a;margin-bottom:11px}
+html.dark .lp-kicker{color:#4ade80}
+.lp-sec-head-row{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;max-width:none}
+.lp-link{color:#16a34a;text-decoration:none;font-size:13.5px;font-weight:550;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+html.dark .lp-link{color:#4ade80}
+
+.lp-rails{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid rgb(var(--line)/var(--line-a))}
+.lp-rail{padding:38px 42px 40px 0;border-right:1px solid rgb(var(--line)/var(--line-a))}
+.lp-rail:last-child{border-right:0;padding-left:42px;padding-right:0}
+.lp-rail-tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#16a34a;margin-bottom:15px}
+html.dark .lp-rail-tag{color:#4ade80}
+.lp-rail-tag .dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.lp-rail h3{font-size:21px;font-weight:650;letter-spacing:-.015em;margin-bottom:11px}
+.lp-rail p{font-size:14px;color:#52525b;line-height:1.7;margin-bottom:20px}
+html.dark .lp-rail p{color:#a1a19c}
+.lp-rail-list{list-style:none;padding:0;margin:0 0 24px}
+.lp-rail-list li{display:flex;gap:11px;padding:9px 0;font-size:13.5px;color:#52525b;border-bottom:1px solid rgb(var(--line)/.07)}
+html.dark .lp-rail-list li{color:#a1a19c}
+.lp-rail-list li:last-child{border-bottom:0}
+.lp-rail-list .n{font-family:var(--font-num);font-size:11.5px;color:#16a34a;flex-shrink:0;padding-top:2px}
+html.dark .lp-rail-list .n{color:#4ade80}
+
+/* 画廊段 */
+.lp-gallery-wide{grid-template-columns:repeat(6,1fr);gap:10px}
+.lp-gallery-wide .lp-shot{aspect-ratio:1/1}
+.lp-filter{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:24px}
+.lp-filter button{padding:5px 12px;border-radius:16px;font-size:12.5px;border:1px solid rgb(var(--line)/var(--line-a));background:transparent;color:#71717a;cursor:pointer;font-family:inherit}
+.lp-filter button.on{background:#16a34a;color:#fff;border-color:transparent}
+html.dark .lp-filter button.on{background:#22c55e;color:#0d1a10}
+.lp-filter button:hover{border-color:rgb(var(--line)/var(--line-a-hover))}
+
+.lp-final{padding:104px 0}
+.lp-final-inner{display:flex;align-items:center;justify-content:space-between;gap:40px;flex-wrap:wrap}
+.lp-final h2{font-size:34px;font-weight:700;letter-spacing:-.025em;margin-bottom:12px}
+.lp-final p{font-size:15px;color:#52525b;max-width:48ch;line-height:1.65}
+html.dark .lp-final p{color:#a1a19c}
+.lp-final-cta{display:flex;gap:11px;flex-wrap:wrap}
+
+.lp-foot{border-top:1px solid rgb(var(--line)/var(--line-a));padding:34px 0}
+.lp-foot-inner{display:flex;gap:22px;flex-wrap:wrap;font-size:12.5px;color:#71717a}
+html.dark .lp-foot-inner{color:#a1a19c}
+.lp-foot a{color:inherit;text-decoration:none}
+.lp-foot a:hover{color:#1f1f20}
+html.dark .lp-foot a:hover{color:#f8f8f6}
+
+@media (max-width:1000px){
+  .lp-hero-grid{grid-template-columns:1fr;gap:40px}
+  .lp-gallery{grid-template-columns:1fr 1fr}
+  .lp-gallery-wide{grid-template-columns:repeat(3,1fr)}
+  .lp-rails{grid-template-columns:1fr}
+  .lp-rail{border-right:0;border-bottom:1px solid rgb(var(--line)/var(--line-a));padding:38px 0}
+  .lp-rail:last-child{border-bottom:0;padding-left:0}
+  .lp-stats{grid-template-columns:repeat(2,1fr)}
+}
+
+/* ② 工作台窗口 */
+.ws-sec{padding:112px 0}
+.ws-head{max-width:48rem;margin:0 0 44px}
+.ws-head h2{font-size:34px;line-height:1.2;font-weight:700;letter-spacing:-.025em;margin-bottom:14px}
+.ws-head p{font-size:15.5px;color:#52525b;line-height:1.7}
+html.dark .ws-head p{color:#a1a19c}
+.ws-app{border-radius:14px;overflow:hidden;background:#0b0f10;border:1px solid #1f2a2c;box-shadow:0 30px 70px -20px rgb(10 20 15/.35)}
+.ws-bar{display:flex;align-items:center;gap:14px;height:42px;padding:0 16px;border-bottom:1px solid #1a2224;color:#8b9597;font-size:12.5px}
+.ws-dots{display:flex;gap:6px}.ws-dots i{width:10px;height:10px;border-radius:50%;background:#253033}
+.ws-crumb b{font-weight:400;color:#4b5658;margin:0 4px}
+.ws-bar-r{margin-left:auto;display:flex;align-items:center;gap:7px;color:#86efac}
+.ws-live{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgb(34 197 94/.15)}
+.ws-body{display:grid;grid-template-columns:300px 1fr;min-height:470px}
+.ws-agent{border-right:1px solid #1a2224;padding:18px;display:flex;flex-direction:column;gap:12px;background:#0d1213}
+.ws-msg{font-size:13px;line-height:1.62;border-radius:10px;padding:11px 13px}
+.ws-msg-user{background:#16a34a;color:#f0fdf4;align-self:flex-end;max-width:92%}
+.ws-msg-ai{background:#141b1d;color:#c9d1d2}
+.ws-msg-ai p{margin-bottom:9px}
+.ws-steps{list-style:none;display:grid;gap:2px}
+.ws-steps li{position:relative;display:flex;justify-content:space-between;gap:8px;padding:7px 0 7px 22px;font-size:12.5px;color:#6b7678;border-top:1px solid #1c2527}
+.ws-steps li:first-child{border-top:0}
+.ws-steps li::before{content:"";position:absolute;left:2px;top:12px;width:9px;height:9px;border-radius:50%;border:1.5px solid #3a4547}
+.ws-steps li.done{color:#d6dddd}
+.ws-steps li.done::before{background:#22c55e;border-color:#22c55e}
+.ws-steps li.run{color:#f0f4f4}
+.ws-steps li.run::before{border-color:#22c55e;box-shadow:0 0 0 3px rgb(34 197 94/.2)}
+.ws-steps em{font-style:normal;font-family:var(--font-num);font-size:11px;color:#7d8a8c}
+.ws-steps li.done em{color:#86efac}
+.ws-steps li.run i{position:absolute;left:22px;right:0;bottom:2px;height:2px;background:#1f2a2c;border-radius:2px}
+.ws-steps li.run i::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--p);background:#22c55e;border-radius:2px}
+.ws-input{margin-top:auto;display:flex;align-items:center;justify-content:space-between;border:1px solid #243032;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#6b7678}
+.ws-send{width:22px;height:22px;border-radius:6px;background:#16a34a}
+.ws-canvas{position:relative;display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.35fr);gap:22px;padding:22px;background-color:#080c0d;background-image:radial-gradient(circle,#1c2628 1px,transparent 1px);background-size:20px 20px}
+.ws-shots{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:center}
+.ws-shot{margin:0;border-radius:9px;overflow:hidden;background:#121a1c;border:1px solid #223033}
+.ws-shot img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover}
+.ws-shot figcaption{white-space:nowrap;display:flex;justify-content:space-between;gap:6px;padding:7px 9px;font-size:11px;color:#b7c1c2}
+.ws-shot .tc{font-family:var(--font-num);color:#6b7678}
+.ws-player{align-self:center;border-radius:11px;overflow:hidden;background:#121a1c;border:1px solid #2b3a3d;box-shadow:0 0 0 1px rgb(34 197 94/.25)}
+.ws-screen{position:relative}
+.ws-screen img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}
+.ws-play{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:rgb(255 255 255/.92)}
+.ws-play::after{content:"";position:absolute;left:21px;top:16px;border-left:15px solid #0b0f10;border-top:10px solid transparent;border-bottom:10px solid transparent}
+.ws-res{position:absolute;right:10px;top:10px;font-family:var(--font-num);font-size:10.5px;color:#e6e6e3;background:rgb(0 0 0/.6);padding:3px 8px;border-radius:5px}
+.ws-timeline{padding:11px 12px 13px}
+.ws-time{display:block;font-family:var(--font-num);font-size:11px;color:#8b9597;margin-bottom:8px}
+.ws-strip{position:relative;display:grid;grid-template-columns:7fr 8fr 7fr 8fr;gap:3px;height:34px}
+.ws-strip span{border-radius:4px;background-size:cover;background-position:center;opacity:.85}
+.ws-head-line{position:absolute;top:-4px;bottom:-4px;width:2px;background:#22c55e;border-radius:2px}
+.ws-note{margin-top:22px;font-size:13.5px;color:#71717a}
+html.dark .ws-note{color:#a1a19c}
+@media (max-width:1000px){
+  .ws-body{grid-template-columns:1fr}
+  .ws-agent{border-right:0;border-bottom:1px solid #1a2224}
+  .ws-canvas{grid-template-columns:1fr}
+  .ws-head h2{font-size:27px}
+}
+.site-bar button.chip{font-family:inherit;background:transparent;color:inherit;cursor:pointer}
+.site-bar button.chip:focus-visible{outline:2px solid #22c55e;outline-offset:2px}
+html.dark .case-p{color:#a1a19c!important}
+/* 公告条 + 导航 */
+.nv-announce{background:#0f1f15;color:#d9f0e0;font-size:13px}
+html.dark .nv-announce{background:#0c1a11}
+.nv-announce-inner{position:relative;display:flex;justify-content:center;align-items:center;min-height:40px}
+.nv-announce-link{display:inline-flex;align-items:center;gap:10px;color:inherit;text-decoration:none;padding:0 36px}
+.nv-announce-tag{font-size:11px;font-weight:650;color:#0f1f15;background:#4ade80;border-radius:5px;padding:1px 7px}
+.nv-announce-go{color:#86efac;font-weight:550;border-bottom:1px solid rgb(134 239 172/.4)}
+.nv-announce-link:hover .nv-announce-go{border-bottom-color:#86efac}
+.nv-announce-x{position:absolute;right:var(--gutter);width:26px;height:26px;display:grid;place-items:center;border:0;background:transparent;color:#7fa58c;cursor:pointer;border-radius:6px}
+.nv-announce-x:hover{background:rgb(255 255 255/.06);color:#d9f0e0}
+.nv-announce-x svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
+
+.nv{position:sticky;top:42px;z-index:15;background:rgb(248 248 246/.82);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid rgb(var(--line)/var(--line-a))}
+html.dark .nv{background:rgb(20 20 19/.8)}
+.nv-inner{display:flex;align-items:center;height:64px;gap:8px}
+.nv-brand{display:flex;align-items:center;gap:9px;color:inherit;text-decoration:none;margin-right:26px;flex-shrink:0}
+.nv-brand img{width:28px;height:28px;display:block}
+.nv-brand span{font-size:17px;font-weight:700;letter-spacing:-.02em}
+.nv-links{display:flex;align-items:center;gap:2px}
+.nv-link{display:inline-flex;align-items:center;gap:4px;height:36px;padding:0 12px;border-radius:8px;border:0;background:transparent;font:inherit;font-size:14px;color:#3f3f46;text-decoration:none;cursor:pointer}
+html.dark .nv-link{color:#c4c4bf}
+.nv-link:hover,.nv-drop:hover .nv-trigger,.nv-trigger[aria-expanded=true]{background:rgb(var(--line)/.1);color:#141413}
+html.dark .nv-link:hover,html.dark .nv-drop:hover .nv-trigger,html.dark .nv-trigger[aria-expanded=true]{color:#fafaf9;background:rgb(255 255 255/.06)}
+.nv-caret{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;transition:transform .15s}
+.nv-drop:hover .nv-caret,.nv-trigger[aria-expanded=true] .nv-caret{transform:rotate(180deg)}
+
+.nv-drop{position:relative}
+.nv-drop::after{content:"";position:absolute;left:0;right:0;top:100%;height:14px}
+.nv-menu{position:absolute;left:-12px;top:calc(100% + 12px);width:780px;display:grid;grid-template-columns:1fr 1fr 220px;gap:6px;padding:14px;border-radius:16px;background:#fff;border:1px solid rgb(var(--line)/.16);box-shadow:0 24px 60px -18px rgb(20 20 19/.28),0 2px 6px rgb(20 20 19/.05);opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .16s,transform .16s,visibility .16s}
+html.dark .nv-menu{background:#1c1c1b;border-color:rgb(255 255 255/.08);box-shadow:0 24px 60px -18px rgb(0 0 0/.7)}
+.nv-drop:hover .nv-menu,.nv-trigger[aria-expanded=true]+.nv-menu,.nv-drop:focus-within .nv-menu{opacity:1;visibility:visible;transform:none}
+.nv-col{padding:4px}
+.nv-col-h{font-size:12px;font-weight:600;color:#a1a19c;padding:6px 10px 8px}
+.nv-item{display:flex;gap:12px;align-items:flex-start;padding:10px;border-radius:10px;color:inherit;text-decoration:none}
+.nv-item:hover{background:rgb(var(--p-500)/.07)}
+html.dark .nv-item:hover{background:rgb(255 255 255/.05)}
+.nv-ico{flex-shrink:0;width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:rgb(var(--p-500)/.1);color:#16a34a}
+html.dark .nv-ico{color:#4ade80;background:rgb(74 222 128/.1)}
+.nv-ico svg{width:17px;height:17px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.nv-item b{display:block;font-size:14px;font-weight:600;margin-bottom:2px}
+.nv-item small{display:block;font-size:12.5px;color:#71717a;line-height:1.45}
+html.dark .nv-item small{color:#a1a19c}
+.nv-feature{position:relative;display:block;border-radius:12px;overflow:hidden;min-height:100%;text-decoration:none}
+.nv-feature img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.nv-feature:hover img{transform:scale(1.04)}
+.nv-feature-txt{position:absolute;left:0;right:0;bottom:0;padding:40px 14px 14px;background:linear-gradient(to top,rgb(0 0 0/.85),transparent);color:#fff}
+.nv-feature-txt b{display:block;font-size:14px;font-weight:600;margin-bottom:3px}
+.nv-feature-txt small{font-size:12px;color:rgb(255 255 255/.75)}
+
+.nv-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.nv-icon{width:36px;height:36px;display:grid;place-items:center;border-radius:8px;border:0;background:transparent;color:#52525b;cursor:pointer}
+.nv-icon:hover{background:rgb(var(--line)/.1)}
+html.dark .nv-icon{color:#c4c4bf}
+.nv-icon svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.nv-sun{display:none}
+html.dark .nv-sun{display:block}
+html.dark .nv-moon{display:none}
+.nv-login{height:36px;display:inline-flex;align-items:center;padding:0 14px;font-size:14px;color:#3f3f46;text-decoration:none;border-radius:8px}
+.nv-login:hover{background:rgb(var(--line)/.1)}
+html.dark .nv-login{color:#e6e6e3}
+.nv-cta{height:36px;display:inline-flex;align-items:center;padding:0 16px;margin-left:4px;font-size:14px;font-weight:600;color:#fff;background:#141413;border-radius:9px;text-decoration:none}
+.nv-cta:hover{background:#16a34a}
+html.dark .nv-cta{background:#fafaf9;color:#141413}
+html.dark .nv-cta:hover{background:#4ade80}
+.nv a:focus-visible,.nv button:focus-visible,.nv-announce a:focus-visible,.nv-announce button:focus-visible{outline:2px solid #22c55e;outline-offset:2px}
+@media (max-width:1000px){
+  .nv-links{display:none}
+  .nv-login{display:none}
+  .nv-announce-go{display:none}
+}
+@media (prefers-reduced-motion:reduce){.nv-menu,.nv-caret,.nv-feature img{transition:none}}
+/* 收尾 + 页脚 */
+.cl{padding:40px 0 112px}
+.cl-panel{position:relative;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:40px;align-items:center;border-radius:24px;overflow:hidden;background:#0f1f15;color:#ecfdf3;padding:64px 0 64px 64px}
+.cl-panel::before{content:"";position:absolute;inset:0;background:radial-gradient(60% 80% at 0% 0%,rgb(34 197 94/.22),transparent 60%);pointer-events:none}
+.cl-copy{position:relative}
+.cl h2{font-size:40px;line-height:1.15;font-weight:700;letter-spacing:-.03em;margin-bottom:16px}
+.cl p{font-size:16px;line-height:1.7;color:#a7c4b1;max-width:30rem;margin-bottom:30px}
+.cl-cta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:30px}
+.cl-btn{height:46px;display:inline-flex;align-items:center;padding:0 22px;border-radius:11px;font-size:15px;font-weight:600;text-decoration:none}
+.cl-btn-main{background:#4ade80;color:#052e16}
+.cl-btn-main:hover{background:#86efac}
+.cl-btn-ghost{color:#ecfdf3;border:1px solid rgb(236 253 243/.22)}
+.cl-btn-ghost:hover{background:rgb(255 255 255/.06)}
+.cl-points{list-style:none;display:flex;flex-wrap:wrap;gap:8px 22px;font-size:13.5px;color:#a7c4b1}
+.cl-points li{position:relative;padding-left:20px}
+.cl-points li::before{content:"";position:absolute;left:0;top:5px;width:11px;height:6px;border-left:2px solid #4ade80;border-bottom:2px solid #4ade80;transform:rotate(-45deg)}
+.cl-visual{position:relative;height:340px}
+.cl-visual img{position:absolute;width:62%;aspect-ratio:16/10;object-fit:cover;border-radius:14px;border:1px solid rgb(255 255 255/.12);box-shadow:0 24px 50px -12px rgb(0 0 0/.6)}
+.cl-visual img:nth-child(1){right:-6%;top:0;width:70%}
+.cl-visual img:nth-child(2){left:0;top:34%;z-index:2}
+.cl-visual img:nth-child(3){right:4%;bottom:-4%;width:52%;z-index:3}
+
+.ft{border-top:1px solid rgb(var(--line)/var(--line-a));padding:64px 0 28px}
+.ft-top{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,2.4fr);gap:48px;padding-bottom:48px}
+.ft-brand .nv-brand{margin:0 0 14px}
+.ft-brand p{font-size:14px;color:#71717a;line-height:1.65;max-width:20rem;margin-bottom:20px}
+html.dark .ft-brand p{color:#a1a19c}
+.ft-status{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#3f3f46;text-decoration:none;border:1px solid rgb(var(--line)/.18);border-radius:999px;padding:6px 12px}
+html.dark .ft-status{color:#d4d4cf}
+.ft-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgb(34 197 94/.18)}
+.ft-cols{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.ft-cols h4{font-size:13px;font-weight:600;margin-bottom:14px}
+.ft-cols a{display:block;font-size:14px;color:#71717a;text-decoration:none;padding:5px 0}
+.ft-cols a:hover{color:#141413}
+html.dark .ft-cols a{color:#a1a19c}
+html.dark .ft-cols a:hover{color:#fafaf9}
+.ft-bottom{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-top:24px;border-top:1px solid rgb(var(--line)/var(--line-a));font-size:13px;color:#a1a19c}
+.cl a:focus-visible,.ft a:focus-visible{outline:2px solid #22c55e;outline-offset:2px}
+@media (max-width:1000px){
+  .cl-panel{grid-template-columns:1fr;padding:44px 28px 0}
+  .cl h2{font-size:30px}
+  .cl-visual{height:240px}
+  .ft-top{grid-template-columns:1fr}
+  .ft-cols{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<div class="doc">
+  <header class="doc-head">
+    <p class="doc-eyebrow">设计稿 · 待你拍板</p>
+    <h1 class="doc-h1">首页重构 · A 版（作品优先）· 真实数据版</h1>
+    <p class="doc-lede">
+      这一稿和已有的 A 版骨架完全一致，唯一区别是：作品墙里的图片<b>不是占位图</b>，
+      而是从工作台灵感库真实拉取的 320 条作品（258 张图 + 62 段视频）。
+      用它来验证「首屏由作品主导」到底成不成立。
+    </p>
+    <div class="doc-meta">
+      <span>数据源 <b>GET /api/public/inspirations/feed</b></span>
+      <span>条目 <b>320</b></span>
+      <span>图 <b>258</b></span>
+      <span>视频 <b>62</b></span>
+      <span>图片可正常加载 <b>✓</b></span>
+    </div>
+  </header>
+
+  <div class="notes">
+    <div class="note">
+      <h4><span class="tag keep">保留</span>Hero 右侧从「路由图」换成「作品墙」</h4>
+      <p>首屏回答的是「这里能做出什么」，而不是「这里怎么调」。真实作品比占位色块有说服力得多——这一稿就是为验证这点做的。</p>
+    </div>
+    <div class="note">
+      <h4><span class="tag new">新增</span>顶部公告条</h4>
+      <p>复用后台已有的公告系统（notify_mode = silent 时静默、popup 时弹窗）。首页顶部只展示一条最新公告，不打断浏览。</p>
+    </div>
+    <div class="note">
+      <h4><span class="tag new">新增</span>作品墙每张卡可点「用这个提示词生成」</h4>
+      <p>直跳工作台并把提示词带过去。这是首页和创作流程之间最短的连接——看完即用，不需要复制粘贴。</p>
+    </div>
+    <div class="note">
+      <h4><span class="tag cut">删除</span>上游 provider 份额条</h4>
+      <p>纯网关内部结构，普通用户不关心。这一段占了近半个首屏高度。</p>
+    </div>
+    <div class="note">
+      <h4><span class="tag cut">删除</span>「四件能力」卡片段</h4>
+      <p>与「接入」段讲的是同一件事，合并进「两大场景」的右栏即可。</p>
+    </div>
+  </div>
+
+  <div class="site">
+    <div class="site-bar">
+      <span class="dot"></span>
+      <span class="url">forapi.cloud</span>
+      <span class="sp">
+        <button type="button" class="chip on" data-theme="light">浅色</button>
+        <button type="button" class="chip" data-theme="dark">深色</button>
+      </span>
+    </div>
+
+    <div class="lp">
+      <!-- 公告条 -->
+      <div class="nv-announce" id="nvAnnounce">
+        <div class="lp-wrap nv-announce-inner">
+          <a class="nv-announce-link" href="#">
+            <span class="nv-announce-tag">新</span>
+            <span>Seedance 2.5 已接入，工作台里直接用提示词生成视频</span>
+            <span class="nv-announce-go">查看公告</span>
+          </a>
+          <button type="button" class="nv-announce-x" aria-label="关闭公告" onclick="document.getElementById('nvAnnounce').hidden=true">
+            <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- 导航 -->
+      <header class="nv">
+        <div class="lp-wrap nv-inner">
+          <a class="nv-brand" href="#">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAACXBIWXMAAAsTAAALEwEAmpwYAAAKaUlEQVR4nO2da2xT5xnHzzapQ5s2rdK2dkzbPpQ4Ny4hJgzShJCEJJQP3boPm7ZpG86NJORCCOSC7RgYnRw7o0xabwiJtjQ2iYZWKtpKaym0o7EdjC+5Ow4wugamETJSmiY2l2d6z/E1F+LLOTl+zfOT/lI+5rz/v9/nPc/76j0MgyAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiB8sMJY8+0kg0wpMWwfkHTLJhMMMrfEILufYCi+x/5tlE1JDLLbEqNsQmIsnkg0BSvJVMKpp2QimVWpTymsynxKZVXOatXFQO2YWO2VecfEGnNlkNIuVQVp7aWdnCw7J9J9qmYlJbJWT6Rba25IbTU2qbX6bamtpkZqrv2x2GMdU+ScUy1LNG4/kdC9/X6CQQYSr4zFkBikEkgyBSvZVMqppxRSWJX5lEp0sZzVSp92sFplDlQFrPbqUgWsuVQZpDRLVZDWWnZysu6EdJ+qWUmJbEQ1sC5ItZBh98hW+2Cdra5rQ3/9CuZRJ/mT4rUrDLIvOMNDMb2UB9Mr/KZfWiLT7UR1sJ6o1yN73XSGfdcfFhobAPhKRzsk6dtcv9Jr3dV6rbvppNZdpWufeVbf/uWPGNpJuLB9m8Qou7eY6ckimL52XtOrozb9p6x2+bShj6j+4Oyx+VsbJOg1M0qdxv3qwpqu6Xr+8+8xNJJ6ofwpiUHm5t30h0ztgpluDzZ9/RzTd81nOquNXvU2lHvHRn/Ynd2hcb38cPM56TWuw/o/zUgY2pAYZZ8tbnoZD6ZXxq7pfbthY/9uyCTqq3dl2vcmnvyza41e63olFPN9IdC6Xjh9BJ5gaCHRuL04FNNTRTBd6jO9RnjTWTXA0x7lWFtO6zWu9nDM94fA3UTWDAwNJBmL//NQ0y9Gb3pauKbbojd9Q6/f8JBMH/BqD2QN7IHfnDv64NiR8c5IAsCGQD2TzMQ6Kw21T8xvevm8pq8Ky/QqXkzPWELTvcoe3Au7Tr8Dh4+NmCINwMl212+ZWEfSXaxaEtOt4Zhey4Ppu1nDwzXdq00DTaDsvAB/PGEZizQAHRq3nIl1kk2l+mDTd/BqeroIpmdGaDpr/GAjqy29raDs/AQO6HomI54BNC4NE+skm0rOL2U3LhzTF3hHB6FM3zTUCDke5Q3IQdnZDa0nDXcjDYBOe3dOPyHmSDGVnBfX9DoeTG/gxfScoSZWm4c5tZw6D/tPGqcjD8BMLRPrpJhKzojdguXL9KxQTB8KNL1pjumbh5tZ5Q43Q8X7nXCww3wr4hLQdjeXiXWSjCXHY6gFu+jKPVMg03MD5WiBPEcL/MyqBfXrfc7I+gCuF97QwjeZWCehW6YmM4AQpvPVmMkMMj3Y8KzBWav3KE33ax/kO/bBIZ35lYgC0D6dz9AACQB5A4iZFqxgpjeHbHr+iEcO+cSvz3V8V9/u3hfW1K91yajpApIAJBlLIM1aFTMt2KU0PX+W6VtG5H45WxrIGB1XwTJdm7ti0V+9xvVyR9vMz6kx3xsAsvu30lweMy1Yv+mz6/nCpm8O1/SRhUyXQ4FTAQUj8t6cq6plgWOlU7tSdVp3rb7d9WLwat91RK91lejaYDlDGwlGLgBkI4gsAOPD9JbITPeo0KkY3zoif2qhMXv3L/B1XdvU8o62mYQuzRdPdnXB1xhaCQwA2Qwii8CoTY+iBRux6Y7wTC+YazoUOpVQ4FT+q/CKYg3zqJDIBsC/FUz2BdIsldxrmwgt2HBNz+PB9MJRTkWjircLRlXfZx4lSAB85wA8u4LkrWDVxXJ2MUh+/UvZgn1YYyY3lJV7GKYXccbPFDoVZwocqk3Mo0hgALzHvLiNIa49THoE5BWRLBDZNcGsRo4vHP1k6icKCEF/w3T2wB51sBo5DTWqcxZUM6tcrxwtc5Q/R3KfCpzzScmqiJXiQOHl1sqto6ptzw7t/RbzKBMcAP+2MBcAf3vY1yDyvCp63xK86wR/ILjZgZ0RBnZPiP18yCIkGkuCA+DZFvZtDgUFgGsQSecNgH824EpDAwaAlgDMrv/eAHCbRJWzAsA1iAJfE70LRe/6wNfNwwDQE4CF6n/ggQ//9M8FwPeaOE8AyDogc6ABA0BPAPit/9xOHQaArgDwWP8xAJSQTAIgQP3HAFAUACHqP9cEwgBQEgAh6j/p/O3BAFATAN7rPwaACpJ75gaAn/qPAaAwAHzWfwwAFST3lKnnq/8ZlhqoGv0rHL3xLrx1qxve/5/Fpw9uW4N09raN06QNPmRlZ/XR570uAOjiSa8BwPMA8AsACk7bUhWAgOk/w1ILR8b+DpP3piCGmQKANgB4XOzxi6sAbOlthsGpa0ARnwHAOrHHMC4CUGBvgZvuSaCQOwCQJvY4UktqT5l6jbkSBqc+BYq5BgDfEXssqQ3AoWs6iAPUYo8llawy71CPzYxDHDCFbwcRUON88TjED8+JPZ7U8dqNf7wH8cMhsceTOs6Mmz6G+OG42ONJHadvdn8E8cNRsceTOo6OvfcOxA8HxB5P6vjdkOZViB+2iD2eVL4GjnxJOqrUMw4Aj4k9nlQGYM/loxAHNIg9ltQGgLSCL0wOAMVYASDoMgckjACQ/f8s224Ynb4OFDIGAPjNn2gDQE4AZdsbaJsJTADwQ7HHkGpWswHwn/9Lt1RD49VjEOMLw1EAKAWg+GqWWArAQuf/nhs6CPs/fRNeunEGXv/vB/AGq7NwgujmWXjz5od+jZ+DDlbnQXeLU+fEP6fJLh1PagWAYgBYLfaYxWcAojr/77nxw3PDB7nZg9zmkedowUOhdAUg0vP/noudfAHgrnPBAFDAanOlOvrz/9x9P+SOH+5CJ99dPhgAGgIQ/fn/udM/BoCmAAhT/8ntXRgAegLAe/3HANAXAF7rPwaABtLMVWqB6j8GgAbSLFVqgeo/BoCeAAhS/9kPLoj9fEjIAeC5/nu+uCH28yGhBECI+o8BoDEAPNZ/DAA9ARCi/pOr2vNHMACUBID/+u+5rx8DQE0AeK7/XAAUGAB6AsBv/ccAUEK6pUotRP0nX+LCAFBAuqVaLUT9J9/qwQDQEgAB6j/38UUMACUB4L/+cwFQYgDoDED09Z/7TBsGgIoACFH/MQCUkG7jAsB3/fd8oBEDQFsA+Kr/7Nc5MQA0BoCf+s9+jxcDEPtIrTX7haj/XABar4v9fMgiSG07K4So/+TDzEVO5UWxnw9ZhHX26meEqP8kAFsvK0+J/XzIIkjN5d/IsNdO8V3/SQCeudJaJvbzISGQYat9S4D6f2/bVdWTYj8bEgJSa/369fa6B7zW/1ElXtpIE+vtdZ381X/FnS3XVMvFfiYkDLJ6Kx/f0FfniLr+O5UPipyKX4r9PEgEZNrrEjf21f874vo/onhQMKKoF/s5kCjIHtz1g4199cbw67/8TsHoPryvPy4A1VefHqz/fVZ/w9hi9T/P0XI/3yHvyr0i/4nY/zbCMyn9qseyhxqLsgf3vpQ91PjxpqFG5+bhpuu5w83mvOHmU/mOfeU5+KqHIAiCIAiCIAiCIAiCIAiCIAiCIAiCIAiCIExY/B9Mi5KreZqTbQAAAABJRU5ErkJggg==" alt="" width="28" height="28">
+            <span>ForApi</span>
+          </a>
+
+          <nav class="nv-links" aria-label="主导航">
+            <div class="nv-drop">
+              <button type="button" class="nv-link nv-trigger" aria-expanded="false" aria-controls="nvMenu">
+                产品<svg class="nv-caret" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5"/></svg>
+              </button>
+              <div class="nv-menu" id="nvMenu">
+                <div class="nv-col">
+                  <p class="nv-col-h">创作工作台</p>
+                  <a class="nv-item" href="#workbench"><span class="nv-ico"><svg viewBox="0 0 24 24"><path d="M4 6h6v5H4zM14 13h6v5h-6zM10 8.5h2a2 2 0 012 2V15"/></svg></span><span><b>无限画布</b><small>节点连线，一条链路做到底</small></span></a>
+                  <a class="nv-item" href="#workbench"><span class="nv-ico"><svg viewBox="0 0 24 24"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z"/></svg></span><span><b>Agent 创作</b><small>说一句要什么，自动拆步执行</small></span></a>
+                  <a class="nv-item" href="#"><span class="nv-ico"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 9.5h4M17 9.5h4M3 14.5h4M17 14.5h4"/></svg></span><span><b>短剧与分镜</b><small>脚本拆镜头，出关键帧和视频</small></span></a>
+                  <a class="nv-item" href="#"><span class="nv-ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-9 9"/></svg></span><span><b>图片创作</b><small>文生图、参考图编辑、批量出图</small></span></a>
+                  <a class="nv-item" href="#"><span class="nv-ico"><svg viewBox="0 0 24 24"><path d="M4 5h7v7H4zM13 5h7v7h-7zM4 14h7v5H4zM13 14h7v5h-7z"/></svg></span><span><b>技能库</b><small>73 个现成工作流，选了就用</small></span></a>
+                </div>
+                <div class="nv-col">
+                  <p class="nv-col-h">开发者</p>
+                  <a class="nv-item" href="#work"><span class="nv-ico"><svg viewBox="0 0 24 24"><path d="M9 8l-4 4 4 4M15 8l4 4-4 4"/></svg></span><span><b>API 接入</b><small>兼容 OpenAI / Anthropic 协议</small></span></a>
+                  <a class="nv-item" href="#"><span class="nv-ico"><svg viewBox="0 0 24 24"><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="7" r="2.5"/><circle cx="7" cy="17" r="2.5"/><circle cx="17" cy="17" r="2.5"/></svg></span><span><b>模型广场</b><small>55 个模型的价格和能力</small></span></a>
+                  <a class="nv-item" href="#"><span class="nv-ico"><svg viewBox="0 0 24 24"><path d="M5 4h10a3 3 0 013 3v13H8a3 3 0 01-3-3z"/><path d="M5 17a3 3 0 013-3h10"/></svg></span><span><b>接入文档</b><small>base URL、密钥、示例代码</small></span></a>
+                  <a class="nv-item" href="#"><span class="nv-ico"><svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 1116 0"/><path d="M12 18l4-6"/></svg></span><span><b>用量与计费</b><small>按 token 结算，每笔可查</small></span></a>
+                </div>
+                <a class="nv-feature" href="#gallery">
+                  <img src="https://media.goodcase.ai/cases/c5e8fdb6d69a.jpg" alt="">
+                  <span class="nv-feature-txt"><b>看看别人做了什么</b><small>灵感库里 320 件作品，带提示词</small></span>
+                </a>
+              </div>
+            </div>
+            <a class="nv-link" href="#">模型广场</a>
+            <a class="nv-link" href="#gallery">作品</a>
+            <a class="nv-link" href="#">文档</a>
+          </nav>
+
+          <div class="nv-actions">
+            <button type="button" class="nv-icon" aria-label="切换深浅色" onclick="document.querySelector('.site-bar [data-theme='+(document.documentElement.classList.contains('dark')?'light':'dark')+']').click()">
+              <svg class="nv-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z"/></svg>
+              <svg class="nv-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+            </button>
+            <a class="nv-login" href="#">登录</a>
+            <a class="nv-cta" href="#">免费开始</a>
+          </div>
+        </div>
+      </header>
+
+      <!-- ① Hero -->
+      <section class="lp-hero">
+        <div class="lp-wrap lp-hero-grid">
+          <div>
+            <p class="lp-status">
+              <span class="lp-status-dot"></span>
+              55 个模型 · 4 个上游平台 · 按 token 计费
+            </p>
+            <h1 class="lp-h1">
+              <span>把提示词、图片</span>
+              <span>和分镜<span class="accent">连成一条线。</span></span>
+            </h1>
+            <p class="lp-lede">
+              不用学节点。一句话就能出图、排镜；等你想要更精细的链路，
+              画布上的<span class="hl">每一步结果都是下一步的输入</span>。
+            </p>
+            <div class="lp-cta-row">
+              <a class="lp-btn lp-btn-primary" href="#">
+                开始创作
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </a>
+              <a class="lp-btn lp-btn-quiet" href="#gallery">看看能做什么</a>
+            </div>
+            <p class="lp-note">不用绑卡。注册就能进工作台试，满意了再充值。</p>
+          </div>
+
+          <!-- 画布示意图：多场景展示 -->
+          <div>
+            <div class="cv-canvas">
+              <svg width="100%" height="100%" viewBox="0 0 560 378" preserveAspectRatio="none">
+                <!-- 场景1：短剧脚本 → 分镜 -->
+                <path class="cv-wire" d="M140 60 C180 60, 186 100, 224 100"/>
+                <!-- 场景2：产品图 → 广告视频 -->
+                <path class="cv-wire" d="M344 110 C388 110, 392 66, 430 66"/>
+                <!-- 场景3：coding prompt → API调用 -->
+                <path class="cv-wire" d="M140 240 C180 240, 186 300, 224 300"/>
+                <!-- 交叉连线：分镜 → 成片 -->
+                <path class="cv-wire" d="M344 100 C392 100, 400 180, 434 180"/>
+                <circle class="cv-packet" cx="182" cy="80" r="3"/>
+                <circle class="cv-packet" cx="400" cy="88" r="3"/>
+                <circle class="cv-packet" cx="182" cy="270" r="3"/>
+              </svg>
+
+              <!-- 场景1：短剧脚本 -->
+              <div class="cv-node prompt" style="left:16px;top:34px">
+                <div class="body">
+                  <em>短剧脚本</em><br>霸总与灰姑娘的都市爱情
+                </div>
+                <div class="lbl">AI 生成脚本 · 5 集</div>
+              </div>
+
+              <!-- 场景1：分镜卡片 -->
+              <div class="cv-node img" style="left:224px;top:74px">
+                <div class="thumb" style="background-image:url('https://cms-assets.youmind.com/media/1792482820813_mtdoc7_HU854tgbIAE9SlB.jpg');background-size:cover;background-position:center"></div>
+                <div class="lbl">分镜 · 79 张</div>
+              </div>
+
+              <!-- 场景1：成片输出 -->
+              <div class="cv-node vid" style="left:436px;top:156px">
+                <div class="thumb" style="background-image:url('https://media.goodcase.ai/cases/c5e8fdb6d69a.jpg');background-size:cover;background-position:center"></div>
+                <div class="lbl">完整短剧 · 15min</div>
+              </div>
+
+              <!-- 场景2：产品图 -->
+              <div class="cv-node img" style="left:224px;top:84px;display:none">
+                <div class="thumb" style="background-image:url('https://cms-assets.youmind.com/media/1792397033814_ium4gp_HU6khRNaMAADLgG.jpg');background-size:cover;background-position:center"></div>
+                <div class="lbl">产品渲染 · 3D</div>
+              </div>
+
+              <!-- 场景2：广告成片 -->
+              <div class="cv-node vid" style="left:432px;top:40px">
+                <div class="thumb" style="background-image:url('https://media.goodcase.ai/media/poster/case-96017ad7706f.jpg');background-size:cover;background-position:center"></div>
+                <div class="lbl">TVC 广告 · 30s</div>
+              </div>
+
+              <!-- 场景3：coding prompt -->
+              <div class="cv-node prompt" style="left:16px;top:214px">
+                <div class="body">
+                  <em>写个 React 组件</em><br>响应式的卡片布局网格
+                </div>
+                <div class="lbl">coding · claude-fable-5</div>
+              </div>
+
+              <!-- 场景3：代码输出（用截图风格的代码块背景） -->
+              <div class="cv-node out" style="left:224px;top:274px">
+                <div class="thumb" style="background:#1e1e1e;color:#d4d4d4;padding:8px;font-family:monospace;font-size:9px;line-height:1.3;height:54px;overflow:hidden">
+                  <span style="color:#c586c0">function</span> <span style="color:#dcdcaa">CardGrid</span>() {<br>
+                  &nbsp;&nbsp;<span style="color:#c586c0">return</span> (<br>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&lt;<span style="color:#4ec9b0">div</span> <span style="color:#9cdcfe">className</span>=<span style="color:#ce9178">"grid"</span>&gt;
+                </div>
+                <div class="lbl">React 组件 · JSX</div>
+              </div>
+
+              <span class="cv-badge">3 种场景 · 多条链路</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 指标条 -->
+        <div class="lp-wrap">
+          <dl class="lp-stats">
+            <div><dt>可调用模型</dt><dd>55<small>个</small></dd></div>
+            <div><dt>上游平台</dt><dd>4<small>个</small></dd></div>
+            <div><dt>内置技能</dt><dd>73<small>个</small></dd></div>
+            <div><dt>计价方式</dt><dd>按<small>token</small></dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <!-- ② 工作台：Agent + 画布 -->
+      <section class="lp-section ws-sec" id="workbench">
+        <div class="lp-wrap">
+          <header class="ws-head">
+            <h2>说一句要什么，Agent 在画布上把片子做出来</h2>
+            <p>拆镜头、出关键帧、生成视频、配乐，每一步都落在画布上。哪一镜不满意，单独重做那一镜。</p>
+          </header>
+
+          <div class="ws-app">
+            <div class="ws-bar">
+              <span class="ws-dots"><i></i><i></i><i></i></span>
+              <span class="ws-crumb">我的画布 <b>/</b> 仙侠短片 · 第 3 集</span>
+              <span class="ws-bar-r"><span class="ws-live"></span>Agent 运行中</span>
+            </div>
+            <div class="ws-body">
+              <aside class="ws-agent">
+                <div class="ws-msg ws-msg-user">做一支 30 秒仙侠短片：神殿里对剑，被逼上断桥，御剑出海，最后和穷奇决战。电影感，16:9。</div>
+                <div class="ws-msg ws-msg-ai">
+                  <p>好，拆成 4 个镜头，按顺序做：</p>
+                  <ol class="ws-steps">
+                    <li class="done"><span>拆分镜头脚本</span><em>4 镜 · 30s</em></li>
+                    <li class="done"><span>生成关键帧</span><em>gpt-image · 4 张</em></li>
+                    <li class="done"><span>关键帧转视频</span><em>Seedance 2.5 · 4 段</em></li>
+                    <li class="run"><span>配乐与音效</span><em>72%</em><i style="--p:72%"></i></li>
+                    <li><span>合成导出</span><em>1080p</em></li>
+                  </ol>
+                </div>
+                <div class="ws-input">镜头 2 的桥再塌得猛一点…<span class="ws-send"></span></div>
+              </aside>
+
+              <div class="ws-canvas">
+                <div class="ws-shots">
+                  <figure class="ws-shot">
+                    <img src="https://media.goodcase.ai/cases/177801c0a33f.jpg" alt="神殿对剑" loading="lazy">
+                    <figcaption><span>镜头 1 · 神殿对剑</span><span class="tc">7s</span></figcaption>
+                  </figure>
+                  <figure class="ws-shot">
+                    <img src="https://media.goodcase.ai/cases/b4c4f9bdf65c.jpg" alt="断桥突围" loading="lazy">
+                    <figcaption><span>镜头 2 · 断桥突围</span><span class="tc">8s</span></figcaption>
+                  </figure>
+                  <figure class="ws-shot">
+                    <img src="https://media.goodcase.ai/cases/a002c9dccc74.jpg" alt="御剑出海" loading="lazy">
+                    <figcaption><span>镜头 3 · 御剑出海</span><span class="tc">7s</span></figcaption>
+                  </figure>
+                  <figure class="ws-shot">
+                    <img src="https://media.goodcase.ai/cases/c5e8fdb6d69a.jpg" alt="大战穷奇" loading="lazy">
+                    <figcaption><span>镜头 4 · 大战穷奇</span><span class="tc">8s</span></figcaption>
+                  </figure>
+                </div>
+                <div class="ws-player">
+                  <div class="ws-screen">
+                    <img src="https://media.goodcase.ai/cases/c5e8fdb6d69a.jpg" alt="成片预览">
+                    <span class="ws-play"></span>
+                    <span class="ws-res">1080p · 16:9</span>
+                  </div>
+                  <div class="ws-timeline">
+                    <span class="ws-time">00:22 / 00:30</span>
+                    <div class="ws-strip"><span style="background-image:url(https://media.goodcase.ai/cases/177801c0a33f.jpg)"></span><span style="background-image:url(https://media.goodcase.ai/cases/b4c4f9bdf65c.jpg)"></span><span style="background-image:url(https://media.goodcase.ai/cases/a002c9dccc74.jpg)"></span><span style="background-image:url(https://media.goodcase.ai/cases/c5e8fdb6d69a.jpg)"></span><b class="ws-head-line" style="left:73%"></b></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="ws-note">这条链路本身就是一个技能。工作台里有 73 个这样的现成技能，短剧、广告、分镜、3D 预演，选一个就能开始。</p>
+        </div>
+      </section>
+
+      <section class="lp-section lp-band" id="work">
+        <div class="lp-wrap">
+          <header class="lp-sec-head">
+            <p class="lp-kicker">两种用法</p>
+            <h2>不管你要的是作品，还是接口</h2>
+            <p>同一个账号，同一套账。想做东西从工作台进，想接程序从文档进。</p>
+          </header>
+          <div class="lp-rails">
+            <div class="lp-rail">
+              <span class="lp-rail-tag"><span class="dot"></span>做作品</span>
+              <h3>创作工作台</h3>
+              <p>适合内容创作者、小团队、品牌方。不用写代码，选模型、填提示词，出图出片。</p>
+              <ul class="lp-rail-list">
+                <li><span class="n">01</span><span>无限画布 —— 把提示词、图片、分镜连成流水线</span></li>
+                <li><span class="n">02</span><span>图片创作 —— 单图、批量、参考图控制</span></li>
+                <li><span class="n">03</span><span>视频创作 —— 提示词直出视频，含分镜续写</span></li>
+                <li><span class="n">04</span><span>提示词库 —— 现成的成品提示词，改改就能用</span></li>
+                <li><span class="n">05</span><span>我的资产 —— 作品、素材、历史统一管理</span></li>
+              </ul>
+              <a class="lp-btn lp-btn-quiet lp-btn-sm" href="#">进入工作台</a>
+            </div>
+            <div class="lp-rail">
+              <span class="lp-rail-tag"><span class="dot"></span>接接口</span>
+              <h3>API 接入</h3>
+              <p>适合开发者与团队。改一行 base URL，SDK 不用换，现有代码原样跑通。</p>
+              <ul class="lp-rail-list">
+                <li><span class="n">01</span><span>兼容 OpenAI / Anthropic / Gemini 协议</span></li>
+                <li><span class="n">02</span><span>账号池自动轮转，单账号被限流自动改道</span></li>
+                <li><span class="n">03</span><span>每笔请求可追溯，token 用量逐条结算</span></li>
+                <li><span class="n">04</span><span>一把密钥绑定多个分组，按模型自动选组</span></li>
+                <li><span class="n">05</span><span>协议细节见 <a href="#" style="color:#16a34a">/docs</a></span></li>
+              </ul>
+              <a class="lp-btn lp-btn-quiet lp-btn-sm" href="#">查看接入文档</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ③ 作品与模型 -->
+      <section class="lp-section" id="gallery">
+        <div class="lp-wrap">
+          <header class="lp-sec-head lp-sec-head-row">
+            <div>
+              <p class="lp-kicker">作品与模型</p>
+              <h2>这些都是在这里做出来的</h2>
+              <p>点任意一张，直接带着它的提示词进工作台改。</p>
+            </div>
+            <a class="lp-link" href="#">看全部 320 件 →</a>
+          </header>
+          <div class="lp-filter">
+            <button class="on">全部</button>
+            <button>图片</button>
+            <button>视频</button>
+            <button>角色</button>
+            <button>产品</button>
+            <button>电影剧照</button>
+            <button>风景</button>
+          </div>
+          <div class="lp-gallery lp-gallery-wide">
+<figure class="lp-shot lp-shot-video">
+      <div class="lp-shot-art"><img src="https://media.goodcase.ai/cases/c5e8fdb6d69a.jpg" alt="御剑修仙者战穷奇：3D CG 仙侠特效战斗场面（Seedance 2.5）" loading="lazy"><span class="lp-shot-badge">▶</span></div>
+      <figcaption class="lp-shot-cap"><span class="m">Seedance 2.5</span><span class="t">御剑修仙者战穷奇：3D CG 仙侠特</span></figcaption>
+    </figure><figure class="lp-shot lp-shot-video">
+      <div class="lp-shot-art"><img src="https://media.goodcase.ai/media/poster/90-vhs-vlog-ae90c46cb606.jpg" alt="90 年代复古 VHS 健身 Vlog" loading="lazy"><span class="lp-shot-badge">▶</span></div>
+      <figcaption class="lp-shot-cap"><span class="m">Seedance 2.0</span><span class="t">90 年代复古 VHS 健身 Vlo</span></figcaption>
+    </figure><figure class="lp-shot lp-shot-video">
+      <div class="lp-shot-art"><img src="https://media.goodcase.ai/media/poster/case-16429da4be7b.jpg" alt="魔幻都市奇幻战斗动画" loading="lazy"><span class="lp-shot-badge">▶</span></div>
+      <figcaption class="lp-shot-cap"><span class="m">Seedance 2.0</span><span class="t">魔幻都市奇幻战斗动画</span></figcaption>
+    </figure><figure class="lp-shot lp-shot-video">
+      <div class="lp-shot-art"><img src="https://media.goodcase.ai/media/poster/case-19957ff473b6.jpg" alt="童年玩具对话提示词" loading="lazy"><span class="lp-shot-badge">▶</span></div>
+      <figcaption class="lp-shot-cap"><span class="m">Seedance 2.0</span><span class="t">童年玩具对话提示词</span></figcaption>
+    </figure><figure class="lp-shot lp-shot-video">
+      <div class="lp-shot-art"><img src="https://media.goodcase.ai/media/poster/case-1f8136a9893a.jpg" alt="富有情感的日语对话动画" loading="lazy"><span class="lp-shot-badge">▶</span></div>
+      <figcaption class="lp-shot-cap"><span class="m">Seedance 2.5</span><span class="t">富有情感的日语对话动画</span></figcaption>
+    </figure><figure class="lp-shot lp-shot-video">
+      <div class="lp-shot-art"><img src="https://media.goodcase.ai/media/poster/case-3ab1709b8447.jpg" alt="现代舞室音乐视频" loading="lazy"><span class="lp-shot-badge">▶</span></div>
+      <figcaption class="lp-shot-cap"><span class="m">Seedance 2.0</span><span class="t">现代舞室音乐视频</span></figcaption>
+    </figure><figure class="lp-shot">
+      <div class="lp-shot-art"><img src="https://cms-assets.youmind.com/media/1792397033814_ium4gp_HU6khRNaMAADLgG.jpg" alt="耳机产品海报提示词" loading="lazy"></div>
+      <figcaption class="lp-shot-cap"><span class="m">蛋黄堡</span><span class="t">耳机产品海报提示词</span></figcaption>
+    </figure><figure class="lp-shot">
+      <div class="lp-shot-art"><img src="https://cms-assets.youmind.com/media/1792482820813_mtdoc7_HU854tgbIAE9SlB.jpg" alt="东方茶商业海报设计" loading="lazy"></div>
+      <figcaption class="lp-shot-cap"><span class="m">蛋黄堡</span><span class="t">东方茶商业海报设计</span></figcaption>
+    </figure><figure class="lp-shot">
+      <div class="lp-shot-art"><img src="https://cms-assets.youmind.com/media/1792482823108_8z0x5o_HU85R_UbMAAF--K.jpg" alt="灯光投影海报" loading="lazy"></div>
+      <figcaption class="lp-shot-cap"><span class="m">蛋黄堡</span><span class="t">灯光投影海报</span></figcaption>
+    </figure><figure class="lp-shot">
+      <div class="lp-shot-art"><img src="https://cms-assets.youmind.com/media/1792482823292_btyvkt_HU85P7GbsAA9nrK.jpg" alt="矿泉水轮廓折射海报" loading="lazy"></div>
+      <figcaption class="lp-shot-cap"><span class="m">蛋黄堡</span><span class="t">矿泉水轮廓折射海报</span></figcaption>
+    </figure><figure class="lp-shot">
+      <div class="lp-shot-art"><img src="https://cms-assets.youmind.com/media/1792655534507_au5rni_HVFB_M2bIAEIVbs.jpg" alt="万圣节僵尸女孩服装提示词" loading="lazy"></div>
+      <figcaption class="lp-shot-cap"><span class="m">のぞむ＊AIイラスト</span><span class="t">万圣节僵尸女孩服装提示词</span></figcaption>
+    </figure><figure class="lp-shot">
+      <div class="lp-shot-art"><img src="https://cms-assets.youmind.com/media/1792827960185_dnn4dr_HVTrPHzboAAg5wi.jpg" alt="戏剧性灯光下的电影感人像" loading="lazy"></div>
+      <figcaption class="lp-shot-cap"><span class="m">Hassan</span><span class="t">戏剧性灯光下的电影感人像</span></figcaption>
+    </figure><figure class="lp-shot">
+      <div class="lp-shot-art"><img src="https://cms-assets.youmind.com/media/1792914376386_7j70s8_HVZDjCWaMAAdC17.jpg" alt="GPT Image 2 超现实时尚与奇幻提示词" loading="lazy"></div>
+      <figcaption class="lp-shot-cap"><span class="m">Taaruk</span><span class="t">GPT Image 2 超现实时尚与</span></figcaption>
+    </figure><figure class="lp-shot">
+      <div class="lp-shot-art"><img src="https://cms-assets.youmind.com/media/1792996787983_tqncdn_HVf5GWcW8AEQM9r.jpg" alt="艾玛·沃特森前卫肖像" loading="lazy"></div>
+      <figcaption class="lp-shot-cap"><span class="m">timedoctor.eth</span><span class="t">艾玛·沃特森前卫肖像</span></figcaption>
+    </figure><figure class="lp-shot">
+      <div class="lp-shot-art"><img src="https://cms-assets.youmind.com/media/1793001764472_4az5cm_HVd_K6AbEAASRYf.jpg" alt="秋叶原的 Suica 企鹅" loading="lazy"></div>
+      <figcaption class="lp-shot-cap"><span class="m">フグリーナ</span><span class="t">秋叶原的 Suica 企鹅</span></figcaption>
+    </figure><figure class="lp-shot">
+      <div class="lp-shot-art"><img src="https://cms-assets.youmind.com/media/1793082739409_o9l10c_HVilk5uWMAAQHLq.jpg" alt="希腊化时期 Medusa 编辑风格提示词" loading="lazy"></div>
+      <figcaption class="lp-shot-cap"><span class="m">Dominus Pellissier</span><span class="t">希腊化时期 Medusa 编辑风格提</span></figcaption>
+    </figure><figure class="lp-shot">
+      <div class="lp-shot-art"><img src="https://cms-assets.youmind.com/media/1793082739399_ml23qa_HVk5BqpXQAAkZf4.jpg" alt="喷火表演者高性能照片" loading="lazy"></div>
+      <figcaption class="lp-shot-cap"><span class="m">Ash</span><span class="t">喷火表演者高性能照片</span></figcaption>
+    </figure><figure class="lp-shot">
+      <div class="lp-shot-art"><img src="https://cms-assets.youmind.com/media/1793255077554_q5ioix_HVrPQIHbQAAQC8v.jpg" alt="蒸汽朋克飞艇电影感提示词" loading="lazy"></div>
+      <figcaption class="lp-shot-cap"><span class="m">JimmyAI｜AI Prompt</span><span class="t">蒸汽朋克飞艇电影感提示词</span></figcaption>
+    </figure><figure class="lp-shot">
+      <div class="lp-shot-art"><img src="https://cms-assets.youmind.com/media/1793255077553_osktbg_HVtui9SXoAAaGl5.jpg" alt="超现实时尚编辑肖像：镀铬鲸鱼与玫瑰" loading="lazy"></div>
+      <figcaption class="lp-shot-cap"><span class="m">timedoctor.eth</span><span class="t">超现实时尚编辑肖像：镀铬鲸鱼与玫瑰</span></figcaption>
+    </figure><figure class="lp-shot">
+      <div class="lp-shot-art"><img src="https://cms-assets.youmind.com/media/1793259850823_w2dtfe_HVt3eXfW8AAzx5k.jpg" alt="3D 设计师玩具女孩肖像" loading="lazy"></div>
+      <figcaption class="lp-shot-cap"><span class="m">mo Ki</span><span class="t">3D 设计师玩具女孩肖像</span></figcaption>
+    </figure><figure class="lp-shot">
+      <div class="lp-shot-art"><img src="https://cms-assets.youmind.com/media/1793259853359_zdj5ww_HVti2rxXEAAo_Zf.jpg" alt="六款杂志封面" loading="lazy"></div>
+      <figcaption class="lp-shot-cap"><span class="m">オオトリヒカリ🐦‍🔥</span><span class="t">六款杂志封面</span></figcaption>
+    </figure><figure class="lp-shot">
+      <div class="lp-shot-art"><img src="https://cms-assets.youmind.com/media/1793346286387_itwz8y_HVyINxVWsAA3wM8.jpg" alt="GPT Image 2 波普艺术编辑风格提示词" loading="lazy"></div>
+      <figcaption class="lp-shot-cap"><span class="m">Soulful Ai</span><span class="t">GPT Image 2 波普艺术编辑</span></figcaption>
+    </figure><figure class="lp-shot">
+      <div class="lp-shot-art"><img src="https://cms-assets.youmind.com/media/1793514064803_ui48ut_HV7d1sGaMAAB8dt.jpg" alt="透明材质静物对比" loading="lazy"></div>
+      <figcaption class="lp-shot-cap"><span class="m">Candy</span><span class="t">透明材质静物对比</span></figcaption>
+    </figure><figure class="lp-shot">
+      <div class="lp-shot-art"><img src="https://cms-assets.youmind.com/media/1793432463290_0m0wve_HV2unoLaEAAuvva.jpg" alt="休闲咖啡馆时尚人像提示词" loading="lazy"></div>
+      <figcaption class="lp-shot-cap"><span class="m">Mano Malik</span><span class="t">休闲咖啡馆时尚人像提示词</span></figcaption>
+    </figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- ④ 收尾 -->
+      <!-- 收尾 -->
+      <section class="cl">
+        <div class="lp-wrap">
+          <div class="cl-panel">
+            <div class="cl-copy">
+              <h2>今天就把第一支片子做出来</h2>
+              <p>注册不用绑卡。工作台、画布和 API 用同一个账号、同一笔余额，按 token 计费，没有月费。</p>
+              <div class="cl-cta">
+                <a class="cl-btn cl-btn-main" href="#">免费开始创作</a>
+                <a class="cl-btn cl-btn-ghost" href="#">联系销售</a>
+              </div>
+              <ul class="cl-points">
+                <li>注册即可进工作台</li>
+                <li>余额按量扣，不用不扣</li>
+              </ul>
+            </div>
+            <div class="cl-visual" aria-hidden="true">
+              <img src="https://media.goodcase.ai/cases/a002c9dccc74.jpg" alt="">
+              <img src="https://media.goodcase.ai/cases/177801c0a33f.jpg" alt="">
+              <img src="https://media.goodcase.ai/cases/b4c4f9bdf65c.jpg" alt="">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 页脚 -->
+      <footer class="ft">
+        <div class="lp-wrap">
+          <div class="ft-top">
+            <div class="ft-brand">
+              <a class="nv-brand" href="#"><img src="data:image/png;base64,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" alt="" width="28" height="28"><span>ForApi</span></a>
+              <p>AI 创作工作台与模型 API，一个账号全部搞定。</p>
+              <a class="ft-status" href="#"><span class="ft-dot"></span>所有服务运行正常</a>
+            </div>
+            <nav class="ft-cols" aria-label="页脚导航">
+              <div><h4>产品</h4><a href="#">创作工作台</a><a href="#">无限画布</a><a href="#">Agent 创作</a><a href="#">技能库</a><a href="#">作品灵感</a></div>
+              <div><h4>开发者</h4><a href="#">API 接入</a><a href="#">模型广场</a><a href="#">接入文档</a><a href="#">用量与计费</a><a href="#">服务状态</a></div>
+              <div><h4>公司</h4><a href="#">关于我们</a><a href="#">联系销售</a><a href="#">公告</a><a href="#">更新日志</a></div>
+              <div><h4>条款</h4><a href="#">服务条款</a><a href="#">隐私政策</a><a href="#">退款政策</a><a href="#">合规说明</a></div>
+            </nav>
+          </div>
+          <div class="ft-bottom">
+            <span>© 2026 ForApi</span>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.site-bar [data-theme]').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var dark=btn.dataset.theme==='dark';
+    document.documentElement.classList.toggle('dark',dark);
+    document.querySelectorAll('.site-bar [data-theme]').forEach(function(b){b.classList.toggle('on',b===btn)});
+  });
+});
+</script>
+<script>
+(function(){
+  var t=document.querySelector('.nv-trigger');
+  t.addEventListener('click',function(){t.setAttribute('aria-expanded',t.getAttribute('aria-expanded')!=='true')});
+  document.addEventListener('click',function(e){if(!e.target.closest('.nv-drop'))t.setAttribute('aria-expanded','false')});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){t.setAttribute('aria-expanded','false');t.focus()}});
+})();
+</script>
+</body>
+</html>

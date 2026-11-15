@@ -3,6 +3,7 @@ package handler
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
@@ -78,4 +79,32 @@ func parseBoolQuery(v string) bool {
 	default:
 		return false
 	}
+}
+
+// PublicAnnouncement 是首页公告条用的精简结构，不含投放规则等内部字段。
+type PublicAnnouncement struct {
+	ID        int64  `json:"id"`
+	Title     string `json:"title"`
+	Content   string `json:"content"`
+	CreatedAt string `json:"created_at"`
+}
+
+// ListPublic handles listing announcements visible to anonymous visitors
+// GET /api/v1/public/announcements
+func (h *AnnouncementHandler) ListPublic(c *gin.Context) {
+	items, err := h.announcementService.ListPublic(c.Request.Context(), 5)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	out := make([]PublicAnnouncement, 0, len(items))
+	for i := range items {
+		out = append(out, PublicAnnouncement{
+			ID:        items[i].ID,
+			Title:     items[i].Title,
+			Content:   items[i].Content,
+			CreatedAt: items[i].CreatedAt.UTC().Format(time.RFC3339),
+		})
+	}
+	response.Success(c, out)
 }
