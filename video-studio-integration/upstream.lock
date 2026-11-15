@@ -1,8 +1,8 @@
 # 视频工作台的上游版本。升级流程见 UPGRADE.md：改这里的 commit，跑 build.sh，
 # 补丁或 overlay 校验失败时按提示处理后再更新对应 sha256。
 UPSTREAM_REPO=https://github.com/ddcat-ai/open-ai-canvas
-UPSTREAM_COMMIT=cf339c1621dd8a4b3fff5265bc3d6eff9cea2ddc
-UPSTREAM_VERSION=v1.8.4.1
+UPSTREAM_COMMIT=ac5e01cab55184fa9f202fe6349a5884411b4114
+UPSTREAM_VERSION=v1.8.5
 
 # overlay 整文件替换的上游文件：上游改了它们，build.sh 会停下来，
 # 需要人工对比上游改动是否要合进 overlay，再更新这里的哈希。

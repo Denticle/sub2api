@@ -51,3 +51,5 @@ ark.ap-southeast.bytepluses.com
 tos-s3-cn-beijing.volces.com
 # 仅出现在注释里的官方文档链接，不会发起请求
 docs.volcengine.com
+# v1.8.5 MCP 连接表单里输入框的示例地址（placeholder），不会发起请求
+mcp.example.com

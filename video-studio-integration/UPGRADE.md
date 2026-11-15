@@ -73,6 +73,11 @@ git -C ../build/upstream.git fetch origin && git -C ../build/upstream.git log --
    遇到这组失败要重跑确认，不要当成回归。
 4. `./build.sh` 构建，记下输出的镜像标签；`/opt/video-studio/.env` 里 `VIDEO_STUDIO_TAG` 改成新标签，
    `cd /opt/video-studio && docker compose up -d`（migrate 容器会先跑数据库迁移）。
+   部署机下载 Go 依赖时单个镜像源经常中途断连（`http2: server sent GOAWAY`），构建时用 `|` 分隔多个源，
+   一个断了自动换下一个：
+   ```bash
+   GOPROXY="https://goproxy.cn|https://goproxy.io|https://proxy.golang.org|direct" ./build.sh
+   ```
 5. 回滚：`.env` 改回上一个标签再 `docker compose up -d`。数据库迁移不可逆，升级前先
    `docker exec video-studio-postgres pg_dump -U video_studio video_studio | gzip > /root/video-studio-$(date +%F).sql.gz`。
 
