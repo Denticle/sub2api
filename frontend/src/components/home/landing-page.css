@@ -323,3 +323,5 @@
   .cl-visual{height:200px}
   .ft-cols{grid-template-columns:repeat(2,1fr)}
 }
+
+img.thumb{display:block;width:100%;object-fit:cover}

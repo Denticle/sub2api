@@ -68,7 +68,7 @@
                 </component>
               </div>
               <a class="nv-feature" href="#lp-gallery" @click="menuOpen = false">
-                <img :src="featureImage" alt="" loading="lazy" />
+                <img :src="featureImage" alt="" loading="lazy" referrerpolicy="no-referrer" />
                 <span class="nv-feature-txt">
                   <b>{{ t('home.lp.menuFeature') }}</b>
                   <small>{{ t('home.lp.menuFeatureDesc') }}</small>
@@ -150,7 +150,7 @@
                 <div class="lbl">{{ t('home.lp.cvDramaLabel') }}</div>
               </div>
               <div class="cv-node img" style="left: 224px; top: 74px">
-                <div class="thumb" :style="bg(MEDIA.boards)"></div>
+                <img class="thumb" :src="MEDIA.boards" alt="" referrerpolicy="no-referrer" />
                 <div class="lbl">{{ t('home.lp.cvBoards') }}</div>
               </div>
               <div class="cv-node vid" style="left: 436px; top: 156px">
@@ -221,7 +221,7 @@
               <div class="ws-canvas">
                 <div class="ws-shots">
                   <figure v-for="shot in shots" :key="shot.n" class="ws-shot">
-                    <img :src="shot.src" alt="" loading="lazy" />
+                    <img :src="shot.src" alt="" loading="lazy" referrerpolicy="no-referrer" />
                     <figcaption>
                       <span>{{ t('home.lp.wsShot', { n: shot.n, name: shot.name }) }}</span>
                       <span class="tc">{{ shot.dur }}</span>
@@ -230,7 +230,7 @@
                 </div>
                 <div class="ws-player">
                   <div class="ws-screen">
-                    <img :src="MEDIA.beast" alt="" loading="lazy" />
+                    <img :src="MEDIA.beast" alt="" loading="lazy" referrerpolicy="no-referrer" />
                     <span class="ws-play"></span>
                     <span class="ws-res">1080p · 16:9</span>
                   </div>
@@ -320,7 +320,7 @@
               :title="item.title"
             >
               <div class="lp-shot-art">
-                <img :src="item.image" :alt="item.title" loading="lazy" />
+                <img :src="item.image" :alt="item.title" loading="lazy" referrerpolicy="no-referrer" />
                 <span v-if="item.mode === 'video'" class="lp-shot-badge">▶</span>
               </div>
               <span class="lp-shot-cap">
@@ -349,9 +349,9 @@
               </ul>
             </div>
             <div class="cl-visual" aria-hidden="true">
-              <img :src="MEDIA.sea" alt="" loading="lazy" />
-              <img :src="MEDIA.temple" alt="" loading="lazy" />
-              <img :src="MEDIA.bridge" alt="" loading="lazy" />
+              <img :src="MEDIA.sea" alt="" loading="lazy" referrerpolicy="no-referrer" />
+              <img :src="MEDIA.temple" alt="" loading="lazy" referrerpolicy="no-referrer" />
+              <img :src="MEDIA.bridge" alt="" loading="lazy" referrerpolicy="no-referrer" />
             </div>
           </div>
         </div>
@@ -414,6 +414,7 @@ const SKILL_COUNT = 73
 const WORKBENCH = '/workbench/canvas'
 
 // 示意图用到的画面，全部取自工作台灵感库里的真实作品封面。
+// 第三方图床按 Referer 防盗链（带本站域名会 403），所以外链图片都用 <img referrerpolicy="no-referrer">。
 const MEDIA = {
   boards: 'https://cms-assets.youmind.com/media/1792482820813_mtdoc7_HU854tgbIAE9SlB.jpg',
   ad: 'https://media.goodcase.ai/media/poster/case-96017ad7706f.jpg',
