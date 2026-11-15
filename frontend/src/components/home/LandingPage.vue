@@ -413,15 +413,16 @@ const appStore = useAppStore()
 const SKILL_COUNT = 73
 const WORKBENCH = '/workbench/canvas'
 
-// 示意图用到的画面，全部取自工作台灵感库里的真实作品封面。
-// 第三方图床按 Referer 防盗链（带本站域名会 403），所以外链图片都用 <img referrerpolicy="no-referrer">。
+// 示意图用到的画面取自工作台灵感库里的真实作品封面，已压成 WebP 放在 public/landing 里由本站提供：
+// 第三方图床按 Referer 防盗链，在部分地区还会断连，固定画面不能依赖它们。
+// 作品墙仍直接用图床地址，所以外链 <img> 都加 referrerpolicy="no-referrer"。
 const MEDIA = {
-  boards: 'https://cms-assets.youmind.com/media/1792482820813_mtdoc7_HU854tgbIAE9SlB.jpg',
-  ad: 'https://media.goodcase.ai/media/poster/case-96017ad7706f.jpg',
-  temple: 'https://media.goodcase.ai/cases/177801c0a33f.jpg',
-  bridge: 'https://media.goodcase.ai/cases/b4c4f9bdf65c.jpg',
-  sea: 'https://media.goodcase.ai/cases/a002c9dccc74.jpg',
-  beast: 'https://media.goodcase.ai/cases/c5e8fdb6d69a.jpg',
+  boards: '/landing/boards.webp',
+  ad: '/landing/ad.webp',
+  temple: '/landing/temple.webp',
+  bridge: '/landing/bridge.webp',
+  sea: '/landing/sea.webp',
+  beast: '/landing/beast.webp',
 }
 
 const ICONS: Record<string, string> = {
